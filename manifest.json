@@ -1,0 +1,16 @@
+{
+	"required_api_version": "2",
+	"name": "Steam",
+	"description": "uLauncher Steam integration",
+	"developer_name": "Jack5",
+	"icon": "images/icon.png",
+	"preferences": [
+		{
+			"id": "game_keyword",
+			"type": "keyword",
+			"name": "Game keyword",
+			"description": "Keyword used to search for and launch games",
+			"default_value": "game"
+		}
+	]
+}
