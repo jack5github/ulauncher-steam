@@ -11,6 +11,20 @@
 			"name": "Game keyword",
 			"description": "Keyword used to search for and launch games",
 			"default_value": "game"
+		},
+		{
+			"id": "steamapps_folder",
+			"type": "input",
+			"name": "Steam steamapps folder",
+			"description": "Path to the steamapps folder",
+			"default_value": "/home/<username>/.steam/debian-installation/steamapps/"
+		},
+		{
+			"id": "userdata_folder",
+			"type": "input",
+			"name": "Steam userdata folder",
+			"description": "Path to the userdata subfolder that describes the user",
+			"default_value": "/home/<username>/.steam/debian-installation/userdata/<steamid>/"
 		}
 	]
 }
