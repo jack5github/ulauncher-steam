@@ -8,9 +8,9 @@
 		{
 			"id": "game_keyword",
 			"type": "keyword",
-			"name": "Game keyword",
-			"description": "Keyword used to search for and launch games",
-			"default_value": "game"
+			"name": "Installed apps",
+			"description": "Search through installed apps (excluding non-Steam apps)",
+			"default_value": "si"
 		},
 		{
 			"id": "steamapps_folder",
@@ -25,6 +25,27 @@
 			"name": "Steam userdata folder",
 			"description": "Path to the userdata subfolder that describes the user",
 			"default_value": "/home/<username>/.steam/debian-installation/userdata/<steamid>/"
+		},
+		{
+			"id": "api_keyword",
+			"type": "keyword",
+			"name": "All owned apps",
+			"description": "Search through all owned apps",
+			"default_value": "sa"
+		},
+		{
+			"id": "api_key",
+			"type": "input",
+			"name": "Steam API key",
+			"description": "Steam API key found at https://steamcommunity.com/dev/apikey",
+			"default_value": ""
+		},
+		{
+			"id": "steam_id",
+			"type": "input",
+			"name": "Steam ID64",
+			"description": "Steam ID64 of the user",
+			"default_value": ""
 		}
 	]
 }
