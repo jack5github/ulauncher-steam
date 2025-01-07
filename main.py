@@ -25,11 +25,12 @@ def get_installed_steam_apps(steamapps_folder: str, userdata_folder: str) -> lis
 	Returns:
 		list[tuple[str, int]]: A list of tuples containing the name and app ID of all installed Steam apps.
 	"""
+	from os import listdir
 	from os.path import join as path_join
 
 	# Get all appmanifest_#.acf files in the steamapps folder
 	appmanifest_files: tuple[str, ...] = tuple(
-		file for file in os.listdir(steamapps_folder) if file.startswith("appmanifest_") and file.endswith(".acf")
+		file for file in listdir(steamapps_folder) if file.startswith("appmanifest_") and file.endswith(".acf")
 	)
 	log.debug(appmanifest_files)
 	# Each file is a JSON-like object using the following syntax:
