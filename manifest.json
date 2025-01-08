@@ -46,6 +46,13 @@
 			"name": "Steam ID64",
 			"description": "Steam ID64 of the user",
 			"default_value": ""
+		},
+		{
+			"id": "nav_keyword",
+			"type": "keyword",
+			"name": "Navigation",
+			"description": "Access Steam menus",
+			"default_value": "sn"
 		}
 	]
 }

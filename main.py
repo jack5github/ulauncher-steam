@@ -74,7 +74,6 @@ def get_installed_steam_apps(steamapps_folder: str, userdata_folder: str) -> lis
 		pass
 	"""
 	log.debug(installed_steam_apps)
-	installed_steam_apps = sorted(installed_steam_apps, key=lambda x: x[0].lower())
 	return installed_steam_apps
 
 # http://docs.ulauncher.io/en/stable/extensions/libs.html
@@ -111,14 +110,31 @@ def get_all_owned_steam_apps(api_key: str, steam_id64: str) -> list[tuple[str, i
 		)
 		for game in json_loads(response)["response"]["games"]
 	]
-	owned_games = sorted(owned_games, key=lambda x: x[0].lower())
+	log.debug(owned_games)
 	return owned_games
 
 def fuzzy_match_filter(items: list[tuple[str, Any, ...]], match: str | None) -> list[tuple[str, Any, ...]]:
+	"""
+	Filters a list of items based on a fuzzy match. If no match is provided, the items are sorted alphabetically.
+
+	Args:
+		items (list[tuple[str, Any, ...]]): The list of items to filter.
+		match (str | None): The fuzzy match to filter the items by.
+
+	Returns:
+		list[tuple[str, Any, ...]]: The filtered list of items.
+	"""
+	from difflib import SequenceMatcher
+
 	if match is None:
+		items.sort(key=lambda x: x[0].lower())
 		return items
 	matches: list[str] = match.strip().lower().split()
-	return [item for item in items if all(word in item[0].lower() for word in matches)]
+	# items = sorted([item for item in items if all(word in item[0].lower() for word in matches)], key=lambda x: x[0].lower())
+	items = [item for item in items if all(word in item[0].lower() for word in matches)]
+	items.sort(key=lambda x: SequenceMatcher(None, x[0].lower(), match.strip().lower()).ratio(), reverse=True)
+	log.debug(items)
+	return items
 
 def get_extension_path() -> str:
 	return "/".join(__file__.split("/")[:-1])
@@ -169,29 +185,56 @@ class SteamExtensionKeywordEventListener(EventListener):
 						on_enter=RunScriptAction(f"steam steam://rungameid/{app[1]}")
 					)
 				)
-		"""
-		else:
-			items = [
-				ExtensionResultItem(
-					icon='images/icon.png',
-					name='DX-Ball 2: 20th Anniversary Edition',
-					description='Longbow Games',
-					on_enter=RunScriptAction("steam steam://rungameid/922400")
-				),
-				ExtensionResultItem(
-					icon='images/icon.png',
-					name=f"{str(event.get_argument())} {str(event.get_keyword())} {str(event.get_query().get_argument())} {str(event.get_query().get_keyword())}",
-					description=str(extension),
-					on_enter=RunScriptAction("steam steam://rungameid/922400")
-				),
-				ExtensionResultItem(
-					icon='images/icon.png',
-					name=str(__file__),
-					description=str([item for item in dir(extension) if not item.startswith("_")]),
-					on_enter=RunScriptAction("steam steam://rungameid/922400")
-				)
+		else:  # event.get_keyword() == extension.preferences["nav_keyword"]
+			navigations: list[tuple[str, str]] = [
+				("Quit Steam", "steam steam://exit"),
+				("Friends", "steam steam://friends"),
+				("Activate Product", "steam steam://open/activateproduct"),
+				("Big Picture", "steam steam://open/bigpicture"),
+				("Console", "steam steam://open/console"),
+				("Downloads", "steam steam://open/downloads"),
+				("Friends (Open)", "steam steam://open/friends"),
+				("Games Library", "steam steam://open/games"),
+				("Preferred Window", "steam steam://open/main"),
+				("Music", "steam steam://open/music"),
+				("Music Player", "steam steam://open/musicplayer"),
+				("Media", "steam steam://open/media"),
+				("News", "steam steam://open/news"),
+				("Screenshots", "steam steam://open/screenshots"),
+				("Servers", "steam steam://open/servers"),
+				("Settings", "steam steam://open/settings"),
+				("Tools", "steam steam://open/tools"),
+				("Account Settings", "steam steam://settings/account"),
+				("Friends Settings", "steam steam://settings/friends"),
+				("Interface Settings", "steam steam://settings/interface"),
+				("In-game Settings", "steam steam://settings/ingame"),
+				("Download Settings", "steam steam://settings/downloads"),
+				("Voice Settings", "steam steam://settings/voice"),
+				("Notifications", "steam steam://url/CommentNotifications"),
+				("Community", "steam steam://url/CommunityHome"),
+				("Inventory", "steam steam://url/CommunityInventory"),
+				("Community Search", "steam steam://url/CommunitySearch"),
+				("Family Sharing", "steam steam://url/FamilySharing"),
+				("Family View", "steam steam://url/ParentalSetup"),
+				("Profile Control", "steam steam://url/SteamIDControlPage"),
+				("Edit Profile", "steam steam://url/SteamIDEditPage"),
+				("Profile Friends", "steam steam://url/SteamIDFriendsPage"),
+				("Profile", "steam steam://url/SteamIDMyProfile"),
+				("Workshop", "steam steam://url/SteamWorkshop"),
+				("Store", "steam steam://url/Store"),
+				("Store Settings", "steam steam://url/StoreAccount"),
+				("Store Cart", "steam steam://url/StoreCart"),
+				("Support", "steam steam://url/SupportFrontPage"),
 			]
-		"""
+			navigations = fuzzy_match_filter(navigations, event.get_argument())
+			for navigation in navigations:
+				items.append(
+					ExtensionResultItem(
+						icon='images/icon.png',
+						name=navigation[0],
+						on_enter=RunScriptAction(navigation[1])
+					)
+				)
 		return RenderResultListAction(items)
 
 if __name__ == '__main__':
