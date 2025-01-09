@@ -51,7 +51,7 @@ def get_extension_path() -> str:
 
 class SteamExtensionKeywordEventListener(EventListener):
     def on_event(self, event, extension):
-        from .get import get_all_owned_steam_apps, get_installed_steam_apps, get_non_steam_apps
+        from get import get_all_owned_steam_apps, get_installed_steam_apps, get_non_steam_apps
         from os import mkdir
         from os.path import isdir, isfile
         from urllib.error import HTTPError
@@ -61,7 +61,7 @@ class SteamExtensionKeywordEventListener(EventListener):
         if event.get_keyword() == extension.preferences["game_keyword"]:
             steam_apps: tuple[str, int, bool] = get_installed_steam_apps(
                 extension.preferences["steamapps_folder"]
-            )  # + get_non_steam_apps(extension.preferences["userdata_folder"])
+            ) + get_non_steam_apps(extension.preferences["userdata_folder"])
             log.debug(event.get_argument())
             steam_apps = fuzzy_match_filter(
                 steam_apps, event.get_argument()

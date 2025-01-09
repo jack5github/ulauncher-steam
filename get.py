@@ -56,6 +56,7 @@ def get_installed_steam_apps(steamapps_folder: str) -> list[tuple[str, int, bool
     return installed_steam_apps
 
 
+# TODO: Make this more efficient by reducing number of keys to check for
 def get_non_steam_apps(userdata_folder: str) -> list[tuple[str, int, bool]]:
     """
     Returns the names and app IDs of all non-Steam apps.
@@ -104,8 +105,8 @@ def get_non_steam_apps(userdata_folder: str) -> list[tuple[str, int, bool]]:
                 shortcuts[shortcut_id][vdf_key] = value
 
             if vdf_key == "appid":
-                # The next five bytes are the app ID
-                insert_key_value(int.from_bytes(buffer[cursor + 1:cursor + 6], "little"))
+                # The next four bytes are the app ID (reversed), followed by 02 00 00 00
+                insert_key_value(int.from_bytes(buffer[cursor + 4:cursor:-1] + b"\x02\x00\x00\x00", "big"))
                 cursor += 1
                 continue
             value_cursor: int = cursor + 1
