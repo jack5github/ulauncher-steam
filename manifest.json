@@ -50,9 +50,9 @@
 		{
 			"id": "nav_keyword",
 			"type": "keyword",
-			"name": "Navigation",
+			"name": "Menu navigation",
 			"description": "Access Steam menus",
-			"default_value": "sn"
+			"default_value": "sm"
 		}
 	]
 }
