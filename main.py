@@ -1,154 +1,90 @@
+from cache import build_cache
 from logging import getLogger, Logger
 from typing import Any
-from ulauncher.api.client.Extension import Extension
 from ulauncher.api.client.EventListener import EventListener
-from ulauncher.api.shared.event import KeywordQueryEvent
-from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
+from ulauncher.api.client.Extension import Extension
+from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
+from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
 from ulauncher.api.shared.action.RunScriptAction import RunScriptAction
+from ulauncher.api.shared.event import KeywordQueryEvent, ItemEnterEvent, PreferencesEvent
+from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 
 log: Logger = getLogger(__name__)
 
+
 class SteamExtension(Extension):
-    def __init__(self):
+    def __init__(self) -> None:
+        log.debug("Initialising Steam extension")
         super().__init__()
-        self.subscribe(KeywordQueryEvent, SteamExtensionKeywordEventListener())
+        self.subscribe(PreferencesEvent, SteamExtensionStartListener())
+        self.subscribe(KeywordQueryEvent, SteamExtensionQueryListener())
+        self.subscribe(ItemEnterEvent, SteamExtensionItemListener())
+        log.info("Steam extension initialised")
 
-# http://docs.ulauncher.io/en/stable/extensions/libs.html
 
-def fuzzy_match_filter(items: list[tuple[Any, ...]], match: str | None) -> list[tuple[Any, ...]]:
-    """
-    Filters a list of items based on a fuzzy match. If no match is provided, the items are sorted alphabetically.
-
-    Args:
-        items (list[tuple[Any, ...]]): The list of items to filter.
-        match (str | None): The fuzzy match to filter the items by.
-
-    Returns:
-        list[tuple[Any, ...]]: The filtered list of items.
-    """
-    from difflib import SequenceMatcher
-
-    if match is None:
-        items.sort(key=lambda x: x[0].lower())
-        return items
-    matches: list[str] = match.strip().lower().split()
-    # items = sorted([item for item in items if all(word in item[0].lower() for word in matches)], key=lambda x: x[0].lower())
-    items = [item for item in items if all(word in item[0].lower() for word in matches)]
-    items.sort(
-        key=lambda x: SequenceMatcher(
-            None, x[0].lower(), match.strip().lower()
-        ).ratio(),
-        reverse=True
-    )
-    log.debug(items)
-    return items
-
-def get_extension_path() -> str:
-    return "/".join(__file__.split("/")[:-1])
-
-# https://developer.valvesoftware.com/wiki/Steam_browser_protocol
-
-class SteamExtensionKeywordEventListener(EventListener):
+class SteamExtensionStartListener(EventListener):
     def on_event(self, event, extension):
-        from get import get_all_owned_steam_apps, get_installed_steam_apps, get_non_steam_apps
-        from os import mkdir
-        from os.path import isdir, isfile
-        from urllib.error import HTTPError
-        from urllib.request import urlretrieve
+        manifest: dict[str, Any] = extension.preferences
 
-        items: list[ExtensionResultItem] = []
-        if event.get_keyword() == extension.preferences["game_keyword"]:
-            steam_apps: list[tuple[str, int, bool]] = get_installed_steam_apps(
-                extension.preferences["steamapps_folder"]
-            ) + get_non_steam_apps(extension.preferences["userdata_folder"])
-            log.debug(event.get_argument())
-            steam_apps = fuzzy_match_filter(
-                steam_apps, event.get_argument()
+        log.debug("Steam extension started, building cache")
+        build_cache(
+            steamapps_folder=manifest["steamapps-folder"],
+            userdata_folder=manifest["userdata-folder"],
+            steam_api_key=manifest["api-key"],
+            steamid64=manifest["steam-id"],
+            time_before_update=manifest["time-before-update"],
+        )
+
+
+class SteamExtensionQueryListener(EventListener):
+    def on_event(self, event, extension) -> RenderResultListAction:
+        from query import SteamExtensionItem, steam_extension_event
+
+        log.debug("Entering Steam extension event listener main function")
+        manifest: dict[str, Any] = extension.preferences
+        items: list[SteamExtensionItem] = steam_extension_event(manifest, event.get_argument())
+        log.debug("Steam extension event listener main function finished")
+        result_items: list[ExtensionResultItem] = []
+        for item in items:
+            log.debug(f"Converting to ExtensionResultItem: {repr(item)}")
+            result_dict: dict[str, Any] = item.to_result_dict()
+            on_enter_class: RunScriptAction | ExtensionCustomAction | HideWindowAction = (
+                RunScriptAction(result_dict["on_enter"]["argument"])
+                if result_dict["on_enter"]["class"] == "RunScriptAction"
+                else ExtensionCustomAction([
+                    manifest["steamapps-folder"],
+                    manifest["userdata-folder"],
+                    manifest["api-key"],
+                    manifest["steam-id"],
+                    manifest["time-before-update"],
+                ])
+                if result_dict["on_enter"]["class"] == "ExtensionCustomAction"
+                else HideWindowAction()
             )
-            for app in steam_apps:
-                items.append(
-                    ExtensionResultItem(
-                        icon='images/icon.png',
-                        name=app[0],
-                        on_enter=RunScriptAction(f"steam steam://run/{app[1]}" if app[2] else f"steam steam://rungameid/{app[1]}")
-                    )
+            result_items.append(
+                ExtensionResultItem(
+                    icon=result_dict["icon"],
+                    name=result_dict["name"],
+                    description=result_dict["description"],
+                    on_enter=on_enter_class,
                 )
-        elif event.get_keyword() == extension.preferences["api_keyword"]:
-            owned_steam_apps: list[tuple[str, int, str]] = get_all_owned_steam_apps(
-                extension.preferences["api_key"], extension.preferences["steam_id"]
             )
-            owned_steam_apps = fuzzy_match_filter(
-                owned_steam_apps, event.get_argument()
-            )
-            ext_path: str = get_extension_path()
-            if not isdir(f"{ext_path}/images/apps"):
-                mkdir(f"{ext_path}/images/apps")
-            for app in owned_steam_apps:
-                if not isfile(f"{ext_path}/images/apps/{app[1]}.jpg"):
-                    # Download the icon
-                    try:
-                        urlretrieve(app[2], f"{ext_path}/images/apps/{app[1]}.jpg")
-                    except HTTPError:
-                        pass
-                items.append(
-                    ExtensionResultItem(
-                        icon=f"images/apps/{app[1]}.jpg",
-                        name=app[0],
-                        on_enter=RunScriptAction(f"steam steam://rungameid/{app[1]}")
-                    )
-                )
-        else:  # event.get_keyword() == extension.preferences["nav_keyword"]
-            navigations: list[tuple[str, str]] = [
-                ("Quit Steam", "steam steam://exit"),
-                ("Friends", "steam steam://friends"),
-                ("Activate Product", "steam steam://open/activateproduct"),
-                ("Big Picture", "steam steam://open/bigpicture"),
-                ("Console", "steam steam://open/console"),
-                ("Downloads", "steam steam://open/downloads"),
-                ("Friends (Open)", "steam steam://open/friends"),
-                ("Games Library", "steam steam://open/games"),
-                ("Preferred Window", "steam steam://open/main"),
-                ("Music", "steam steam://open/music"),
-                ("Music Player", "steam steam://open/musicplayer"),
-                ("Media", "steam steam://open/media"),
-                ("News", "steam steam://open/news"),
-                ("Screenshots", "steam steam://open/screenshots"),
-                ("Servers", "steam steam://open/servers"),
-                ("Settings", "steam steam://open/settings"),
-                ("Tools", "steam steam://open/tools"),
-                ("Account Settings", "steam steam://settings/account"),
-                ("Friends Settings", "steam steam://settings/friends"),
-                ("Interface Settings", "steam steam://settings/interface"),
-                ("In-game Settings", "steam steam://settings/ingame"),
-                ("Download Settings", "steam steam://settings/downloads"),
-                ("Voice Settings", "steam steam://settings/voice"),
-                ("Notifications", "steam steam://url/CommentNotifications"),
-                ("Community", "steam steam://url/CommunityHome"),
-                ("Inventory", "steam steam://url/CommunityInventory"),
-                ("Community Search", "steam steam://url/CommunitySearch"),
-                ("Family Sharing", "steam steam://url/FamilySharing"),
-                ("Family View", "steam steam://url/ParentalSetup"),
-                ("Profile Control", "steam steam://url/SteamIDControlPage"),
-                ("Edit Profile", "steam steam://url/SteamIDEditPage"),
-                ("Profile Friends", "steam steam://url/SteamIDFriendsPage"),
-                ("Profile", "steam steam://url/SteamIDMyProfile"),
-                ("Workshop", "steam steam://url/SteamWorkshop"),
-                ("Store", "steam steam://url/Store"),
-                ("Store Settings", "steam steam://url/StoreAccount"),
-                ("Store Cart", "steam steam://url/StoreCart"),
-                ("Support", "steam steam://url/SupportFrontPage"),
-            ]
-            navigations = fuzzy_match_filter(navigations, event.get_argument())
-            for navigation in navigations:
-                items.append(
-                    ExtensionResultItem(
-                        icon='images/icon.png',
-                        name=navigation[0],
-                        on_enter=RunScriptAction(navigation[1])
-                    )
-                )
-        return RenderResultListAction(items)
+        return RenderResultListAction(result_items)
+
+
+class SteamExtensionItemListener(EventListener):
+    def on_event(self, event, extension) -> None:
+        manifest: dict[str, Any] = extension.preferences
+
+        log.debug("User requested to rebuild cache")
+        build_cache(
+            steamapps_folder=manifest["steamapps-folder"],
+            userdata_folder=manifest["userdata-folder"],
+            steam_api_key=manifest["api-key"],
+            steamid64=manifest["steam-id"],
+        )
+
 
 if __name__ == '__main__':
     SteamExtension().run()

@@ -1,58 +1,65 @@
 {
-	"required_api_version": "2",
-	"name": "Steam",
-	"description": "uLauncher Steam integration",
-	"developer_name": "Jack5",
-	"icon": "images/icon.png",
-	"preferences": [
-		{
-			"id": "game_keyword",
-			"type": "keyword",
-			"name": "Installed apps",
-			"description": "Search through installed apps (excluding non-Steam apps)",
-			"default_value": "si"
-		},
-		{
-			"id": "steamapps_folder",
-			"type": "input",
-			"name": "Steam steamapps folder",
-			"description": "Path to the steamapps folder",
-			"default_value": "/home/<username>/.steam/debian-installation/steamapps/"
-		},
-		{
-			"id": "userdata_folder",
-			"type": "input",
-			"name": "Steam userdata folder",
-			"description": "Path to the userdata subfolder that describes the user",
-			"default_value": "/home/<username>/.steam/debian-installation/userdata/<steamid>/"
-		},
-		{
-			"id": "api_keyword",
-			"type": "keyword",
-			"name": "All owned apps",
-			"description": "Search through all owned apps",
-			"default_value": "sa"
-		},
-		{
-			"id": "api_key",
-			"type": "input",
-			"name": "Steam API key",
-			"description": "Steam API key found at https://steamcommunity.com/dev/apikey",
-			"default_value": ""
-		},
-		{
-			"id": "steam_id",
-			"type": "input",
-			"name": "Steam ID64",
-			"description": "Steam ID64 of the user",
-			"default_value": ""
-		},
-		{
-			"id": "nav_keyword",
-			"type": "keyword",
-			"name": "Menu navigation",
-			"description": "Access Steam menus",
-			"default_value": "sm"
-		}
-	]
+    "required_api_version": "2",
+    "name": "Steam",
+    "description": "uLauncher Steam integration",
+    "developer_name": "Jack5",
+    "icon": "images/icon.png",
+    "preferences": [
+        {
+            "id": "keyword",
+            "type": "keyword",
+            "name": "Keyword",
+            "description": "Search through Steam apps and menus",
+            "default_value": "s"
+        },
+        {
+            "id": "steamapps-folder",
+            "type": "input",
+            "name": "Steam steamapps folder",
+            "description": "Path to the steamapps folder",
+            "default_value": "/home/<username>/.steam/debian-installation/steamapps/"
+        },
+        {
+            "id": "userdata-folder",
+            "type": "input",
+            "name": "Steam userdata folder",
+            "description": "Path to the userdata subfolder that describes the user",
+            "default_value": "/home/<username>/.steam/debian-installation/userdata/<steamid>/"
+        },
+        {
+            "id": "api-key",
+            "type": "input",
+            "name": "Steam API key",
+            "description": "Steam API key found at https://steamcommunity.com/dev/apikey",
+            "default_value": ""
+        },
+        {
+            "id": "steam-id",
+            "type": "input",
+            "name": "Steam ID64",
+            "description": "Steam ID64 of the user",
+            "default_value": ""
+        },
+        {
+            "id": "time-before-update",
+            "type": "input",
+            "name": "Time before update (minutes)",
+            "description": "Time before the extension checks for updates",
+            "default_value": "60"
+        },
+        {
+            "id": "language",
+            "type": "input",
+            "name": "Language code",
+            "description": "Language code for the extension",
+            "default_value": "en-GB"
+        },
+        {
+            "id": "sort-keys",
+            "type": "input",
+            "name": "Sort keys",
+            "description": "The priority of the sort keys separated by commas. Available: name,appid,ulaunched-last,ulaunched-times",
+            "default_value": "ulaunched-last,ulaunched-times,appid,name"
+        }
+    ]
 }

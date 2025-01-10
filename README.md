@@ -1,12 +1,6 @@
 # uLauncher Steam integration extension
 
-This extension allows you to search and launch Steam apps and menus from uLauncher.
-
-## Keywords
-
-- `si` - Installed apps (excluding non-Steam apps)
-- `sa` - All owned apps
-- `sm` - Steam menus
+This extension allows you to search and launch Steam apps and menus from uLauncher. Simply type `s ` (or whatever keyword the extension is set to use) and search for the desired app or menu.
 
 ## Installation
 
