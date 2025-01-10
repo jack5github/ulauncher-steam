@@ -2,7 +2,7 @@ from logging import getLogger, Logger
 from typing import Any
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.client.EventListener import EventListener
-from ulauncher.api.shared.event import KeywordQueryEvent, ItemEnterEvent
+from ulauncher.api.shared.event import KeywordQueryEvent
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
 from ulauncher.api.shared.action.RunScriptAction import RunScriptAction
@@ -16,16 +16,16 @@ class SteamExtension(Extension):
 
 # http://docs.ulauncher.io/en/stable/extensions/libs.html
 
-def fuzzy_match_filter(items: list[tuple[str, Any, ...]], match: str | None) -> list[tuple[str, Any, ...]]:
+def fuzzy_match_filter(items: list[tuple[Any, ...]], match: str | None) -> list[tuple[Any, ...]]:
     """
     Filters a list of items based on a fuzzy match. If no match is provided, the items are sorted alphabetically.
 
     Args:
-        items (list[tuple[str, Any, ...]]): The list of items to filter.
+        items (list[tuple[Any, ...]]): The list of items to filter.
         match (str | None): The fuzzy match to filter the items by.
 
     Returns:
-        list[tuple[str, Any, ...]]: The filtered list of items.
+        list[tuple[Any, ...]]: The filtered list of items.
     """
     from difflib import SequenceMatcher
 
@@ -59,7 +59,7 @@ class SteamExtensionKeywordEventListener(EventListener):
 
         items: list[ExtensionResultItem] = []
         if event.get_keyword() == extension.preferences["game_keyword"]:
-            steam_apps: tuple[str, int, bool] = get_installed_steam_apps(
+            steam_apps: list[tuple[str, int, bool]] = get_installed_steam_apps(
                 extension.preferences["steamapps_folder"]
             ) + get_non_steam_apps(extension.preferences["userdata_folder"])
             log.debug(event.get_argument())
@@ -75,7 +75,7 @@ class SteamExtensionKeywordEventListener(EventListener):
                     )
                 )
         elif event.get_keyword() == extension.preferences["api_keyword"]:
-            owned_steam_apps: tuple[str, int, str] = get_all_owned_steam_apps(
+            owned_steam_apps: list[tuple[str, int, str]] = get_all_owned_steam_apps(
                 extension.preferences["api_key"], extension.preferences["steam_id"]
             )
             owned_steam_apps = fuzzy_match_filter(

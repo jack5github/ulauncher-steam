@@ -12,7 +12,7 @@ def get_installed_steam_apps(steamapps_folder: str) -> list[tuple[str, int, bool
         steamapps_folder (str): The path to the steamapps folder.
 
     Returns:
-        list[tuple[str, int]]: A list of tuples containing the name and app ID of all installed Steam apps. The boolean in each tuple is always True.
+        list[tuple[str, int, bool]]: A list of tuples containing the name and app ID of all installed Steam apps. The boolean in each tuple is always True.
     """
     from os import listdir
 
@@ -33,7 +33,7 @@ def get_installed_steam_apps(steamapps_folder: str) -> list[tuple[str, int, bool
         }
     }
     """
-    installed_steam_apps: list[tuple[str, int]] = []
+    installed_steam_apps: list[tuple[str, int, bool]] = []
     for file in appmanifest_files:
         log.debug(path_join(steamapps_folder, file))
         with open(path_join(steamapps_folder, file), "r", encoding="utf-8") as f:
@@ -76,7 +76,7 @@ def get_non_steam_apps(userdata_folder: str) -> list[tuple[str, int, bool]]:
     log.debug(user_shortcuts_file)
     # Shortcuts are represented as hex, flanked by keys in plain English
     # https://steamcommunity.com/discussions/forum/1/5560306947036116992/
-    buffer: str
+    buffer: bytearray
     with open(user_shortcuts_file, "rb") as f:
         buffer = bytearray.fromhex(hexlify(f.read()).decode())
     cursor: int = 20
@@ -97,7 +97,7 @@ def get_non_steam_apps(userdata_folder: str) -> list[tuple[str, int, bool]]:
         try:
             vdf_key: str = next(key for key in vdf_keys if buffer[cursor - len(key):cursor].decode(errors="ignore") == key)
 
-            def insert_key_value(value: str) -> None:
+            def insert_key_value(value: str | int) -> None:
                 nonlocal shortcuts
 
                 if shortcut_id not in shortcuts.keys():
@@ -121,8 +121,8 @@ def get_non_steam_apps(userdata_folder: str) -> list[tuple[str, int, bool]]:
         except StopIteration:
             pass
         cursor += 1
-    print(shortcuts)
-    non_steam_apps: list[tuple[str, int]] = []
+    log.debug(shortcuts)
+    non_steam_apps: list[tuple[str, int, bool]] = []
     for shortcut in shortcuts.values():
         non_steam_apps.append((shortcut["AppName"], shortcut["appid"], False))
     log.debug(non_steam_apps)
@@ -152,7 +152,7 @@ def get_all_owned_steam_apps(api_key: str, steam_id64: str) -> list[tuple[str, i
     )
     conn: HTTPSConnection = HTTPSConnection("api.steampowered.com")
     conn.request("GET", owned_games_url)
-    response: str = conn.getresponse().read()
+    response: bytes = conn.getresponse().read()
     owned_games: list[tuple[str, int, str]] = [
         (
             game["name"],
