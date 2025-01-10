@@ -7,7 +7,11 @@ from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAct
 from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
 from ulauncher.api.shared.action.RunScriptAction import RunScriptAction
-from ulauncher.api.shared.event import KeywordQueryEvent, ItemEnterEvent, PreferencesEvent
+from ulauncher.api.shared.event import (
+    ItemEnterEvent,
+    KeywordQueryEvent,
+    PreferencesEvent,
+)
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 
 log: Logger = getLogger(__name__)
@@ -24,9 +28,8 @@ class SteamExtension(Extension):
 
 
 class SteamExtensionStartListener(EventListener):
-    def on_event(self, event, extension):
-        manifest: dict[str, Any] = extension.preferences
-
+    def on_event(self, event, _):
+        manifest: dict[str, Any] = event.preferences
         log.debug("Steam extension started, building cache")
         build_cache(
             steamapps_folder=manifest["steamapps-folder"],
@@ -38,7 +41,7 @@ class SteamExtensionStartListener(EventListener):
 
 
 class SteamExtensionQueryListener(EventListener):
-    def on_event(self, event, extension) -> RenderResultListAction:
+    def on_event(self, _, extension) -> RenderResultListAction:
         from query import SteamExtensionItem, steam_extension_event
 
         log.debug("Entering Steam extension event listener main function")

@@ -1,6 +1,6 @@
 from os.path import abspath
 
-EXTENSION_PATH: str = f"{"/".join(__file__.split("/")[:-1])}/"
+EXTENSION_PATH: str = f"{'/'.join(__file__.split('/')[:-1])}/"
 if len(EXTENSION_PATH) <= 1:
     EXTENSION_PATH = "."
 EXTENSION_PATH = abspath(EXTENSION_PATH)

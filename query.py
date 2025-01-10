@@ -123,12 +123,12 @@ class SteamExtensionItem():
         sort_keys: list[str] = sort_keys_string.split(",")
         for index, key in enumerate(sort_keys):
             key = key.strip()
-            if key == "name":
+            if key == "appid":
+                sort_string += self.appid if self.appid is not None else ""
+            elif key == "name":
                 sort_string += self.name if self.name is not None else ""
             elif key == "description":
                 sort_string += self.description if self.description is not None else ""
-            elif key == "appid":
-                sort_string += self.appid if self.appid is not None else ""
             elif key == "non_steam":
                 sort_string += str(self.non_steam)
             elif key == "ulaunched_last":
