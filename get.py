@@ -4,7 +4,7 @@ from os.path import join as path_join
 log: Logger = getLogger(__name__)
 
 
-def get_installed_steam_apps(steamapps_folder: str) -> list[tuple[str, int, bool]]:
+def get_installed_steam_apps(steamapps_folder: str) -> list[tuple[int, str]]:
     """
     Returns the names and app IDs of all installed Steam apps.
 
@@ -12,7 +12,7 @@ def get_installed_steam_apps(steamapps_folder: str) -> list[tuple[str, int, bool
         steamapps_folder (str): The path to the steamapps folder.
 
     Returns:
-        list[tuple[str, int, bool]]: A list of tuples containing the name and app ID of all installed Steam apps. The boolean in each tuple is always True.
+        list[tuple[int, str]]: A list of tuples containing the app ID and name of all installed Steam apps.
     """
     from os import listdir
 
@@ -33,7 +33,7 @@ def get_installed_steam_apps(steamapps_folder: str) -> list[tuple[str, int, bool
         }
     }
     """
-    installed_steam_apps: list[tuple[str, int, bool]] = []
+    installed_steam_apps: list[tuple[int, str]] = []
     for file in appmanifest_files:
         log.debug(path_join(steamapps_folder, file))
         with open(path_join(steamapps_folder, file), "r", encoding="utf-8") as f:
@@ -50,14 +50,14 @@ def get_installed_steam_apps(steamapps_folder: str) -> list[tuple[str, int, bool
                     appid = int(line[1:].split('"')[2])
                     log.debug(f"App ID found: {appid}")
                 if name is not None and appid is not None:
-                    installed_steam_apps.append((name, appid, True))
+                    installed_steam_apps.append((appid, name))
                     break
     log.debug(installed_steam_apps)
     return installed_steam_apps
 
 
 # TODO: Make this more efficient by reducing number of keys to check for
-def get_non_steam_apps(userdata_folder: str) -> list[tuple[str, int, bool]]:
+def get_non_steam_apps(userdata_folder: str) -> list[tuple[int, str]]:
     """
     Returns the names and app IDs of all non-Steam apps.
 
@@ -65,7 +65,7 @@ def get_non_steam_apps(userdata_folder: str) -> list[tuple[str, int, bool]]:
         userdata_folder (str): The path to the Steam userdata folder.
 
     Returns:
-        list[tuple[str, int, bool]]: A list of tuples containing the name and app ID of all non-Steam apps. The boolean in each tuple is always False.
+        list[tuple[int, str]]: A list of tuples containing the app ID and name of all non-Steam apps for the current user.
     """
     from binascii import hexlify
     from typing import Any
@@ -122,14 +122,14 @@ def get_non_steam_apps(userdata_folder: str) -> list[tuple[str, int, bool]]:
             pass
         cursor += 1
     log.debug(shortcuts)
-    non_steam_apps: list[tuple[str, int, bool]] = []
+    non_steam_apps: list[tuple[int, str]] = []
     for shortcut in shortcuts.values():
-        non_steam_apps.append((shortcut["AppName"], shortcut["appid"], False))
+        non_steam_apps.append((shortcut["appid"], shortcut["AppName"], ))
     log.debug(non_steam_apps)
     return non_steam_apps
 
 
-def get_all_owned_steam_apps(api_key: str, steam_id64: str) -> list[tuple[str, int, str]]:
+def get_all_owned_steam_apps(api_key: str, steam_id64: str) -> dict[int, dict[str, str | int]] | str:
     """
     Returns the names, app IDs and icon URLs of all owned Steam apps.
 
@@ -138,7 +138,7 @@ def get_all_owned_steam_apps(api_key: str, steam_id64: str) -> list[tuple[str, i
         steam_id64 (str): The Steam ID64 of the user.
 
     Returns:
-        list[tuple[str, int]]: A list of tuples containing the name, app ID and icon URL of all owned Steam apps.
+        dict[int, dict[str, str | int]] | bool: A dictionary containing various information about all owned Steam apps for the current user. If an error occurs, a string is returned.
     """
     from http.client import HTTPSConnection
     from json import loads as json_loads
@@ -153,13 +153,18 @@ def get_all_owned_steam_apps(api_key: str, steam_id64: str) -> list[tuple[str, i
     conn: HTTPSConnection = HTTPSConnection("api.steampowered.com")
     conn.request("GET", owned_games_url)
     response: bytes = conn.getresponse().read()
-    owned_games: list[tuple[str, int, str]] = [
-        (
-            game["name"],
-            game["appid"],
-            f"https://media.steampowered.com/steamcommunity/public/images/apps/{game['appid']}/{game['img_icon_url']}.jpg"
-        )
-        for game in json_loads(response)["response"]["games"]
-    ]
+    if response == b"<html><head><title>Unauthorized</title></head><body><h1>Unauthorized</h1>Access is denied. Retrying will not help. Please verify your <pre>key=</pre> parameter.</body></html>":
+        return "Unauthorized"
+    elif response == b"<html><head><title>Bad Request</title></head><body><h1>Bad Request</h1>Please verify that all required parameters are being sent</body></html>":
+        return "Bad Request"
+    log.debug(response)
+    owned_games: dict[int, dict[str, str | int]] = {}
+    for game in json_loads(response)["response"]["games"]:
+        owned_games[game["appid"]] = {
+            "name": game["name"],
+            "playtime-total": game["playtime_forever"],
+            "icon-url": f"https://media.steampowered.com/steamcommunity/public/images/apps/{game['appid']}/{game['img_icon_url']}.jpg",
+            "icon-hash": game["img_icon_url"],
+        }
     log.debug(owned_games)
     return owned_games

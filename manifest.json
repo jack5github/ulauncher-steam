@@ -1,58 +1,72 @@
 {
-	"required_api_version": "2",
-	"name": "Steam",
-	"description": "uLauncher Steam integration",
-	"developer_name": "Jack5",
-	"icon": "images/icon.png",
-	"preferences": [
-		{
-			"id": "game_keyword",
-			"type": "keyword",
-			"name": "Installed apps",
-			"description": "Search through installed apps (excluding non-Steam apps)",
-			"default_value": "si"
-		},
-		{
-			"id": "steamapps_folder",
-			"type": "input",
-			"name": "Steam steamapps folder",
-			"description": "Path to the steamapps folder",
-			"default_value": "/home/<username>/.steam/debian-installation/steamapps/"
-		},
-		{
-			"id": "userdata_folder",
-			"type": "input",
-			"name": "Steam userdata folder",
-			"description": "Path to the userdata subfolder that describes the user",
-			"default_value": "/home/<username>/.steam/debian-installation/userdata/<steamid>/"
-		},
-		{
-			"id": "api_keyword",
-			"type": "keyword",
-			"name": "All owned apps",
-			"description": "Search through all owned apps",
-			"default_value": "sa"
-		},
-		{
-			"id": "api_key",
-			"type": "input",
-			"name": "Steam API key",
-			"description": "Steam API key found at https://steamcommunity.com/dev/apikey",
-			"default_value": ""
-		},
-		{
-			"id": "steam_id",
-			"type": "input",
-			"name": "Steam ID64",
-			"description": "Steam ID64 of the user",
-			"default_value": ""
-		},
-		{
-			"id": "nav_keyword",
-			"type": "keyword",
-			"name": "Menu navigation",
-			"description": "Access Steam menus",
-			"default_value": "sm"
-		}
-	]
+    "required_api_version": "2",
+    "name": "Steam",
+    "description": "uLauncher Steam integration",
+    "developer_name": "Jack5",
+    "icon": "images/icon.png",
+    "preferences": [
+        {
+            "id": "keyword",
+            "type": "keyword",
+            "name": "Steam",
+            "description": "Search through Steam games, apps and menus",
+            "default_value": "s"
+        },
+        {
+            "id": "steamapps-folder",
+            "type": "input",
+            "name": "Steam steamapps folder",
+            "description": "The path to the steamapps folder, used to fetch installed apps",
+            "default_value": "/home/<username>/.steam/debian-installation/steamapps/"
+        },
+        {
+            "id": "userdata-folder",
+            "type": "input",
+            "name": "Steam userdata folder for current user, used to fetch non-Steam apps",
+            "description": "The path to the userdata subfolder that describes the current user",
+            "default_value": "/home/<username>/.steam/debian-installation/userdata/<number>/"
+        },
+        {
+            "id": "api-key",
+            "type": "input",
+            "name": "Steam API key",
+            "description": "The Steam API key to use when fetching owned apps, found at steamcommunity.com/dev/apikey",
+            "default_value": ""
+        },
+        {
+            "id": "steam-id",
+            "type": "input",
+            "name": "steamid64 for current user",
+            "description": "The Steam ID to fetch owned apps for, found at steamid.io",
+            "default_value": ""
+        },
+        {
+            "id": "time-before-update",
+            "type": "input",
+            "name": "Time before update (minutes)",
+            "description": "If this much time has passed since uLauncher was started, the cache will be rebuit",
+            "default_value": "60"
+        },
+        {
+            "id": "language",
+            "type": "input",
+            "name": "Language code",
+            "description": "The preferred language of the current user",
+            "default_value": "en-GB"
+        },
+        {
+            "id": "sort-keys",
+            "type": "input",
+            "name": "Sort keys",
+            "description": "Separated by commas in priority order. appid,name,description,non_steam,ulaunched_last,ulaunched_times",
+            "default_value": "ulaunched_last,ulaunched_times,name,description"
+        },
+        {
+            "id": "max-items",
+            "type": "input",
+            "name": "Maximum items",
+            "description": "The maximum number of items to show in the list",
+            "default_value": "10"
+        }
+    ]
 }
