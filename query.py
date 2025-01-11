@@ -71,6 +71,7 @@ class SteamExtensionItem:
         Returns:
             SteamExtensionItem: A new SteamExtensionItem instance.
         """
+        log.error(f"{err.__class__.__name__}: {err}", exc_info=True)
         return SteamExtensionItem(
             name=err.__class__.__name__, description=str(err), is_error=True
         )
@@ -248,6 +249,15 @@ def steam_extension_event(
                         cache = json_loads(f.read())
                 except Exception as err:
                     items.insert(0, SteamExtensionItem.from_error(err))
+            else:
+                items.insert(
+                    0,
+                    SteamExtensionItem.from_error(
+                        FileNotFoundError(
+                            f"'{EXTENSION_PATH}cache.json' does not exist"
+                        )
+                    )
+                )
             steam_apps: list[SteamExtensionItem] = []
             if "steam-apps" in cache.keys():
                 log.debug("Iterating through Steam apps")

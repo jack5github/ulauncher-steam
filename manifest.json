@@ -37,7 +37,7 @@
             "id": "STEAMID64",
             "type": "input",
             "name": "steamid64 for current user",
-            "description": "The Steam ID to fetch owned apps for, found at steamid.io",
+            "description": "The Steam ID to fetch owned apps for, found at steamid.io  # TODO: Find native alternative",
             "default_value": ""
         },
         {

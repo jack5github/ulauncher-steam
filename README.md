@@ -12,5 +12,5 @@ If you would like to improve this extension, feel free to fork it, make your cha
 
 ### Debugging
 
-- **Linux**: Code changes can be tested directly in uLauncher by first shutting it down, then executing the command `ulauncher --dev -v`. Search the console to find the extension's output.
+- **Linux**: Code changes can be tested directly in uLauncher by first shutting it down, then executing the command `ulauncher --dev -v`. Search the console for `com.github.jack5github.obsidian-steam-integration |` to find the extension's output.
 - **Windows**: As uLauncher is not available on Windows, only the **.py** files that do not import uLauncher packages can be tested. Additionally, the values of manifest variables must be set using a **.env** file, which must start with `[MANIFEST]` and represent keys and values in the format `KEY=value`. These files can be invoked using the command `python <filename> <argument>`, with `argument` being the string input after the Steam extension keyword (only used for **query.py**).
