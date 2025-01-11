@@ -89,6 +89,7 @@ class SteamExtensionItem():
         result_dict: dict[str, Any] = {
             "icon": icon_file,
             "name": self.name if self.name is not None else str(self.appid),
+            "description": self.description if self.description is not None else "",
             "on_enter": {
                 "class": (
                     "ExtensionCustomAction"
@@ -99,8 +100,6 @@ class SteamExtensionItem():
                 )
             }
         }
-        if self.description is not None:
-            result_dict["description"] = self.description
         if self.appid is not None or self.action is not None:
             result_dict["on_enter"]["argument"] = (
                 self.action
@@ -146,7 +145,7 @@ class SteamExtensionItem():
         Returns:
             str: The string representation for searching.
         """
-        return f"{self.name if self.name is not None else ""}{self.description if self.description is not None else ""}".lower()
+        return f"{self.name if self.name is not None else ''}{self.description if self.description is not None else ''}".lower()
 
 
 def get_lang_string(lang: dict[str, Any], language: str, key: str) -> str:
@@ -419,7 +418,7 @@ def steam_extension_event(
             items = sorted(items, key=lambda x: SequenceMatcher(
                 None, x.to_search_string(), search
             ).ratio(), reverse=True)
-        items = items[:max(10, len(items))]
+        items = items[:min(10, len(items))]
     except Exception as err:
         items.insert(0, SteamExtensionItem.from_error(err))
     return items

@@ -69,7 +69,7 @@ def build_cache(
             time_difference: timedelta = datetime.now() - updated_last
             if time_difference < update_time:
                 log.info(
-                    f"It is too soon to update the cache, wait {(time_difference.total_seconds() / 60):2f} minutes"
+                    f"It is too soon to update the cache, wait {((update_time - time_difference).total_seconds() / 60):2f} minutes"
                 )
                 return
         log.debug("Getting non-Steam apps")

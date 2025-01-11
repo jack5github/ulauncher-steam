@@ -28,7 +28,7 @@ class SteamExtension(Extension):
 
 
 class SteamExtensionStartListener(EventListener):
-    def on_event(self, event, _):
+    def on_event(self, event, _) -> None:
         manifest: dict[str, Any] = event.preferences
         log.debug("Steam extension started, building cache")
         build_cache(
@@ -41,7 +41,7 @@ class SteamExtensionStartListener(EventListener):
 
 
 class SteamExtensionQueryListener(EventListener):
-    def on_event(self, _, extension) -> RenderResultListAction:
+    def on_event(self, event, extension) -> RenderResultListAction:
         from query import SteamExtensionItem, steam_extension_event
 
         log.debug("Entering Steam extension event listener main function")
