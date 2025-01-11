@@ -60,6 +60,13 @@
             "name": "Sort keys",
             "description": "Separated by commas in priority order. appid,name,description,non_steam,ulaunched_last,ulaunched_times",
             "default_value": "ulaunched_last,ulaunched_times,name,description"
+        },
+        {
+            "id": "max-items",
+            "type": "input",
+            "name": "Maximum items",
+            "description": "The maximum number of items to show in the list",
+            "default_value": "10"
         }
     ]
 }
