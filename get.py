@@ -129,7 +129,7 @@ def get_non_steam_apps(userdata_folder: str) -> list[tuple[int, str]]:
     return non_steam_apps
 
 
-def get_all_owned_steam_apps(api_key: str, steam_id64: str) -> dict[int, dict[str, str | int]]:
+def get_all_owned_steam_apps(api_key: str, steam_id64: str) -> dict[int, dict[str, str | int]] | str:
     """
     Returns the names, app IDs and icon URLs of all owned Steam apps.
 
@@ -138,7 +138,7 @@ def get_all_owned_steam_apps(api_key: str, steam_id64: str) -> dict[int, dict[st
         steam_id64 (str): The Steam ID64 of the user.
 
     Returns:
-        dict[int, dict[str, str | int]]: A dictionary containing various information about all owned Steam apps for the current user.
+        dict[int, dict[str, str | int]] | bool: A dictionary containing various information about all owned Steam apps for the current user. If an error occurs, a string is returned.
     """
     from http.client import HTTPSConnection
     from json import loads as json_loads
@@ -153,11 +153,15 @@ def get_all_owned_steam_apps(api_key: str, steam_id64: str) -> dict[int, dict[st
     conn: HTTPSConnection = HTTPSConnection("api.steampowered.com")
     conn.request("GET", owned_games_url)
     response: bytes = conn.getresponse().read()
+    if response == b"<html><head><title>Unauthorized</title></head><body><h1>Unauthorized</h1>Access is denied. Retrying will not help. Please verify your <pre>key=</pre> parameter.</body></html>":
+        return "Unauthorized"
+    elif response == b"<html><head><title>Bad Request</title></head><body><h1>Bad Request</h1>Please verify that all required parameters are being sent</body></html>":
+        return "Bad Request"
+    log.debug(response)
     owned_games: dict[int, dict[str, str | int]] = {}
     for game in json_loads(response)["response"]["games"]:
         owned_games[game["appid"]] = {
             "name": game["name"],
-            "playtime-2-weeks": game["playtime_2weeks"],
             "playtime-total": game["playtime_forever"],
             "icon-url": f"https://media.steampowered.com/steamcommunity/public/images/apps/{game['appid']}/{game['img_icon_url']}.jpg",
             "icon-hash": game["img_icon_url"],

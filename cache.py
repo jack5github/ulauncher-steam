@@ -19,11 +19,10 @@ def download_steam_app_icon(appid: int, icon_url: str) -> None:
 
     if isfile(f"{EXTENSION_PATH}images/apps/{appid}.jpg"):
         remove(f"{EXTENSION_PATH}images/apps/{appid}.jpg")
-    log.debug(f"Downloading Steam icon for app ID {appid}")
     try:
         urlretrieve(icon_url, f"{EXTENSION_PATH}images/apps/{appid}.jpg")
     except HTTPError:
-        log.warning(f"Failed to download Steam icon for app ID {appid}")
+        log.warning(f"Failed to download Steam icon for app ID {appid} at '{icon_url}'")
 
 
 def build_cache(
@@ -110,37 +109,51 @@ def build_cache(
         cache["updated-last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with open(f"{EXTENSION_PATH}cache.json", "w", encoding="utf-8") as f:
             f.write(json_dumps(cache, indent=4))
-        owned_steam_apps: dict[int, dict[str, str | int]] = get_all_owned_steam_apps(
+        owned_steam_apps: dict[int, dict[str, str | int]] | str = get_all_owned_steam_apps(
             steam_api_key, steamid64
         )
-        if not isdir(f"{EXTENSION_PATH}images/apps"):
-            mkdir(f"{EXTENSION_PATH}images/apps")
-        for appid, appinfo in owned_steam_apps.items():
-            if str(appid) not in cache["steam-apps"].keys():
-                cache["steam-apps"][str(appid)] = {
-                    "name": appinfo["name"],
-                    "icon-hash": appinfo["icon_hash"],
-                    "playtime-2-weeks": appinfo["playtime-2-weeks"],
-                    "playtime-total": appinfo["playtime-total"],
-                }
-                download_steam_app_icon(appid, appinfo["icon-url"])  # type: ignore
-                continue
-            cache["steam-apps"][str(appid)]["name"] = appinfo["name"]
-            cache["steam-apps"][str(appid)]["playtime-2-weeks"] = appinfo[
-                "playtime-2-weeks"
-            ]
-            cache["steam-apps"][str(appid)]["playtime-total"] = appinfo["playtime-total"]
-            if (
-                "icon-hash" not in cache["steam-apps"][str(appid)].keys()
-                or "icon-hash" != cache["steam-apps"][str(appid)]["icon-hash"]
-                or not isfile(f"{EXTENSION_PATH}images/apps/{appid}.jpg")
-            ):
+        app_icons_to_download: list[tuple[int, int]] = []
+        if isinstance(owned_steam_apps, str):
+            if owned_steam_apps == "Unauthorized":
+                raise ValueError("Steam API key is invalid")
+            elif owned_steam_apps == "Bad Request":
+                raise ValueError("Steam ID is invalid")
+            else:
+                raise ConnectionError(owned_steam_apps)
+        else:
+            if not isdir(f"{EXTENSION_PATH}images/apps"):
+                mkdir(f"{EXTENSION_PATH}images/apps")
+            for appid, appinfo in owned_steam_apps.items():
+                if str(appid) not in cache["steam-apps"].keys():
+                    cache["steam-apps"][str(appid)] = {
+                        "name": appinfo["name"],
+                        "icon-hash": appinfo["icon-hash"],
+                        "playtime-total": appinfo["playtime-total"],
+                    }
+                    log.debug(f"Downloading Steam icon for app ID {appid}, not in cache")
+                    app_icons_to_download.append((appid, appinfo["icon-url"]))
+                    continue
+                cache["steam-apps"][str(appid)]["name"] = appinfo["name"]
+                cache["steam-apps"][str(appid)]["playtime-total"] = appinfo["playtime-total"]
+                # TODO: Check hashes of icons for difference if possible
+                if "icon-hash" != cache["steam-apps"][str(appid)]["icon-hash"]:
+                    log.warning(f"Icon hash for app ID {appid} does not match cache: '{appinfo['icon-hash']}' != '{cache['steam-apps'][str(appid)]['icon-hash']}'")
+                if (
+                    "icon-hash" not in cache["steam-apps"][str(appid)].keys()
+                    or not isfile(f"{EXTENSION_PATH}images/apps/{appid}.jpg")
+                ):
+                    log.debug(f"Downloading Steam icon for app ID {appid}, icon does not exist")
+                    app_icons_to_download.append((appid, appinfo["icon-url"]))
                 cache["steam-apps"][str(appid)]["icon-hash"] = appinfo["icon-hash"]
-                download_steam_app_icon(appid, appinfo["icon-url"])  # type: ignore
-        log.debug("Saving cache.json after querying Steam APIs")
-        cache["updated-last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open(f"{EXTENSION_PATH}cache.json", "w", encoding="utf-8") as f:
-            f.write(json_dumps(cache, indent=4))
+            log.debug("Saving cache.json after querying Steam APIs")
+            cache["updated-last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            with open(f"{EXTENSION_PATH}cache.json", "w", encoding="utf-8") as f:
+                f.write(json_dumps(cache, indent=4))
         log.info("Steam extension cache built")
+        if len(app_icons_to_download) >= 1:
+            log.info(f"Downloading {len(app_icons_to_download)} Steam app icons")
+            for download in app_icons_to_download:
+                download_steam_app_icon(download[0], download[1])
+            log.info("Steam app icons downloaded")
     except Exception as err:
         log.error(f"Failed to build Steam extension cache ({err.__class__.__name__}): {err}")

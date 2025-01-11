@@ -30,14 +30,14 @@
             "id": "api-key",
             "type": "input",
             "name": "Steam API key",
-            "description": "The Steam API key to use when fetching owned apps, found at https://steamcommunity.com/dev/apikey",
+            "description": "The Steam API key to use when fetching owned apps, found at steamcommunity.com/dev/apikey",
             "default_value": ""
         },
         {
             "id": "steam-id",
             "type": "input",
             "name": "steamid64 for current user",
-            "description": "The Steam ID to fetch owned apps for, found at https://steamid.io",
+            "description": "The Steam ID to fetch owned apps for, found at steamid.io",
             "default_value": ""
         },
         {
