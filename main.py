@@ -51,6 +51,7 @@ class SteamExtensionQueryListener(EventListener):
         result_items: list[ExtensionResultItem] = []
         for item in items:
             log.debug(f"Converting to ExtensionResultItem: {repr(item)}")
+            # TODO: Add tracking of last time item was used and number of times used
             result_dict: dict[str, Any] = item.to_result_dict()
             on_enter_class: RunScriptAction | ExtensionCustomAction | HideWindowAction = (
                 RunScriptAction(result_dict["on_enter"]["argument"])
