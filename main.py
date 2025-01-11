@@ -46,25 +46,33 @@ class SteamExtensionQueryListener(EventListener):
 
         log.debug("Entering Steam extension event listener main function")
         manifest: dict[str, Any] = extension.preferences
-        items: list[SteamExtensionItem] = steam_extension_event(manifest, event.get_argument())
+        items: list[SteamExtensionItem] = steam_extension_event(
+            manifest, event.get_argument()
+        )
         log.debug("Steam extension event listener main function finished")
         result_items: list[ExtensionResultItem] = []
         for item in items:
             log.debug(f"Converting to ExtensionResultItem: {repr(item)}")
             # TODO: Add tracking of last time item was used and number of times used
             result_dict: dict[str, Any] = item.to_result_dict()
-            on_enter_class: RunScriptAction | ExtensionCustomAction | HideWindowAction = (
+            on_enter_class: (
+                RunScriptAction | ExtensionCustomAction | HideWindowAction
+            ) = (
                 RunScriptAction(result_dict["on_enter"]["argument"])
                 if result_dict["on_enter"]["class"] == "RunScriptAction"
-                else ExtensionCustomAction([
-                    manifest["steamapps-folder"],
-                    manifest["userdata-folder"],
-                    manifest["api-key"],
-                    manifest["steam-id"],
-                    manifest["time-before-update"],
-                ])
-                if result_dict["on_enter"]["class"] == "ExtensionCustomAction"
-                else HideWindowAction()
+                else (
+                    ExtensionCustomAction(
+                        [
+                            manifest["steamapps-folder"],
+                            manifest["userdata-folder"],
+                            manifest["api-key"],
+                            manifest["steam-id"],
+                            manifest["time-before-update"],
+                        ]
+                    )
+                    if result_dict["on_enter"]["class"] == "ExtensionCustomAction"
+                    else HideWindowAction()
+                )
             )
             result_items.append(
                 ExtensionResultItem(
@@ -90,5 +98,5 @@ class SteamExtensionItemListener(EventListener):
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     SteamExtension().run()
