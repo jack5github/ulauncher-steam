@@ -32,11 +32,11 @@ class SteamExtensionStartListener(EventListener):
         manifest: dict[str, Any] = event.preferences
         log.debug("Steam extension started, building cache")
         build_cache(
-            steamapps_folder=manifest["steamapps-folder"],
-            userdata_folder=manifest["userdata-folder"],
-            steam_api_key=manifest["api-key"],
-            steamid64=manifest["steam-id"],
-            time_before_update=manifest["time-before-update"],
+            steamapps_folder=manifest["STEAMAPPS_FOLDER"],
+            userdata_folder=manifest["USERDATA_FOLDER"],
+            steam_api_key=manifest["STEAM_API_KEY"],
+            steamid64=manifest["STEAMID64"],
+            time_before_update=manifest["CACHE_UPDATE_DELAY"],
         )
 
 
@@ -63,11 +63,11 @@ class SteamExtensionQueryListener(EventListener):
                 else (
                     ExtensionCustomAction(
                         [
-                            manifest["steamapps-folder"],
-                            manifest["userdata-folder"],
-                            manifest["api-key"],
-                            manifest["steam-id"],
-                            manifest["time-before-update"],
+                            manifest["STEAMAPPS_FOLDER"],
+                            manifest["USERDATA_FOLDER"],
+                            manifest["STEAM_API_KEY"],
+                            manifest["STEAMID64"],
+                            manifest["CACHE_UPDATE_DELAY"],
                         ]
                     )
                     if result_dict["on_enter"]["class"] == "ExtensionCustomAction"
@@ -91,10 +91,10 @@ class SteamExtensionItemListener(EventListener):
 
         log.debug("User requested to rebuild cache")
         build_cache(
-            steamapps_folder=manifest["steamapps-folder"],
-            userdata_folder=manifest["userdata-folder"],
-            steam_api_key=manifest["api-key"],
-            steamid64=manifest["steam-id"],
+            steamapps_folder=manifest["STEAMAPPS_FOLDER"],
+            userdata_folder=manifest["USERDATA_FOLDER"],
+            steam_api_key=manifest["STEAM_API_KEY"],
+            steamid64=manifest["STEAMID64"],
         )
 
 

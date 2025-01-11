@@ -206,7 +206,7 @@ def steam_extension_event(
         try:
             missing_manifest_key: str = next(
                 key
-                for key in ("keyword", "language", "sort-keys")
+                for key in ("KEYWORD", "LANGUAGE_CODE", "SORT_KEYS")
                 if key not in manifest.keys()
             )
             items = [
@@ -220,8 +220,8 @@ def steam_extension_event(
         if populate_items:
             log.debug("Loading lang.json")
             language: str = DEFAULT_LANGUAGE
-            if "language" in manifest.keys():
-                language = manifest["language"]
+            if "LANGUAGE_CODE" in manifest.keys():
+                language = manifest["LANGUAGE_CODE"]
             lang: dict[str, Any] = {}
             try:
                 with open(f"{EXTENSION_PATH}lang.json", "r", encoding="utf-8") as f:
@@ -454,7 +454,7 @@ def steam_extension_event(
             if search == "":
                 log.debug("Sorting items")
                 items = sorted(
-                    items, key=lambda x: x.to_sort_string(manifest["sort-keys"])
+                    items, key=lambda x: x.to_sort_string(manifest["SORT_KEYS"])
                 )
             else:
                 log.debug(f"Searching items for fuzzy match of '{search}'")
@@ -470,21 +470,24 @@ def steam_extension_event(
                     ).ratio(),
                     reverse=True,
                 )
-        max_items: int = 10
+    except Exception as err:
+        items.insert(0, SteamExtensionItem.from_error(err))
+    max_items: int = 10
+    try:
+        max_items = int(manifest["MAX_ITEMS"])
+        if max_items <= 0:
+            raise ValueError()
+    except ValueError:
+        items.insert(
+            0,
+            SteamExtensionItem.from_error(
+                ValueError("Maximum items is not a valid positive integer")
+            ),
+        )
+    if len(items) >= 1:
+        items = items[: min(max_items, len(items))]
+    else:
         try:
-            max_items = int(manifest["max-items"])
-            if max_items <= 0:
-                raise ValueError()
-        except ValueError:
-            items.insert(
-                0,
-                SteamExtensionItem.from_error(
-                    ValueError("Maximum items is not a valid positive integer")
-                ),
-            )
-        if len(items) >= 1:
-            items = items[: min(max_items, len(items))]
-        else:
             items.append(
                 SteamExtensionItem(
                     name=get_lang_string(lang, language, "no-results"),
@@ -492,6 +495,24 @@ def steam_extension_event(
                     is_error=True,
                 )
             )
-    except Exception as err:
-        items.insert(0, SteamExtensionItem.from_error(err))
+        except KeyError as err:
+            items.append(SteamExtensionItem.from_error(err))
     return items
+
+
+if __name__ == "__main__":
+    from configparser import ConfigParser
+
+    manifest_file = ConfigParser()
+    manifest_file.read(".env")
+    print(
+        "\n".join(
+            f"{index + 1}. {item}"
+            for index, item in enumerate(
+                steam_extension_event(
+                    manifest={k.upper(): v for k, v in manifest_file.items("MANIFEST")},
+                    search=" ".join(sys.argv[1:]),
+                )
+            )
+        )
+    )

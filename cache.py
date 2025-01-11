@@ -1,6 +1,7 @@
 from const import EXTENSION_PATH
 from logging import getLogger, Logger
 from os.path import isfile
+from typing import Any
 
 log: Logger = getLogger(__name__)
 
@@ -51,7 +52,6 @@ def build_cache(
     from json import dumps as json_dumps, loads as json_loads
     from os import mkdir
     from os.path import isdir
-    from typing import Any
 
     log.info("Building Steam extension cache")
     cache: dict[str, Any] = {}
@@ -174,3 +174,20 @@ def build_cache(
         log.error(
             f"Failed to build Steam extension cache ({err.__class__.__name__}): {err}"
         )
+
+
+if __name__ == "__main__":
+    from configparser import ConfigParser
+
+    manifest_file = ConfigParser()
+    manifest_file.read(".env")
+    manifest: dict[str, Any] = {
+        k.upper(): v for k, v in manifest_file.items("MANIFEST")
+    }
+    build_cache(
+        steamapps_folder=manifest["STEAMAPPS_FOLDER"],
+        userdata_folder=manifest["USERDATA_FOLDER"],
+        steam_api_key=manifest["STEAM_API_KEY"],
+        steamid64=manifest["STEAMID64"],
+        time_before_update=manifest["CACHE_UPDATE_DELAY"],
+    )

@@ -6,63 +6,63 @@
     "icon": "images/icon.png",
     "preferences": [
         {
-            "id": "keyword",
+            "id": "KEYWORD",
             "type": "keyword",
             "name": "Steam",
             "description": "Search through Steam games, apps and menus",
             "default_value": "s"
         },
         {
-            "id": "steamapps-folder",
+            "id": "STEAMAPPS_FOLDER",
             "type": "input",
             "name": "Steam steamapps folder",
             "description": "The path to the steamapps folder, used to fetch installed apps",
             "default_value": "/home/<username>/.steam/debian-installation/steamapps/"
         },
         {
-            "id": "userdata-folder",
+            "id": "USERDATA_FOLDER",
             "type": "input",
             "name": "Steam userdata folder for current user, used to fetch non-Steam apps",
             "description": "The path to the userdata subfolder that describes the current user",
             "default_value": "/home/<username>/.steam/debian-installation/userdata/<number>/"
         },
         {
-            "id": "api-key",
+            "id": "STEAM_API_KEY",
             "type": "input",
             "name": "Steam API key",
             "description": "The Steam API key to use when fetching owned apps, found at steamcommunity.com/dev/apikey",
             "default_value": ""
         },
         {
-            "id": "steam-id",
+            "id": "STEAMID64",
             "type": "input",
             "name": "steamid64 for current user",
             "description": "The Steam ID to fetch owned apps for, found at steamid.io",
             "default_value": ""
         },
         {
-            "id": "time-before-update",
+            "id": "CACHE_UPDATE_DELAY",
             "type": "input",
             "name": "Time before update (minutes)",
             "description": "If this much time has passed since uLauncher was started, the cache will be rebuit",
             "default_value": "60"
         },
         {
-            "id": "language",
+            "id": "LANGUAGE_CODE",
             "type": "input",
             "name": "Language code",
             "description": "The preferred language of the current user",
             "default_value": "en-GB"
         },
         {
-            "id": "sort-keys",
+            "id": "SORT_KEYS",
             "type": "input",
             "name": "Sort keys",
             "description": "Separated by commas in priority order. appid,name,description,non_steam,ulaunched_last,ulaunched_times",
             "default_value": "ulaunched_last,ulaunched_times,name,description"
         },
         {
-            "id": "max-items",
+            "id": "MAX_ITEMS",
             "type": "input",
             "name": "Maximum items",
             "description": "The maximum number of items to show in the list",
