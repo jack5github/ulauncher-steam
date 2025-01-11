@@ -106,6 +106,8 @@
         "validate/%g": "Verify integrity of %g",
         "validate/%g%d": "Verify the app's files to ensure that they are installed correctly",
         "rebuild-cache": "Rebuild Cache",
-        "rebuild-cache%d": "Rebuilds the cache of the Steam extension, including apps and icons"
+        "rebuild-cache%d": "Rebuilds the cache of the Steam extension, including apps and icons",
+        "no-results": "No Results",
+        "no-results%d": "No results found that match your search"
     }
 }
