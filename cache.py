@@ -31,7 +31,7 @@ def build_cache(
     userdata_folder: str,
     steam_api_key: str,
     steamid64: str,
-    time_before_update: str,
+    time_before_update: str = "",
 ) -> None:
     """
     Builds the Steam extension cache if enough time has passed, saving it to cache.json. This includes non-Steam apps, installed Steam apps and owned Steam apps.
@@ -41,7 +41,7 @@ def build_cache(
         userdata_folder (str): The path to the userdata folder of the current user.
         steam_api_key (str): The Steam API key to use.
         steamid64 (str): The Steam ID64 of the current user.
-        time_before_update (str): The time in minutes before the cache should be updated.
+        time_before_update (str. optional): The time in minutes before the cache should be updated. This may not be supplied in the case where the user requests to rebuild the cache. Defaults to "".
     """
     from datetime import datetime, timedelta
     from get import (
@@ -79,7 +79,9 @@ def build_cache(
             if "non-steam-apps" not in cache.keys():
                 cache["non-steam-apps"] = {}
             else:
-                existing_non_steam_apps: list[str] = list(cache["non-steam-apps"].keys())
+                existing_non_steam_apps: list[str] = list(
+                    cache["non-steam-apps"].keys()
+                )
                 for existing_non_steam_app in existing_non_steam_apps:
                     if existing_non_steam_app not in [app[0] for app in non_steam_apps]:
                         del cache["non-steam-apps"][existing_non_steam_app]
@@ -104,8 +106,13 @@ def build_cache(
             else:
                 existing_steam_apps: list[str] = list(cache["steam-apps"].keys())
                 for existing_steam_app in existing_steam_apps:
-                    if existing_steam_app not in [app[0] for app in installed_steam_apps]:
-                        if "installed" in cache["steam-apps"][existing_steam_app].keys():
+                    if existing_steam_app not in [
+                        app[0] for app in installed_steam_apps
+                    ]:
+                        if (
+                            "installed"
+                            in cache["steam-apps"][existing_steam_app].keys()
+                        ):
                             del cache["steam-apps"][existing_steam_app]["installed"]
             for installed_steam_app in installed_steam_apps:
                 appid: int = installed_steam_app[0]
