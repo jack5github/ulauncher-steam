@@ -1,6 +1,7 @@
 __pycache__
 .vscode
 images/apps
+rnd
 venv
 .env
 cache.json
