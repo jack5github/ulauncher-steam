@@ -131,7 +131,9 @@ class SteamExtensionItem():
             elif key == "non_steam":
                 sort_string += str(self.non_steam)
             elif key == "ulaunched_last":
-                sort_string += str(self.ulaunched_last.timestamp()).zfill(20) if self.ulaunched_last is not None else ""
+                sort_string += str(
+                    self.ulaunched_last.timestamp()
+                ).zfill(20) if self.ulaunched_last is not None else ""
             elif key == "ulaunched_times":
                 sort_string += str(self.ulaunched_times)
             if index != len(sort_keys) - 1:
@@ -234,7 +236,9 @@ def steam_extension_event(
             cache: dict[str, Any] = {}
             if isfile(f"{EXTENSION_PATH}cache.json"):
                 try:
-                    with open(f"{EXTENSION_PATH}cache.json", "r", encoding="utf-8") as f:
+                    with open(
+                        f"{EXTENSION_PATH}cache.json", "r", encoding="utf-8"
+                    ) as f:
                         cache = json_loads(f.read())
                 except Exception as err:
                     items.insert(0, SteamExtensionItem.from_error(err))
@@ -404,7 +408,9 @@ def steam_extension_event(
                     "%Y-%m-%d %H:%M:%S"
                 )
             if "ulaunched-times" in cache["actions"]["rebuild-cache"].keys():
-                ulaunched_times = int(cache["actions"]["rebuild-cache"]["ulaunched-times"])
+                ulaunched_times = int(
+                    cache["actions"]["rebuild-cache"]["ulaunched-times"]
+                )
             items.append(SteamExtensionItem(
                 name=get_lang_string(lang, language, "rebuild-cache"),
                 non_steam=True,
@@ -422,7 +428,11 @@ def steam_extension_event(
                 items = sorted(items, key=lambda x: x.to_sort_string(manifest["sort-keys"]))
             else:
                 log.debug(f"Searching items for fuzzy match of '{search}'")
-                items = [item for item in items if all(word in item.to_search_string() for word in search.split())]
+                items = [
+                    item for item in items if all(
+                        word in item.to_search_string() for word in search.split()
+                    )
+                ]
                 items = sorted(items, key=lambda x: SequenceMatcher(
                     None, x.to_search_string(), search
                 ).ratio(), reverse=True)
