@@ -193,13 +193,13 @@ def get_lang_string(lang: dict[str, Any], language: str, key: str) -> str:
 
 
 def steam_extension_event(
-    manifest: dict[str, Any], search: str | None = None
+    preferences: dict[str, Any], search: str | None = None
 ) -> list[SteamExtensionItem]:
     """
     The main code that is run when the Steam extension keyword is entered into uLauncher. This function looks for Steam and non-Steam apps and menus using cache.json and returns a list of SteamExtensionItem instances. It is designed to be run on its own without needing to import the uLauncher API.
 
     Args:
-        manifest (dict[str, Any]): The manifest dictionary, a set of variables that are passed into the extension from uLauncher's extension settings.
+        preferences (dict[str, Any]): The preferences dictionary, a set of variables that are passed into the extension from uLauncher's extension settings.
         search (str | None, optional): The search string entered after the Steam extension keyword, or None if no search is provided. Defaults to None.
 
     Returns:
@@ -214,12 +214,12 @@ def steam_extension_event(
     items: list[SteamExtensionItem] = []
     populate_items: bool = True
     try:
-        check_required_preferences(manifest)
+        check_required_preferences(preferences)
         if populate_items:
             log.debug("Loading lang.json")
             language: str = DEFAULT_LANGUAGE
-            if "LANGUAGE_CODE" in manifest.keys():
-                language = manifest["LANGUAGE_CODE"]
+            if "LANGUAGE_CODE" in preferences.keys():
+                language = preferences["LANGUAGE_CODE"]
             lang: dict[str, Any] = {}
             try:
                 with open(f"{EXTENSION_PATH}lang.json", "r", encoding="utf-8") as f:
@@ -443,7 +443,7 @@ def steam_extension_event(
             if search == "":
                 log.debug("Sorting items")
                 items = sorted(
-                    items, key=lambda x: x.to_sort_string(manifest["SORT_KEYS"])
+                    items, key=lambda x: x.to_sort_string(preferences["SORT_KEYS"])
                 )
             else:
                 log.debug(f"Searching items for fuzzy match of '{search}'")
@@ -463,7 +463,7 @@ def steam_extension_event(
         items.insert(0, SteamExtensionItem.from_error(err))
     max_items: int = 10
     try:
-        max_items = int(manifest["MAX_ITEMS"])
+        max_items = int(preferences["MAX_ITEMS"])
         if max_items <= 0:
             raise ValueError()
     except ValueError:
@@ -492,14 +492,14 @@ def steam_extension_event(
 if __name__ == "__main__":
     from configparser import ConfigParser
 
-    manifest_file = ConfigParser()
-    manifest_file.read(".env")
+    preferences_file = ConfigParser()
+    preferences_file.read(".env")
     print(
         "\n".join(
             f"{index + 1}. {item}"
             for index, item in enumerate(
                 steam_extension_event(
-                    manifest={k.upper(): v for k, v in manifest_file.items("MANIFEST")},
+                    preferences={k.upper(): v for k, v in preferences_file.items("PREFERENCES")},
                     search=" ".join(sys.argv[1:]),
                 )
             )

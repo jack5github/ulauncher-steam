@@ -47,9 +47,9 @@ class SteamExtensionQueryListener(EventListener):
         from query import SteamExtensionItem, steam_extension_event
 
         log.debug("Entering Steam extension event listener main function")
-        manifest: dict[str, Any] = extension.preferences
+        preferences: dict[str, Any] = extension.preferences
         items: list[SteamExtensionItem] = steam_extension_event(
-            manifest, event.get_argument()
+            preferences, event.get_argument()
         )
         log.debug("Steam extension event listener main function finished")
         result_items: list[ExtensionResultItem] = []
@@ -63,15 +63,7 @@ class SteamExtensionQueryListener(EventListener):
                 RunScriptAction(result_dict["on_enter"]["argument"])
                 if result_dict["on_enter"]["class"] == "RunScriptAction"
                 else (
-                    ExtensionCustomAction(
-                        [
-                            manifest["STEAMAPPS_FOLDER"],
-                            manifest["USERDATA_FOLDER"],
-                            manifest["STEAM_API_KEY"],
-                            manifest["STEAMID64"],
-                            manifest["CACHE_UPDATE_DELAY"],
-                        ]
-                    )
+                    ExtensionCustomAction(preferences)
                     if result_dict["on_enter"]["class"] == "ExtensionCustomAction"
                     else HideWindowAction()
                 )
