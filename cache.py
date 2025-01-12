@@ -458,8 +458,8 @@ def build_cache(
             cache_app["name"] = app_info["name"]
             cache_app["total_playtime"] = app_info["total_playtime"]
             if app_info["icon_hash"] is not None:
-                cache_app["icon-hash"] = app_info["icon_hash"]
-                app_icons_to_download.append((app_id, cache_app["icon-hash"]))
+                cache_app["icon_hash"] = app_info["icon_hash"]
+                app_icons_to_download.append((app_id, cache_app["icon_hash"]))
         if len(owned_steam_apps) >= 1:
             if "CACHE_SORT" in preferences.keys() and bool(preferences["CACHE_SORT"]):
                 cache["steam_apps"] = {

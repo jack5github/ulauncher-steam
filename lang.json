@@ -105,9 +105,9 @@
         "url/SupportFrontPage": "Steam Support",
         "validate/%g": "Verify integrity of %g",
         "validate/%g%d": "Verify the app's files to ensure that they are installed correctly",
-        "rebuild-cache": "Rebuild Cache",
-        "rebuild-cache%d": "Rebuilds the cache of the Steam extension, including apps and icons",
-        "no-results": "No Results",
-        "no-results%d": "No results found that match your search"
+        "rebuild_cache": "Rebuild Cache",
+        "rebuild_cache%d": "Rebuilds the cache of the Steam extension, including apps and icons",
+        "no_results": "No Results",
+        "no_results%d": "No results found that match your search"
     }
 }

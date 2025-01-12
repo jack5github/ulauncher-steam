@@ -479,8 +479,8 @@ def steam_extension_event(
         try:
             items.append(
                 SteamExtensionItem(
-                    name=get_lang_string(lang, language, "no-results"),
-                    description=get_lang_string(lang, language, "no-results%d"),
+                    name=get_lang_string(lang, language, "no_results"),
+                    description=get_lang_string(lang, language, "no_results%d"),
                     is_error=True,
                 )
             )
