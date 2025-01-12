@@ -1,5 +1,7 @@
 from cache import build_cache
+from const import EXTENSION_PATH
 from logging import getLogger, Logger
+from logging.config import fileConfig as logging_fileConfig
 from typing import Any
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
@@ -14,6 +16,10 @@ from ulauncher.api.shared.event import (
 )
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 
+try:
+    logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
+except FileNotFoundError:
+    pass
 log: Logger = getLogger(__name__)
 
 
@@ -29,15 +35,9 @@ class SteamExtension(Extension):
 
 class SteamExtensionStartListener(EventListener):
     def on_event(self, event, _) -> None:
-        manifest: dict[str, Any] = event.preferences
         log.debug("Steam extension started, building cache")
-        build_cache(
-            steamapps_folder=manifest["STEAMAPPS_FOLDER"],
-            userdata_folder=manifest["USERDATA_FOLDER"],
-            steam_api_key=manifest["STEAM_API_KEY"],
-            steamid64=manifest["STEAMID64"],
-            time_before_update=manifest["CACHE_UPDATE_DELAY"],
-        )
+        preferences: dict[str, Any] = event.preferences
+        build_cache(preferences)
 
 
 class SteamExtensionQueryListener(EventListener):
@@ -87,15 +87,9 @@ class SteamExtensionQueryListener(EventListener):
 
 class SteamExtensionItemListener(EventListener):
     def on_event(self, event, extension) -> None:
-        manifest: dict[str, Any] = extension.preferences
-
         log.debug("User requested to rebuild cache")
-        build_cache(
-            steamapps_folder=manifest["STEAMAPPS_FOLDER"],
-            userdata_folder=manifest["USERDATA_FOLDER"],
-            steam_api_key=manifest["STEAM_API_KEY"],
-            steamid64=manifest["STEAMID64"],
-        )
+        preferences: dict[str, Any] = extension.preferences
+        build_cache(preferences, force=True)
 
 
 if __name__ == "__main__":

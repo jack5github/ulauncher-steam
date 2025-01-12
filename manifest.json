@@ -13,18 +13,18 @@
             "default_value": "s"
         },
         {
-            "id": "STEAMAPPS_FOLDER",
+            "id": "STEAM_FOLDER",
             "type": "input",
-            "name": "Steam steamapps folder",
-            "description": "The path to the steamapps folder, used to fetch installed apps",
-            "default_value": "/home/<username>/.steam/debian-installation/steamapps/"
+            "name": "Steam folder path",
+            "description": "The path to the folder that contains the steamapps and userdata folders",
+            "default_value": "/home/<username>/.steam/debian-installation/"
         },
         {
-            "id": "USERDATA_FOLDER",
+            "id": "STEAM_USERDATA_ID",
             "type": "input",
-            "name": "Steam userdata folder for current user, used to fetch non-Steam apps",
-            "description": "The path to the userdata subfolder that describes the current user",
-            "default_value": "/home/<username>/.steam/debian-installation/userdata/<number>/"
+            "name": "Steam userdata folder name",
+            "description": "The name of the userdata subfolder (a number) that describes the current user",
+            "default_value": ""
         },
         {
             "id": "STEAM_API_KEY",
@@ -41,11 +41,18 @@
             "default_value": ""
         },
         {
-            "id": "CACHE_UPDATE_DELAY",
+            "id": "UPDATE_APPS_FROM_FILES_DELAY",
             "type": "input",
-            "name": "Time before update (minutes)",
-            "description": "If this much time has passed since uLauncher was started, the cache will be rebuit",
-            "default_value": "60"
+            "name": "Get apps from files wait time",
+            "description": "The time to wait before updating apps from files",
+            "default_value": "1m"
+        },
+        {
+            "id": "UPDATE_APPS_FROM_STEAM_API_DELAY",
+            "type": "input",
+            "name": "Get apps from Steam API wait time",
+            "description": "The time to wait before updating apps from the Steam API",
+            "default_value": "1h"
         },
         {
             "id": "LANGUAGE_CODE",

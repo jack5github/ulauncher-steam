@@ -1,10 +1,15 @@
 from const import DEFAULT_LANGUAGE, EXTENSION_PATH, STEAM_NAVIGATIONS
 from datetime import datetime
 from logging import getLogger, Logger
+from logging.config import fileConfig as logging_fileConfig
 from os.path import isfile
 import sys
 from typing import Any
 
+try:
+    logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
+except FileNotFoundError:
+    pass
 log: Logger = getLogger(__name__)
 
 
@@ -83,8 +88,10 @@ class SteamExtensionItem:
         Returns:
             dict[str, Any]: The dictionary representation.
         """
+        from const import DIR_SEP
+
         icon_file: str = "images/icon.png"
-        if isfile(f"{EXTENSION_PATH}images/apps/{self.appid}.jpg"):
+        if isfile(f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{self.appid}.jpg"):
             icon_file = f"images/apps/{self.appid}.jpg"
         result_dict: dict[str, Any] = {
             "icon": icon_file,
@@ -93,7 +100,7 @@ class SteamExtensionItem:
             "on_enter": {
                 "class": (
                     "ExtensionCustomAction"
-                    if self.action is not None and self.action == "rebuild-cache"
+                    if self.action is not None and self.action == "rebuild_cache"
                     else (
                         "RunScriptAction"
                         if self.appid is not None or self.action is not None
@@ -196,6 +203,8 @@ def steam_extension_event(
     Returns:
         list[SteamExtensionItem]: A list of SteamExtensionItem instances.
     """
+    from cache import load_cache
+    from const import check_required_preferences
     from difflib import SequenceMatcher
     from json import loads as json_loads
 
@@ -203,21 +212,7 @@ def steam_extension_event(
     items: list[SteamExtensionItem] = []
     populate_items: bool = True
     try:
-        log.debug("Checking manifest keys")
-        try:
-            missing_manifest_key: str = next(
-                key
-                for key in ("KEYWORD", "LANGUAGE_CODE", "SORT_KEYS")
-                if key not in manifest.keys()
-            )
-            items = [
-                SteamExtensionItem.from_error(
-                    KeyError(f"'{missing_manifest_key}' missing from manifest keys")
-                )
-            ]
-            populate_items = False
-        except StopIteration:
-            pass
+        check_required_preferences(manifest)
         if populate_items:
             log.debug("Loading lang.json")
             language: str = DEFAULT_LANGUAGE
@@ -239,43 +234,25 @@ def steam_extension_event(
                 )
                 language = DEFAULT_LANGUAGE
         if populate_items:
-            log.debug("Loading cache.json")
-            cache: dict[str, Any] = {}
-            if isfile(f"{EXTENSION_PATH}cache.json"):
-                try:
-                    with open(
-                        f"{EXTENSION_PATH}cache.json", "r", encoding="utf-8"
-                    ) as f:
-                        cache = json_loads(f.read())
-                except Exception as err:
-                    items.insert(0, SteamExtensionItem.from_error(err))
-            else:
-                items.insert(
-                    0,
-                    SteamExtensionItem.from_error(
-                        FileNotFoundError(
-                            f"'{EXTENSION_PATH}cache.json' does not exist"
-                        )
-                    )
-                )
+            cache: dict[str, Any] = load_cache()
             steam_apps: list[SteamExtensionItem] = []
-            if "steam-apps" in cache.keys():
+            if "steam_apps" in cache.keys():
                 log.debug("Iterating through Steam apps")
-                if not isinstance(cache["steam-apps"], dict):
+                if not isinstance(cache["steam_apps"], dict):
                     items.insert(
                         0,
                         SteamExtensionItem.from_error(
-                            TypeError("'steam-apps' in cache.json is not a dictionary")
+                            TypeError("'steam_apps' in cache.json is not a dictionary")
                         ),
                     )
-                    cache["steam-apps"] = {}
-                for appid, appinfo in cache["steam-apps"].items():
+                    cache["steam_apps"] = {}
+                for appid, appinfo in cache["steam_apps"].items():
                     if not isinstance(appinfo, dict):
                         items.insert(
                             0,
                             SteamExtensionItem.from_error(
                                 TypeError(
-                                    f"'steam-apps' app ID {appid} in cache.json is not a dictionary"
+                                    f"'steam_apps' app ID {appid} in cache.json is not a dictionary"
                                 )
                             ),
                         )
@@ -288,12 +265,12 @@ def steam_extension_event(
                         name = str(appinfo["name"])
                     if "installed" in appinfo.keys() and appinfo["installed"]:
                         installed = True
-                    if "ulaunched-last" in appinfo.keys():
+                    if "last_launched" in appinfo.keys():
                         ulaunched_last = datetime.strptime(
-                            str(appinfo["ulaunched-last"]), "%Y-%m-%d %H:%M:%S"
+                            str(appinfo["last_launched"]), "%Y-%m-%d %H:%M:%S"
                         )
-                    if "ulaunched-times" in appinfo.keys():
-                        ulaunched_times = int(appinfo["ulaunched-times"])
+                    if "times_launched" in appinfo.keys():
+                        ulaunched_times = int(appinfo["times_launched"])
                     steam_apps.append(
                         SteamExtensionItem(
                             appid=appid,
@@ -304,25 +281,25 @@ def steam_extension_event(
                         )
                     )
                 items.extend(steam_apps)
-            if "non-steam-apps" in cache.keys():
+            if "non_steam_apps" in cache.keys():
                 log.debug("Iterating through non-Steam apps")
-                if not isinstance(cache["non-steam-apps"], dict):
+                if not isinstance(cache["non_steam_apps"], dict):
                     items.insert(
                         0,
                         SteamExtensionItem.from_error(
                             TypeError(
-                                "'non-steam-apps' in cache.json is not a dictionary"
+                                "'non_steam_apps' in cache.json is not a dictionary"
                             )
                         ),
                     )
-                    cache["non-steam-apps"] = {}
-                for appid, appinfo in cache["non-steam-apps"].items():
+                    cache["non_steam_apps"] = {}
+                for appid, appinfo in cache["non_steam_apps"].items():
                     if not isinstance(appinfo, dict):
                         items.insert(
                             0,
                             SteamExtensionItem.from_error(
                                 TypeError(
-                                    f"'non-steam-apps' app ID {appid} in cache.json is not a dictionary"
+                                    f"'non_steam_apps' app ID {appid} in cache.json is not a dictionary"
                                 )
                             ),
                         )
@@ -332,12 +309,12 @@ def steam_extension_event(
                     ulaunched_times: int = 0
                     if "name" in appinfo.keys():
                         name = str(appinfo["name"])
-                    if "ulaunched-last" in appinfo.keys():
+                    if "last_launched" in appinfo.keys():
                         ulaunched_last = datetime.strptime(
-                            str(appinfo["ulaunched-last"]), "%Y-%m-%d %H:%M:%S"
+                            str(appinfo["last_launched"]), "%Y-%m-%d %H:%M:%S"
                         )
-                    if "ulaunched-times" in appinfo.keys():
-                        ulaunched_times = int(appinfo["ulaunched-times"])
+                    if "times_launched" in appinfo.keys():
+                        ulaunched_times = int(appinfo["times_launched"])
                     items.append(
                         SteamExtensionItem(
                             appid=appid,
@@ -350,16 +327,16 @@ def steam_extension_event(
             # Navigation
             # https://developer.valvesoftware.com/wiki/Steam_browser_protocol
             log.debug("Iterating through Steam navigations")
-            if "steam-navs" not in cache.keys():
-                cache["steam-navs"] = {}
-            if not isinstance(cache["steam-navs"], dict):
+            if "steam_navs" not in cache.keys():
+                cache["steam_navs"] = {}
+            if not isinstance(cache["steam_navs"], dict):
                 items.insert(
                     0,
                     SteamExtensionItem.from_error(
-                        TypeError("'steam-navs' in cache.json is not a dictionary")
+                        TypeError("'steam_navs' in cache.json is not a dictionary")
                     ),
                 )
-                cache["steam-navs"] = {}
+                cache["steam_navs"] = {}
             navigations: list[str] = STEAM_NAVIGATIONS.copy()
             for navigation in navigations:
                 log.debug(f"Adding navigation '{navigation}'")
@@ -378,17 +355,17 @@ def steam_extension_event(
                     ulaunched_last: datetime | None = None
                     ulaunched_times: int = 0
                     if (
-                        "steam-navs" in cache.keys()
-                        and isinstance(cache["steam-navs"], dict)
-                        and navigation in cache["steam-navs"].keys()
-                        and isinstance(cache["steam-navs"][navigation], dict)
+                        "steam_navs" in cache.keys()
+                        and isinstance(cache["steam_navs"], dict)
+                        and navigation in cache["steam_navs"].keys()
+                        and isinstance(cache["steam_navs"][navigation], dict)
                     ):
-                        if "ulaunched-last" in appinfo.keys():
+                        if "last_launched" in appinfo.keys():
                             ulaunched_last = datetime.strptime(
-                                str(appinfo["ulaunched-last"]), "%Y-%m-%d %H:%M:%S"
+                                str(appinfo["last_launched"]), "%Y-%m-%d %H:%M:%S"
                             )
-                        if "ulaunched-times" in appinfo.keys():
-                            ulaunched_times = int(appinfo["ulaunched-times"])
+                        if "times_launched" in appinfo.keys():
+                            ulaunched_times = int(appinfo["times_launched"])
                     items.append(
                         SteamExtensionItem(
                             name=nav_name,
@@ -434,25 +411,25 @@ def steam_extension_event(
                     )
             if "actions" not in cache.keys():
                 cache["actions"] = {}
-            if "rebuild-cache" not in cache["actions"].keys():
-                cache["actions"]["rebuild-cache"] = {}
+            if "rebuild_cache" not in cache["actions"].keys():
+                cache["actions"]["rebuild_cache"] = {}
             ulaunched_last: datetime | None = None
             ulaunched_times: int = 0
-            if "ulaunched-last" in cache["actions"]["rebuild-cache"].keys():
+            if "last_launched" in cache["actions"]["rebuild_cache"].keys():
                 ulaunched_last = datetime.strptime(
-                    str(cache["actions"]["rebuild-cache"]["ulaunched-last"]),
+                    str(cache["actions"]["rebuild_cache"]["last_launched"]),
                     "%Y-%m-%d %H:%M:%S",
                 )
-            if "ulaunched-times" in cache["actions"]["rebuild-cache"].keys():
+            if "times_launched" in cache["actions"]["rebuild_cache"].keys():
                 ulaunched_times = int(
-                    cache["actions"]["rebuild-cache"]["ulaunched-times"]
+                    cache["actions"]["rebuild_cache"]["times_launched"]
                 )
             items.append(
                 SteamExtensionItem(
-                    name=get_lang_string(lang, language, "rebuild-cache"),
+                    name=get_lang_string(lang, language, "rebuild_cache"),
                     non_steam=True,
-                    description=get_lang_string(lang, language, "rebuild-cache%d"),
-                    action="rebuild-cache",
+                    description=get_lang_string(lang, language, "rebuild_cache%d"),
+                    action="rebuild_cache",
                     ulaunched_last=ulaunched_last,
                     ulaunched_times=ulaunched_times,
                 )

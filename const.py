@@ -1,11 +1,57 @@
+from json import loads as json_loads
+from logging import getLogger, Logger
+from logging.config import fileConfig as logging_fileConfig
+import os
 from os.path import abspath
+from typing import Any
 
-EXTENSION_PATH: str = f"{'/'.join(__file__.split('/')[:-1])}/"
+DIR_SEP: str = "/"
+if os.name == "nt":
+    DIR_SEP = "\\"
+
+EXTENSION_PATH: str = f"{DIR_SEP.join(__file__.split(DIR_SEP)[:-1])}{DIR_SEP}"
 if len(EXTENSION_PATH) <= 1:
     EXTENSION_PATH = "."
 EXTENSION_PATH = abspath(EXTENSION_PATH)
-if EXTENSION_PATH[-1] != "/":
-    EXTENSION_PATH += "/"
+if EXTENSION_PATH[-1] != DIR_SEP:
+    EXTENSION_PATH += DIR_SEP
+
+try:
+    logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
+except FileNotFoundError:
+    pass
+log: Logger = getLogger(__name__)
+
+REQUIRED_PREFERENCES: tuple[str, ...] = ()
+if os.name == "nt":
+    with open(f"{EXTENSION_PATH}manifest.json", "r", encoding="utf-8") as f:
+        REQUIRED_PREFERENCES = tuple(
+            preference["id"] for preference in json_loads(f.read())["preferences"]
+        )
+
+
+def check_required_preferences(preferences: dict[str, Any]) -> None:
+    """
+    Checks if all required preferences are present in the preferences dictionary on Windows.
+
+    Args:
+        preferences (dict[str, Any]): The preferences dictionary.
+
+    Raises:
+        ValueError: If a required preference is missing.
+    """
+    if os.name == "nt":
+        log.debug("Checking all required preferences are present")
+        try:
+            missing_preference: str = next(
+                key for key in REQUIRED_PREFERENCES if key not in preferences.keys()
+            )
+            raise ValueError(
+                f"Missing preference key '{missing_preference}', add to .env file"
+            )
+        except StopIteration:
+            pass
+
 
 # Navigation
 # https://developer.valvesoftware.com/wiki/Steam_browser_protocol

@@ -1,216 +1,505 @@
-from const import EXTENSION_PATH
+"""
+This module contains functions for building and saving the Steam extension cache.
+
+The cache dictionary is saved to a JSON file named "cache.json" in the extension directory. It has the following structure:
+{
+    # TODO: Store times as timestamps
+    "last_updated": {
+        "cache": "YYYY-MM-DD HH:MM:SS",
+        "apps_from_files": "YYYY-MM-DD HH:MM:SS",
+        "apps_from_steam_api": "YYYY-MM-DD HH:MM:SS",
+        "friends_from_steam_api": "YYYY-MM-DD HH:MM:SS"
+    },
+    "non_steam_apps": {
+        "APP_ID": {
+            "name": "APP_NAME",
+            "exe": "INSTALL_LOCATION",
+            "last_launched": "YYYY-MM-DD HH:MM:SS",
+            "times_launched": 0,
+            "size_on_disk": 0
+        }
+    },
+    "steam_apps": {
+        "APP_ID": {
+            "name": "APP_NAME",
+            "install_dir": "INSTALL_DIR_NAME",
+            "last_updated": "YYYY-MM-DD HH:MM:SS",
+            "last_launched": "YYYY-MM-DD HH:MM:SS",
+            "times_launched": 0,
+            "size_on_disk": 0,
+            "total_playtime": 0,
+            "icon_hash": "ICON_HASH"
+        }
+    },
+    "friends": {
+        "STEAMID64": {
+            "name": "NAME",
+            "avatar_url": "URL",
+            "nickname": "NICKNAME"
+        }
+    }
+    "steam_navs": {
+        "NAVIGATION": {
+            "last_launched": "YYYY-MM-DD HH:MM:SS",
+            "times_launched": 0
+        }
+    },
+    "actions": {
+        "ACTION": {
+            "last_launched": "YYYY-MM-DD HH:MM:SS",
+            "times_launched": 0
+        }
+    }
+}
+"""
+
+from const import DIR_SEP, EXTENSION_PATH
+from datetime import timedelta
 from logging import getLogger, Logger
+from logging.config import fileConfig as logging_fileConfig
 from os.path import isfile
 from typing import Any
 
+try:
+    logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
+except FileNotFoundError:
+    pass
 log: Logger = getLogger(__name__)
 
 
-def download_steam_app_icon(appid: int, icon_url: str) -> None:
+def download_steam_app_icon(app_id: int, icon_hash: str) -> None:
     """
-    Downloads the Steam icon for the given app ID and saves it to the images/apps folder.
+    Downloads the Steam icon for the given app ID and hash and saves it to the images/apps folder.
 
     Args:
         appid (int): The ID of the Steam app.
-        icon_url (str): The URL of the Steam icon.
+        icon_hash (str): The hash of the icon of the Steam app.
     """
     from os import remove
     from urllib.error import HTTPError
     from urllib.request import urlretrieve
 
-    if isfile(f"{EXTENSION_PATH}images/apps/{appid}.jpg"):
-        remove(f"{EXTENSION_PATH}images/apps/{appid}.jpg")
+    if isfile(f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id}.jpg"):
+        remove(f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id}.jpg")
+    icon_url: str = (
+        f"http://media.steampowered.com/steamcommunity/public/images/apps/{app_id}/{icon_hash}.jpg"
+    )
     try:
-        urlretrieve(icon_url, f"{EXTENSION_PATH}images/apps/{appid}.jpg")
+        urlretrieve(
+            icon_url, f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id}.jpg"
+        )
     except HTTPError:
-        log.warning(f"Failed to download Steam icon for app ID {appid} at '{icon_url}'")
+        log.warning(
+            f"Failed to download Steam icon for app ID {app_id} at '{icon_url}'",
+            exc_info=True,
+        )
+
+
+def load_cache(clear: bool = False) -> dict[str, Any]:
+    """
+    Loads the cache dictionary from its JSON file. If the file does not exist or an error occurs, an empty dictionary is returned.
+
+    Args:
+        clear (bool, optional): If True, the cache dictionary is cleared before loading. Defaults to False.
+
+    Returns:
+        dict[str, Any]: The cache dictionary.
+    """
+    from json import loads as json_loads
+    from os import remove
+
+    cache: dict[str, Any] = {}
+    if isfile(f"{EXTENSION_PATH}cache.json"):
+        if clear:
+            log.debug("Deleting cache.json")
+            remove(f"{EXTENSION_PATH}cache.json")
+        else:
+            log.debug("Loading cache.json")
+            try:
+                with open(f"{EXTENSION_PATH}cache.json", "r", encoding="utf-8") as f:
+                    cache = json_loads(f.read())
+                log.debug("cache.json loaded")
+            except Exception:
+                log.error("Failed to read cache.json", exc_info=True)
+    else:
+        log.warning("cache.json does not exist")
+    return cache
+
+
+def str_to_timedelta(string: str) -> timedelta:
+    """
+    Converts a string to a timedelta object, using regex to parse time units. The string can contain the following units: y, mo, w, d, h, m, s, ms, us. If the string has no units, the timedelta will be 0.
+
+    Args:
+        string (str): The string to convert.
+
+    Returns:
+        timedelta: The timedelta object.
+    """
+    from re import findall as re_findall
+
+    if string == "":
+        return timedelta(0)
+    time_strings: list[str] = re_findall(
+        r"-?[0-9]+(?:\.[0-9]+)?(?:y|mo|w|d|h|m|s|ms|us|[a-z]+)", string
+    )
+    years: float = 0
+    months: float = 0
+    weeks: float = 0
+    days: float = 0
+    hours: float = 0
+    minutes: float = 0
+    seconds: float = 0
+    milliseconds: float = 0
+    microseconds: float = 0
+    for time_string in time_strings:
+        if time_string.endswith("y"):
+            years += float(time_string[:-1])
+        elif time_string.endswith("mo"):
+            months += float(time_string[:-2])
+        elif time_string.endswith("w"):
+            weeks += float(time_string[:-1])
+        elif time_string.endswith("d"):
+            days += float(time_string[:-1])
+        elif time_string.endswith("h"):
+            hours += float(time_string[:-1])
+        elif time_string.endswith("m"):
+            minutes += float(time_string[:-1])
+        elif time_string.endswith("s"):
+            seconds += float(time_string[:-1])
+        elif time_string.endswith("ms"):
+            milliseconds += float(time_string[:-2])
+        elif time_string.endswith("us"):
+            microseconds += float(time_string[:-2])
+        else:
+            log.warning(
+                f"Invalid time unit '{time_string}' in '{string}', accepted units: y, mo, w, d, h, m, s, ms, us"
+            )
+    return timedelta(
+        weeks=weeks,
+        days=(years * 365) + (months * 30) + days,
+        hours=hours,
+        minutes=minutes,
+        seconds=seconds,
+        milliseconds=milliseconds,
+        microseconds=microseconds,
+    )
+
+
+def ensure_dict_key_is_dict(dictionary: dict, key: Any) -> tuple[dict, bool]:
+    """
+    Ensures that the given key exists in the dictionary and is a dictionary. If the key does not exist or is not a dictionary, it is created and initialised as an empty dictionary.
+
+    Args:
+        dictionary (dict): The dictionary to check.
+        key (Any): The key to check.
+
+    Returns:
+        tuple[dict, bool]: The dictionary at the given key, and a boolean that is True if the key existed and was a dictionary, or False if otherwise.
+    """
+    if key in dictionary.keys() and isinstance(dictionary[key], dict):
+        return dictionary[key], True
+    dictionary[key] = {}
+    return dictionary[key], False
+
+
+def save_cache(cache: dict[str, Any], preferences: dict[str, Any]) -> None:
+    """
+    Saves the updated cache dictionary to its JSON file.
+
+    Args:
+        cache (dict[str, Any]): The updated cache dictionary.
+        preferences (dict[str, Any]): The preferences dictionary.
+    """
+    from json import dumps as json_dumps
+
+    log.debug("Saving cache.json")
+    try:
+        with open(f"{EXTENSION_PATH}cache.json", "w", encoding="utf-8") as f:
+            f.write(
+                json_dumps(
+                    cache,
+                    indent=(
+                        int(preferences["CACHE_INDENT"])
+                        if "CACHE_INDENT" in preferences.keys()
+                        else None
+                    ),
+                )
+            )
+        log.debug("Saved cache.json")
+    except Exception:
+        log.error("Failed to save cache.json", exc_info=True)
 
 
 def build_cache(
-    steamapps_folder: str,
-    userdata_folder: str,
-    steam_api_key: str,
-    steamid64: str,
-    time_before_update: str = "",
+    preferences: dict[str, Any], force: bool = False, clear: bool = False
 ) -> None:
     """
-    Builds the Steam extension cache if enough time has passed, saving it to cache.json. This includes non-Steam apps, installed Steam apps and owned Steam apps.
+    Builds the Steam extension cache, saving it to cache.json. This includes non-Steam apps, installed Steam apps and owned Steam apps.
 
     Args:
-        steamapps_folder (str): The path to the steamapps folder.
-        userdata_folder (str): The path to the userdata folder of the current user.
-        steam_api_key (str): The Steam API key to use.
-        steamid64 (str): The Steam ID64 of the current user.
-        time_before_update (str. optional): The time in minutes before the cache should be updated. This may not be supplied in the case where the user requests to rebuild the cache. Defaults to "".
+        preferences (dict[str, Any]): The preferences dictionary.
+        force (bool, optional): Whether to force a rebuild of all parts of the cache, regardless of whether enough time has passed for each. Defaults to False.
+        clear (bool, optional): Whether to clear the cache entirely before building it. Defaults to False.
     """
-    from datetime import datetime, timedelta
+    from const import check_required_preferences
+    from datetime import datetime
     from get import (
-        get_all_owned_steam_apps,
         get_installed_steam_apps,
-        get_non_steam_apps,
+        # get_non_steam_apps,
+        get_owned_steam_apps,
+        InstalledSteamApp,
+        # NonSteamApp,
+        OwnedSteamApp,
     )
-    from json import dumps as json_dumps, loads as json_loads
-    from os import mkdir
     from os.path import isdir
 
+    check_required_preferences(preferences)
     log.info("Building Steam extension cache")
-    cache: dict[str, Any] = {}
-    # TODO: Report error in cache so rebuilding can be attempted immediately on next uLauncher start
-    try:
-        log.debug("Loading cache.json")
-        if isfile(f"{EXTENSION_PATH}cache.json"):
-            with open(f"{EXTENSION_PATH}cache.json", "r", encoding="utf-8") as f:
-                cache = json_loads(f.read())
-        if "updated-last" in cache.keys() and time_before_update != "":
-            log.debug("Checking updated last time")
-            updated_last: datetime = datetime.strptime(
-                cache["updated-last"], "%Y-%m-%d %H:%M:%S"
-            )
-            update_time: timedelta = timedelta(minutes=float(time_before_update))
-            time_difference: timedelta = datetime.now() - updated_last
-            if time_difference < update_time:
-                log.info(
-                    f"It is too soon to update the cache, wait {((update_time - time_difference).total_seconds() / 60):2f} minutes"
+    cache: dict[str, Any] = load_cache(clear=clear)
+    log.debug("Getting blacklists from preferences")
+
+    def get_blacklist(type: str) -> list[int]:
+        blacklist_str: str = preferences[f"{type.upper()}_BLACKLIST"].strip()
+        if blacklist_str != "":
+            blacklist_str_list: list[str] = blacklist_str.split(",")
+            try:
+                return [int(id.strip()) for id in blacklist_str_list]
+            except Exception:
+                log.error(
+                    f"Failed to parse {type} blacklist value '{blacklist_str}'",
+                    exc_info=True,
                 )
-                return
-        log.debug("Getting non-Steam apps")
-        try:
-            non_steam_apps: list[tuple[int, str]] = get_non_steam_apps(userdata_folder)
-            if "non-steam-apps" not in cache.keys():
-                cache["non-steam-apps"] = {}
-            else:
-                existing_non_steam_apps: list[str] = list(
-                    cache["non-steam-apps"].keys()
+        return []
+
+    app_blacklist: list[int] = get_blacklist("app")
+    """
+    friend_blacklist: list[int] = get_blacklist("friend")
+    """
+    log.debug("Getting delays from preferences")
+    update_apps_from_files: bool = True
+    update_apps_from_steam_api: bool = True
+    """
+    update_friends_from_steam_api: bool = True
+    """
+    if "last_updated" not in cache.keys():
+        log.warning("'last_updated' not found in cache.json")
+    elif not isinstance(cache["last_updated"], dict):
+        log.warning("'last_updated' in cache.json is not a dictionary")
+    elif not force:
+
+        def compare_updated_last(key: str) -> bool:
+            if key not in cache["last_updated"].keys():
+                log.warning(
+                    f"'last_updated' in cache.json does not contain '{key}' key"
                 )
-                for existing_non_steam_app in existing_non_steam_apps:
-                    if existing_non_steam_app not in [app[0] for app in non_steam_apps]:
-                        del cache["non-steam-apps"][existing_non_steam_app]
-            for non_steam_app in non_steam_apps:
-                appid: int = non_steam_app[0]
-                name: str = non_steam_app[1]
-                if str(appid) not in cache["non-steam-apps"].keys():
-                    cache["non-steam-apps"][str(appid)] = {"name": name}
-        except FileNotFoundError:
-            log.error(
-                f"Failed to get non-Steam apps: userdata folder '{userdata_folder}' is invalid"
+                return True
+            updated_last: datetime = datetime.min
+            try:
+                updated_last = datetime.strptime(
+                    cache["last_updated"][key], "%Y-%m-%d %H:%M:%S"
+                )
+            except Exception:
+                log.warning(
+                    f"Failed to parse 'last_updated' key '{key}' date '{cache['last_updated'][key]}'",
+                    exc_info=True,
+                )
+            wait_time: timedelta = str_to_timedelta(
+                preferences[f"UPDATE_{key.upper().replace('-', '_')}_DELAY"]
             )
-        except Exception as err:
-            log.error("Failed to get non-Steam apps", exc_info=True)
-        log.debug("Getting installed Steam apps")
-        try:
-            installed_steam_apps: list[tuple[int, str]] = get_installed_steam_apps(
-                steamapps_folder
+            if updated_last + wait_time < datetime.now():
+                log.debug(
+                    f"{key.replace('_', ' ').capitalize()} cache is outdated, updating"
+                )
+                return True
+            log.debug(f"{key.replace('_', ' ').capitalize()} cache is up to date")
+            return False
+
+        update_apps_from_files = compare_updated_last("apps_from_files")
+        update_apps_from_steam_api = compare_updated_last("apps_from_steam_api")
+        """
+        update_friends_from_steam_api = compare_updated_last("friends_from_steam_api")
+        """
+    ensure_dict_key_is_dict(cache, "last_updated")
+    if update_apps_from_files or force:
+        if not isdir(preferences["STEAM_FOLDER"]):
+            log.error(f"Steam folder path '{preferences['STEAM_FOLDER']}' is invalid")
+        else:
+            apps_from_files_updated: bool = False
+            log.info("Getting non-Steam apps from shortcuts.vdf")
+            userdata_folder: str = (
+                f"{preferences['STEAM_FOLDER']}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}"
             )
-            if "steam-apps" not in cache.keys():
-                cache["steam-apps"] = {}
+            shortcuts_file: str = (
+                f"{preferences['STEAM_FOLDER']}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf"
+            )
+            if not isdir(userdata_folder):
+                log.error(
+                    f"Steam userdata ID '{preferences['STEAM_USERDATA_ID']}' is invalid as folder path '{userdata_folder}' is invalid"
+                )
+            elif not isfile(shortcuts_file):
+                log.error(
+                    f"Steam shortcuts file '{shortcuts_file}' unexpectedly not found"
+                )
             else:
-                existing_steam_apps: list[str] = list(cache["steam-apps"].keys())
-                for existing_steam_app in existing_steam_apps:
-                    if existing_steam_app not in [
-                        app[0] for app in installed_steam_apps
-                    ]:
-                        if (
-                            "installed"
-                            in cache["steam-apps"][existing_steam_app].keys()
-                        ):
-                            del cache["steam-apps"][existing_steam_app]["installed"]
-            for installed_steam_app in installed_steam_apps:
-                appid: int = installed_steam_app[0]
-                name: str = installed_steam_app[1]
-                if str(appid) in cache["steam-apps"].keys():
-                    cache["steam-apps"][str(appid)]["installed"] = True
-                    continue
-                cache["steam-apps"][str(appid)] = {"name": name, "installed": True}
-        except FileNotFoundError:
-            log.error(
-                f"Failed to get installed Steam apps: steamapps folder '{steamapps_folder}' is invalid"
-            )
-        except Exception as err:
-            log.error("Failed to get installed Steam apps", exc_info=True)
-        log.debug("Saving cache.json before querying Steam APIs")
-        cache["updated-last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open(f"{EXTENSION_PATH}cache.json", "w", encoding="utf-8") as f:
-            f.write(json_dumps(cache, indent=4))
-        app_icons_to_download: list[tuple[int, str]] = []
-        try:
-            owned_steam_apps: dict[int, dict[str, str | int]] | str = (
-                get_all_owned_steam_apps(steam_api_key, steamid64)
-            )
-            if isinstance(owned_steam_apps, str):
-                if owned_steam_apps == "Unauthorized":
-                    raise ValueError("Steam API key is invalid")
-                elif owned_steam_apps == "Bad Request":
-                    raise ValueError("Steam ID is invalid")
-                else:
-                    raise ConnectionError(owned_steam_apps)
+                """
+                non_steam_apps: dict[int, NonSteamApp] = {}
+                try:
+                    non_steam_apps = get_non_steam_apps(shortcuts_file, app_blacklist)
+                except Exception:
+                    log.error("Failed to get non-Steam apps", exc_info=True)
+                if not ensure_dict_key_is_dict(cache, "non_steam_apps")[1]:
+                    log.debug("Removing non-existant non-Steam apps")
+                    for app_id in cache["non_steam_apps"].keys():
+                        if int(app_id) not in non_steam_apps.keys():
+                            del cache["non_steam_apps"][app_id]
+                for app_id, app_info in non_steam_apps.items():
+                    cache_app_info: dict[str, Any] = ensure_dict_key_is_dict(
+                        cache["non_steam_apps"], str(app_id)
+                    )[0]
+                    cache_app["name"] = app_info["name"]
+                    cache_app["install_dir"] = app_info["install_dir"]
+                    cache_app["last_launched"] = app_info["last_launched"]
+                    cache_app["size_on_disk"] = app_info["size_on_disk"]
+                """
+                apps_from_files_updated = True
+            log.info("Getting installed Steam apps from appmanifest_#.acf files")
+            steamapps_folder: str = f"{preferences['STEAM_FOLDER']}steamapps{DIR_SEP}"
+            if not isdir(steamapps_folder):
+                log.error(
+                    f"Steam steamapps folder path '{steamapps_folder}' unexpectedly is invalid"
+                )
             else:
-                if not isdir(f"{EXTENSION_PATH}images/apps"):
-                    mkdir(f"{EXTENSION_PATH}images/apps")
-                for appid, appinfo in owned_steam_apps.items():
-                    if str(appid) not in cache["steam-apps"].keys():
-                        cache["steam-apps"][str(appid)] = {
-                            "name": appinfo["name"],
-                            "icon-hash": (
-                                appinfo["icon-hash"]
-                                if "icon-hash" in appinfo.keys()
-                                else ""
-                            ),
-                            "playtime-total": appinfo["playtime-total"],
-                        }
-                        log.debug(
-                            f"Downloading Steam icon for app ID {appid}, not in cache"
+                installed_steam_apps: dict[int, InstalledSteamApp] = {}
+                try:
+                    installed_steam_apps = get_installed_steam_apps(
+                        steamapps_folder, app_blacklist
+                    )
+                except Exception:
+                    log.error("Failed to get installed Steam apps", exc_info=True)
+                if not ensure_dict_key_is_dict(cache, "steam_apps")[1]:
+                    log.debug("Removing 'size_on_disk' key from uninstalled Steam apps")
+                    for app_id in cache["steam_apps"].keys():
+                        try:
+                            if (
+                                int(app_id) not in installed_steam_apps.keys()
+                                and isinstance(cache["steam_apps"][app_id], dict)
+                                and "size_on_disk" in cache["steam_apps"][app_id].keys()
+                            ):
+                                del cache["steam_apps"][app_id]["size_on_disk"]
+                        except Exception:
+                            log.warning(
+                                f"Failed to check Steam app with ID '{app_id}', not a number"
+                            )
+                for app_id, app_info in installed_steam_apps.items():
+                    cache_app: dict[str, Any] = ensure_dict_key_is_dict(
+                        cache["steam_apps"], str(app_id)
+                    )[0]
+                    cache_app["name"] = app_info["name"]
+                    cache_app["install_dir"] = app_info["install_dir"]
+                    if app_info["last_updated"] is not None:
+                        cache_app["last_updated"] = datetime.strftime(
+                            app_info["last_updated"], "%Y-%m-%d %H:%M:%S"
                         )
-                        app_icons_to_download.append((appid, appinfo["icon-url"]))  # type: ignore
-                        continue
-                    cache["steam-apps"][str(appid)]["name"] = appinfo["name"]
-                    cache["steam-apps"][str(appid)]["playtime-total"] = appinfo[
-                        "playtime-total"
-                    ]
-                    # TODO: Check hashes of icons for difference if possible
-                    if (
-                        "icon-hash" in cache["steam-apps"][str(appid)].keys()
-                        and appinfo["icon-hash"]
-                        != cache["steam-apps"][str(appid)]["icon-hash"]
+                    if app_info["last_launched"] is not None:
+                        set_last_launched: bool = True
+                        if "last_launched" in cache_app.keys():
+                            try:
+                                old_last_launched: datetime = datetime.strptime(
+                                    cache_app["last_launched"], "%Y-%m-%d %H:%M:%S"
+                                )
+                                if app_info["last_launched"] < old_last_launched:
+                                    set_last_launched = False
+                            except Exception:
+                                log.warning(
+                                    f"Failed to parse 'steam_apps' app {app_info['app_id']} 'last_launched' date '{cache_app['last_launched']}'",
+                                    exc_info=True,
+                                )
+                        if set_last_launched:
+                            cache_app["last_launched"] = datetime.strftime(
+                                app_info["last_launched"],
+                                "%Y-%m-%d %H:%M:%S",
+                            )
+                    cache_app["size_on_disk"] = app_info["size_on_disk"]
+                if len(installed_steam_apps) >= 1:
+                    if "CACHE_SORT" in preferences.keys() and bool(
+                        preferences["CACHE_SORT"]
                     ):
-                        log.warning(
-                            f"Icon hash for app ID {appid} does not match cache: '{appinfo['icon-hash']}' != '{cache['steam-apps'][str(appid)]['icon-hash']}'"
-                        )
-                    if "icon-hash" not in cache["steam-apps"][
-                        str(appid)
-                    ].keys() or not isfile(f"{EXTENSION_PATH}images/apps/{appid}.jpg"):
-                        log.debug(
-                            f"Downloading Steam icon for app ID {appid}, icon does not exist"
-                        )
-                        app_icons_to_download.append((appid, appinfo["icon-url"]))  # type: ignore
-                    cache["steam-apps"][str(appid)]["icon-hash"] = appinfo["icon-hash"]
-            log.debug("Saving cache.json after querying Steam APIs")
-            cache["updated-last"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            with open(f"{EXTENSION_PATH}cache.json", "w", encoding="utf-8") as f:
-                f.write(json_dumps(cache, indent=4))
-        except Exception as err:
+                        cache["steam_apps"] = {
+                            k: v
+                            for k, v in sorted(
+                                cache["steam_apps"].items(), key=lambda i: int(i[0])
+                            )
+                        }
+                    apps_from_files_updated = True
+            if apps_from_files_updated:
+                cache["last_updated"]["apps_from_files"] = datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+                save_cache(cache, preferences)
+    if update_apps_from_steam_api or force:
+        log.info("Getting owned Steam apps from Steam API")
+        apps_from_steam_api_updated: bool = False
+        owned_steam_apps: dict[int, OwnedSteamApp] = {}
+        try:
+            owned_steam_apps = get_owned_steam_apps(
+                preferences["STEAM_API_KEY"], preferences["STEAMID64"]
+            )
+        except Exception:
             log.error("Failed to get owned Steam apps", exc_info=True)
-        log.info("Steam extension cache built")
+        ensure_dict_key_is_dict(cache, "steam_apps")
+        app_icons_to_download: list[tuple[int, str]] = []
+        for app_id, app_info in owned_steam_apps.items():
+            cache_app: dict[str, Any] = ensure_dict_key_is_dict(
+                cache["steam_apps"], str(app_id)
+            )[0]
+            cache_app["name"] = app_info["name"]
+            cache_app["total_playtime"] = app_info["total_playtime"]
+            if app_info["icon_hash"] is not None:
+                cache_app["icon-hash"] = app_info["icon_hash"]
+                app_icons_to_download.append((app_id, cache_app["icon-hash"]))
+        if len(owned_steam_apps) >= 1:
+            if "CACHE_SORT" in preferences.keys() and bool(preferences["CACHE_SORT"]):
+                cache["steam_apps"] = {
+                    k: v
+                    for k, v in sorted(
+                        cache["steam_apps"].items(), key=lambda i: int(i[0])
+                    )
+                }
+            apps_from_steam_api_updated = True
+        if apps_from_steam_api_updated:
+            cache["last_updated"]["apps_from_steam_api"] = datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            save_cache(cache, preferences)
         if len(app_icons_to_download) >= 1:
             log.info(f"Downloading {len(app_icons_to_download)} Steam app icons")
             for download in app_icons_to_download:
                 download_steam_app_icon(download[0], download[1])
-            log.info("Steam app icons downloaded")
-    except Exception as err:
-        log.error("Failed to build Steam extension cache", exc_info=True)
+    """
+    if update_friends_from_steam_api or force:
+        log.info("Getting friends from Steam API")
+        friends_from_steam_api_updated: bool = False
+        # TODO: Get friends from Steam API
+        if True:
+            friends_from_steam_api_updated = True
+        if friends_from_steam_api_updated:
+            cache["last_updated"]["friends_from_steam_api"] = datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            save_cache(cache)
+    """
+    cache["last_updated"]["cache"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    save_cache(cache, preferences)
+    log.info("Steam extension cache built")
 
 
 if __name__ == "__main__":
     from configparser import ConfigParser
 
-    manifest_file = ConfigParser()
-    manifest_file.read(".env")
-    manifest: dict[str, Any] = {
-        k.upper(): v for k, v in manifest_file.items("MANIFEST")
+    preferences_file = ConfigParser()
+    preferences_file.read(".env")
+    preferences: dict[str, Any] = {
+        k.upper(): v for k, v in preferences_file.items("PREFERENCES")
     }
-    build_cache(
-        steamapps_folder=manifest["STEAMAPPS_FOLDER"],
-        userdata_folder=manifest["USERDATA_FOLDER"],
-        steam_api_key=manifest["STEAM_API_KEY"],
-        steamid64=manifest["STEAMID64"],
-        time_before_update=manifest["CACHE_UPDATE_DELAY"],
-    )
+    build_cache(preferences)
