@@ -9,13 +9,15 @@ from const import EXTENSION_PATH
 from datetime import datetime
 from logging import getLogger, Logger
 from logging.config import fileConfig as logging_fileConfig
+import os
 from os.path import join as path_join
 from typing import TypeAlias, TypedDict, Union
 
-try:
-    logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
-except FileNotFoundError:
-    pass
+if os.name == "nt":
+    try:
+        logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
+    except FileNotFoundError:
+        pass
 log: Logger = getLogger(__name__)
 
 NestedStrDict: TypeAlias = dict[str, Union[str, "NestedStrDict"]]

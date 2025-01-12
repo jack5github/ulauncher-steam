@@ -16,10 +16,11 @@ EXTENSION_PATH = abspath(EXTENSION_PATH)
 if EXTENSION_PATH[-1] != DIR_SEP:
     EXTENSION_PATH += DIR_SEP
 
-try:
-    logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
-except FileNotFoundError:
-    pass
+if os.name == "nt":
+    try:
+        logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
+    except FileNotFoundError:
+        pass
 log: Logger = getLogger(__name__)
 
 REQUIRED_PREFERENCES: tuple[str, ...] = ()

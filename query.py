@@ -2,14 +2,16 @@ from const import DEFAULT_LANGUAGE, EXTENSION_PATH, STEAM_NAVIGATIONS
 from datetime import datetime
 from logging import getLogger, Logger
 from logging.config import fileConfig as logging_fileConfig
+import os
 from os.path import isfile
 import sys
 from typing import Any
 
-try:
-    logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
-except FileNotFoundError:
-    pass
+if os.name == "nt":
+    try:
+        logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
+    except FileNotFoundError:
+        pass
 log: Logger = getLogger(__name__)
 
 

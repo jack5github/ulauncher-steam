@@ -55,6 +55,13 @@
             "default_value": "1h"
         },
         {
+            "id": "APP_BLACKLIST",
+            "type": "input",
+            "name": "App blacklist",
+            "description": "App IDs to hide from the list, separated by commas",
+            "default_value": ""
+        },
+        {
             "id": "LANGUAGE_CODE",
             "type": "input",
             "name": "Language code",

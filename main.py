@@ -2,6 +2,7 @@ from cache import build_cache
 from const import EXTENSION_PATH
 from logging import getLogger, Logger
 from logging.config import fileConfig as logging_fileConfig
+import os
 from typing import Any
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
@@ -16,10 +17,11 @@ from ulauncher.api.shared.event import (
 )
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 
-try:
-    logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
-except FileNotFoundError:
-    pass
+if os.name == "nt":
+    try:
+        logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
+    except FileNotFoundError:
+        pass
 log: Logger = getLogger(__name__)
 
 

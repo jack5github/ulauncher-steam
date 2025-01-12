@@ -57,13 +57,15 @@ from const import DIR_SEP, EXTENSION_PATH
 from datetime import timedelta
 from logging import getLogger, Logger
 from logging.config import fileConfig as logging_fileConfig
+import os
 from os.path import isfile
 from typing import Any
 
-try:
-    logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
-except FileNotFoundError:
-    pass
+if os.name == "nt":
+    try:
+        logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
+    except FileNotFoundError:
+        pass
 log: Logger = getLogger(__name__)
 
 
