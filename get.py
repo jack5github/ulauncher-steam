@@ -8,7 +8,6 @@ This module contains functions for retrieving data from Steam for the purposes o
 from const import get_logger
 from datetime import datetime
 from logging import Logger
-from os.path import join as path_join
 from typing import TypeAlias, TypedDict, Union
 
 log: Logger = get_logger(__name__)
@@ -120,37 +119,45 @@ def get_installed_steam_apps(
         if file.startswith("appmanifest_") and file.endswith(".acf")
     )
     for appmanifest_file in appmanifest_files:
-        app_id: int = int(appmanifest_file.split("_")[1].split(".")[0])
-        if app_id in app_blacklist:
-            continue
-        app_vdf: dict[str, NestedStrDict] = vdf_to_dict(
-            path_join(steamapps_folder, appmanifest_file)
-        )
-        name: str = app_vdf["AppState"]["name"].strip()  # type: ignore
-        install_dir: str = app_vdf["AppState"]["installdir"]  # type: ignore
-        last_updated_str: str = app_vdf["AppState"]["LastUpdated"]  # type: ignore
-        last_updated: datetime | None = (
-            datetime.fromtimestamp(int(last_updated_str))
-            if last_updated_str != "0"
-            else None
-        )
-        last_launched_str: str = app_vdf["AppState"]["LastPlayed"]  # type: ignore
-        last_launched: datetime | None = (
-            datetime.fromtimestamp(int(last_launched_str))
-            if last_launched_str != "0"
-            else None
-        )
-        size_on_disk_str: str = app_vdf["AppState"]["SizeOnDisk"]  # type: ignore
-        if size_on_disk_str == "0":
-            size_on_disk_str = app_vdf["AppState"]["BytesToStage"]  # type: ignore
-        size_on_disk: int = int(size_on_disk_str)
-        installed_steam_apps[app_id] = InstalledSteamApp(
-            name=name,
-            install_dir=install_dir,
-            size_on_disk=size_on_disk,
-            last_updated=last_updated,
-            last_launched=last_launched,
-        )
+        try:
+            app_id: int = int(appmanifest_file.split("_")[1].split(".")[0])
+            if app_id in app_blacklist:
+                log.debug(f"Skipping blacklisted app ID {app_id}")
+                continue
+            app_vdf: dict[str, NestedStrDict] = vdf_to_dict(
+                path_join(steamapps_folder, appmanifest_file)
+            )
+            name: str = app_vdf["AppState"]["name"].strip()  # type: ignore
+            install_dir: str = app_vdf["AppState"]["installdir"]  # type: ignore
+            last_updated_str: str = app_vdf["AppState"]["LastUpdated"]  # type: ignore
+            last_updated: datetime | None = (
+                datetime.fromtimestamp(int(last_updated_str))
+                if last_updated_str != "0"
+                else None
+            )
+            last_launched_str: str = app_vdf["AppState"]["LastPlayed"]  # type: ignore
+            last_launched: datetime | None = (
+                datetime.fromtimestamp(int(last_launched_str))
+                if last_launched_str != "0"
+                else None
+            )
+            size_on_disk_str: str = app_vdf["AppState"]["SizeOnDisk"]  # type: ignore
+            if size_on_disk_str == "0":
+                log.debug("Game has not finished installing, using BytesToStage")
+                size_on_disk_str = app_vdf["AppState"]["BytesToStage"]  # type: ignore
+            size_on_disk: int = int(size_on_disk_str)
+            installed_steam_apps[app_id] = InstalledSteamApp(
+                name=name,
+                install_dir=install_dir,
+                size_on_disk=size_on_disk,
+                last_updated=last_updated,
+                last_launched=last_launched,
+            )
+        except Exception:
+            log.error(
+                f"Failed to get installed Steam app from '{appmanifest_file}'",
+                exc_info=True,
+            )
     return installed_steam_apps
 
 
@@ -160,14 +167,14 @@ class NonSteamApp(TypedDict):
 
     Args:
         name (str): The name of the non-Steam app.
-        exe (str): The location of the non-Steam app.
+        exe (str | None): The location of the non-Steam app, or None if it is invalid.
+        size_on_disk (int | None): The size of the non-Steam app on disk in bytes.
         last_launched (datetime | None): The time the app was last launched, or None if not launched.
-        size_on_disk (int): The size of the non-Steam app on disk in bytes.
     """
 
     name: str
-    exe: str
-    size_on_disk: int
+    exe: str | None
+    size_on_disk: int | None
     last_launched: datetime | None
 
 
@@ -185,7 +192,7 @@ def get_non_steam_apps(
         dict[int, NonSteamApp]: A dictionary of NonSteamApp instances for all non-Steam apps, indexed by app ID.
     """
     from binascii import hexlify
-    from os.path import getsize
+    from os.path import getsize, isfile
     from typing import Any
 
     non_steam_apps: dict[int, NonSteamApp] = {}
@@ -202,10 +209,14 @@ def get_non_steam_apps(
             nonlocal cursor
             nonlocal cursor_moved
 
-            cursor_matched: bool = string == buffer[cursor : cursor + len(string)].decode(errors="ignore")
+            cursor_matched: bool = string == buffer[
+                cursor : cursor + len(string)
+            ].decode(errors="ignore")
             if cursor_matched:
+                log.debug(f"Found shortcut ID {shortcut_id} key '{string}'")
                 cursor += len(string)
                 cursor_moved = True
+            return cursor_matched
 
         if cursor_match(f"\x00{shortcut_id + 1}\x00"):
             shortcut_id += 1
@@ -217,36 +228,57 @@ def get_non_steam_apps(
             cursor += 4
         if cursor_match("\x01AppName\x00"):
             app_name_start: int = cursor
-            while buffer[cursor] != "\x00":
+            while cursor < len(buffer) and buffer[cursor] != 0:
+                log.debug(f"{cursor}: {buffer[cursor]}")
                 cursor += 1
-            shortcuts_dict[shortcut_id]["name"] = buffer[
-                app_name_start : cursor
-            ].decode()
+            shortcuts_dict[shortcut_id]["name"] = buffer[app_name_start:cursor].decode(
+                errors="ignore"
+            )
             cursor += 1
         if cursor_match("\x01Exe\x00"):
             exe_start: int = cursor
-            while buffer[cursor] != "\x00":
+            while cursor < len(buffer) and buffer[cursor] != 0:
                 cursor += 1
-            shortcuts_dict[shortcut_id]["exe"] = buffer[exe_start : cursor].decode()
-            shortcuts_dict[shortcut_id]["size_on_disk"] = getsize(shortcuts_dict[shortcut_id]["exe"])
+            exe: str | None = (
+                buffer[exe_start:cursor].decode(errors="ignore").strip('"')
+            )
+            size_on_disk: int | None = None
+            if isfile(exe):
+                size_on_disk = getsize(exe)
+            else:
+                log.warning(f"Non-Steam app executable '{exe}' does not exist")
+                exe = None
+            shortcuts_dict[shortcut_id]["exe"] = exe
+            shortcuts_dict[shortcut_id]["size_on_disk"] = size_on_disk
             cursor += 1
         if cursor_match("\x02LastPlayTime\x00"):
-            last_launched_int: int = int.from_bytes(buffer[cursor : cursor + 4], "little")
-            shortcuts_dict[shortcut_id]["last_launched"] = datetime.fromtimestamp(
-                last_launched_int
-            ) if last_launched_int != 0 else None
+            last_launched_int: int = int.from_bytes(
+                buffer[cursor : cursor + 4], "little"
+            )
+            shortcuts_dict[shortcut_id]["last_launched"] = (
+                datetime.fromtimestamp(last_launched_int)
+                if last_launched_int != 0
+                else None
+            )
             cursor += 4
         if not cursor_moved:
             cursor += 1
-    for app_info in shortcuts_dict.values():
+    for shortcut_id, app_info in shortcuts_dict.items():
         if app_info["app_id"] in app_blacklist:
+            log.debug(f"Skipping blacklisted app {app_info['app_id']}")
             continue
-        non_steam_apps[app_info["app_id"]] = NonSteamApp(
-            name=app_info["name"],
-            exe=app_info["exe"],
-            size_on_disk=app_info["size_on_disk"],
-            last_launched=app_info["last_launched"],
-        )
+        try:
+            non_steam_apps[app_info["app_id"]] = NonSteamApp(
+                name=app_info["name"],
+                exe=app_info["exe"],
+                size_on_disk=app_info["size_on_disk"],
+                last_launched=app_info["last_launched"],
+            )
+        except Exception:
+            log.error(
+                f"Failed to parse non-Steam app with shortcut ID {shortcut_id}",
+                exc_info=True,
+            )
     return non_steam_apps
 
 
@@ -265,17 +297,13 @@ class OwnedSteamApp(TypedDict):
     icon_hash: str | None
 
 
-def get_owned_steam_apps(api_key: str, steam_id64: str) -> dict[int, OwnedSteamApp]:
+def get_owned_steam_apps(api_key: str, steamid64: str) -> dict[int, OwnedSteamApp]:
     """
     Returns a dictionary of owned Steam apps, retrieved from the Steam API.
 
     Args:
         api_key (str): The Steam API key.
-        steam_id64 (str): The steamid64 of the user.
-
-    Raises:
-        ValueError: If the Steam API key is invalid.
-        ValueError: If the steamid64 is invalid.
+        steamid64 (str): The steamid64 of the user.
 
     Returns:
         dict[int, OwnedSteamApp]: The dictionary of owned Steam apps.
@@ -283,12 +311,13 @@ def get_owned_steam_apps(api_key: str, steam_id64: str) -> dict[int, OwnedSteamA
     from http.client import HTTPSConnection
     from json import loads as json_loads
 
+    log.info(f"Getting owned Steam apps from Steam API for user {steamid64}")
     owned_steam_apps: dict[int, OwnedSteamApp] = {}
     owned_apps_url: str = (
         "https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key="
         + api_key
         + "&steamid="
-        + steam_id64
+        + steamid64
         + "&include_appinfo=1&include_played_free_games=1&format=json"
     )
     conn: HTTPSConnection = HTTPSConnection("api.steampowered.com")
@@ -298,12 +327,14 @@ def get_owned_steam_apps(api_key: str, steam_id64: str) -> dict[int, OwnedSteamA
         response
         == b"<html><head><title>Unauthorized</title></head><body><h1>Unauthorized</h1>Access is denied. Retrying will not help. Please verify your <pre>key=</pre> parameter.</body></html>"
     ):
-        raise ValueError(f"Steam API key '{api_key}' is invalid")
+        log.error(f"Steam API key '{api_key}' is invalid")
+        return {}
     elif (
         response
         == b"<html><head><title>Bad Request</title></head><body><h1>Bad Request</h1>Please verify that all required parameters are being sent</body></html>"
     ):
-        raise ValueError(f"User steamid64 '{steam_id64}' is invalid")
+        log.error(f"User steamid64 '{steamid64}' is invalid")
+        return {}
     for owned_steam_app in json_loads(response)["response"]["games"]:
         app_id: int = owned_steam_app["appid"]
         name: str = owned_steam_app["name"].strip()
