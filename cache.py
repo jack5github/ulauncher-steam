@@ -5,10 +5,9 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
 {
     # TODO: Store times as timestamps
     "last_updated": {
+        "from_files": "YYYY-MM-DD HH:MM:SS",
+        "from_steam_api": "YYYY-MM-DD HH:MM:SS",
         "cache": "YYYY-MM-DD HH:MM:SS",
-        "apps_from_files": "YYYY-MM-DD HH:MM:SS",
-        "apps_from_steam_api": "YYYY-MM-DD HH:MM:SS",
-        "friends_from_steam_api": "YYYY-MM-DD HH:MM:SS"
     },
     "non_steam_apps": {
         "APP_ID": {
@@ -272,11 +271,8 @@ def build_cache(
     friend_blacklist: list[int] = get_blacklist("friend")
     """
     log.debug("Getting delays from preferences")
-    update_apps_from_files: bool = True
-    update_apps_from_steam_api: bool = True
-    """
-    update_friends_from_steam_api: bool = True
-    """
+    update_from_files: bool = True
+    update_from_steam_api: bool = True
     if "last_updated" not in cache.keys():
         log.warning("'last_updated' not found in cache.json")
     elif not isinstance(cache["last_updated"], dict):
@@ -310,17 +306,14 @@ def build_cache(
             log.debug(f"{key.replace('_', ' ').capitalize()} cache is up to date")
             return False
 
-        update_apps_from_files = compare_updated_last("apps_from_files")
-        update_apps_from_steam_api = compare_updated_last("apps_from_steam_api")
-        """
-        update_friends_from_steam_api = compare_updated_last("friends_from_steam_api")
-        """
+        update_from_files = compare_updated_last("from_files")
+        update_from_steam_api = compare_updated_last("from_steam_api")
     ensure_dict_key_is_dict(cache, "last_updated")
-    if update_apps_from_files or force:
+    if update_from_files or force:
         if not isdir(preferences["STEAM_FOLDER"]):
             log.error(f"Steam folder path '{preferences['STEAM_FOLDER']}' is invalid")
         else:
-            apps_from_files_updated: bool = False
+            from_files_updated: bool = False
             log.info("Getting non-Steam apps from shortcuts.vdf")
             userdata_folder: str = (
                 f"{preferences['STEAM_FOLDER']}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}"
@@ -357,7 +350,7 @@ def build_cache(
                     cache_app["last_launched"] = app_info["last_launched"]
                     cache_app["size_on_disk"] = app_info["size_on_disk"]
                 """
-                apps_from_files_updated = True
+                from_files_updated = True
             log.info("Getting installed Steam apps from appmanifest_#.acf files")
             steamapps_folder: str = f"{preferences['STEAM_FOLDER']}steamapps{DIR_SEP}"
             if not isdir(steamapps_folder):
@@ -426,15 +419,15 @@ def build_cache(
                                 cache["steam_apps"].items(), key=lambda i: int(i[0])
                             )
                         }
-                    apps_from_files_updated = True
-            if apps_from_files_updated:
-                cache["last_updated"]["apps_from_files"] = datetime.now().strftime(
+                    from_files_updated = True
+            if from_files_updated:
+                cache["last_updated"]["from_files"] = datetime.now().strftime(
                     "%Y-%m-%d %H:%M:%S"
                 )
                 save_cache(cache, preferences)
-    if update_apps_from_steam_api or force:
+    if update_from_steam_api or force:
         log.info("Getting owned Steam apps from Steam API")
-        apps_from_steam_api_updated: bool = False
+        from_steam_api_updated: bool = False
         owned_steam_apps: dict[int, OwnedSteamApp] = {}
         try:
             owned_steam_apps = get_owned_steam_apps(
@@ -461,29 +454,27 @@ def build_cache(
                         cache["steam_apps"].items(), key=lambda i: int(i[0])
                     )
                 }
-            apps_from_steam_api_updated = True
-        if apps_from_steam_api_updated:
-            cache["last_updated"]["apps_from_steam_api"] = datetime.now().strftime(
+            from_steam_api_updated = True
+        if from_steam_api_updated:
+            cache["last_updated"]["from_steam_api"] = datetime.now().strftime(
                 "%Y-%m-%d %H:%M:%S"
             )
             save_cache(cache, preferences)
+        """
+        log.info("Getting friends from Steam API")
+        # TODO: Get friends from Steam API
+        if True:
+            from_steam_api_updated = True
+        if friends_from_steam_api_updated:
+            cache["last_updated"]["from_steam_api"] = datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            save_cache(cache)
+        """
         if len(app_icons_to_download) >= 1:
             log.info(f"Downloading {len(app_icons_to_download)} Steam app icons")
             for download in app_icons_to_download:
                 download_steam_app_icon(download[0], download[1])
-    """
-    if update_friends_from_steam_api or force:
-        log.info("Getting friends from Steam API")
-        friends_from_steam_api_updated: bool = False
-        # TODO: Get friends from Steam API
-        if True:
-            friends_from_steam_api_updated = True
-        if friends_from_steam_api_updated:
-            cache["last_updated"]["friends_from_steam_api"] = datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
-            save_cache(cache)
-    """
     cache["last_updated"]["cache"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     save_cache(cache, preferences)
     log.info("Steam extension cache built")

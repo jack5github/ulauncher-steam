@@ -41,17 +41,17 @@
             "default_value": ""
         },
         {
-            "id": "UPDATE_APPS_FROM_FILES_DELAY",
+            "id": "UPDATE_FROM_FILES_DELAY",
             "type": "input",
-            "name": "Get apps from files wait time",
-            "description": "The time to wait before updating apps from files",
+            "name": "Time between cache updates from files",
+            "description": "The time to wait before updating the cache by reading files on disk",
             "default_value": "1m"
         },
         {
-            "id": "UPDATE_APPS_FROM_STEAM_API_DELAY",
+            "id": "UPDATE_FROM_STEAM_API_DELAY",
             "type": "input",
-            "name": "Get apps from Steam API wait time",
-            "description": "The time to wait before updating apps from the Steam API",
+            "name": "Time between cache updates from Steam API",
+            "description": "The time to wait before updating the cache by querying the Steam API",
             "default_value": "1h"
         },
         {
