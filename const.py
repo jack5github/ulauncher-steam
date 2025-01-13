@@ -1,5 +1,5 @@
 from json import loads as json_loads
-from logging import getLogger, Logger
+from logging import Logger
 from logging.config import fileConfig as logging_fileConfig
 import os
 from os.path import abspath
@@ -16,12 +16,30 @@ EXTENSION_PATH = abspath(EXTENSION_PATH)
 if EXTENSION_PATH[-1] != DIR_SEP:
     EXTENSION_PATH += DIR_SEP
 
-if os.name == "nt":
-    try:
-        logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
-    except FileNotFoundError:
-        pass
-log: Logger = getLogger(__name__)
+
+def get_logger(module_name: str) -> Logger:
+    """
+    Gets the logger for the given module name. If on Windows, the logging configuration file logging.conf is loaded if it exists.
+
+    Args:
+        module_name (str): The name of the module.
+
+    Returns:
+        Logger: The logger.
+    """
+    from logging import getLogger
+
+    if os.name == "nt":
+        try:
+            logging_fileConfig(
+                f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False
+            )
+        except FileNotFoundError:
+            pass
+    return getLogger(module_name)
+
+
+log: Logger = get_logger(__name__)
 
 REQUIRED_PREFERENCES: tuple[str, ...] = ()
 if os.name == "nt":

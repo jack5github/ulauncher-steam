@@ -5,20 +5,13 @@ This module contains functions for retrieving data from Steam for the purposes o
 - Non-Steam apps
 """
 
-from const import EXTENSION_PATH
+from const import get_logger
 from datetime import datetime
-from logging import getLogger, Logger
-from logging.config import fileConfig as logging_fileConfig
-import os
+from logging import Logger
 from os.path import join as path_join
 from typing import TypeAlias, TypedDict, Union
 
-if os.name == "nt":
-    try:
-        logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
-    except FileNotFoundError:
-        pass
-log: Logger = getLogger(__name__)
+log: Logger = get_logger(__name__)
 
 NestedStrDict: TypeAlias = dict[str, Union[str, "NestedStrDict"]]
 

@@ -53,20 +53,13 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
 }
 """
 
-from const import DIR_SEP, EXTENSION_PATH
+from const import DIR_SEP, EXTENSION_PATH, get_logger
 from datetime import timedelta
-from logging import getLogger, Logger
-from logging.config import fileConfig as logging_fileConfig
-import os
+from logging import Logger
 from os.path import isfile
 from typing import Any
 
-if os.name == "nt":
-    try:
-        logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
-    except FileNotFoundError:
-        pass
-log: Logger = getLogger(__name__)
+log: Logger = get_logger(__name__)
 
 
 def download_steam_app_icon(app_id: int, icon_hash: str) -> None:

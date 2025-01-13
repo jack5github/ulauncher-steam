@@ -1,18 +1,11 @@
-from const import DEFAULT_LANGUAGE, EXTENSION_PATH, STEAM_NAVIGATIONS
+from const import DEFAULT_LANGUAGE, EXTENSION_PATH, get_logger, STEAM_NAVIGATIONS
 from datetime import datetime
-from logging import getLogger, Logger
-from logging.config import fileConfig as logging_fileConfig
-import os
+from logging import Logger
 from os.path import isfile
 import sys
 from typing import Any
 
-if os.name == "nt":
-    try:
-        logging_fileConfig(f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False)
-    except FileNotFoundError:
-        pass
-log: Logger = getLogger(__name__)
+log: Logger = get_logger(__name__)
 
 
 class SteamExtensionItem:
@@ -499,7 +492,9 @@ if __name__ == "__main__":
             f"{index + 1}. {item}"
             for index, item in enumerate(
                 steam_extension_event(
-                    preferences={k.upper(): v for k, v in preferences_file.items("PREFERENCES")},
+                    preferences={
+                        k.upper(): v for k, v in preferences_file.items("PREFERENCES")
+                    },
                     search=" ".join(sys.argv[1:]),
                 )
             )
