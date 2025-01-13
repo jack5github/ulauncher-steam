@@ -1,3 +1,4 @@
+# TODO: from zoneinfo import ZoneInfo, requires Python 3.9+ (convert timestamps from UTC (ZoneInfo("UTC")) to local timezone (ZoneInfo("localtime")))
 from const import DEFAULT_LANGUAGE, EXTENSION_PATH, get_logger, STEAM_NAVIGATIONS
 from datetime import datetime
 from logging import Logger
