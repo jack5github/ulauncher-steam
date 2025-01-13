@@ -229,7 +229,6 @@ def get_non_steam_apps(
         if cursor_match("\x01AppName\x00"):
             app_name_start: int = cursor
             while cursor < len(buffer) and buffer[cursor] != 0:
-                log.debug(f"{cursor}: {buffer[cursor]}")
                 cursor += 1
             shortcuts_dict[shortcut_id]["name"] = buffer[app_name_start:cursor].decode(
                 errors="ignore"
