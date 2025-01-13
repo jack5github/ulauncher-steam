@@ -336,6 +336,8 @@ def build_cache(
         update_from_steam_api = compare_last_updated("from_steam_api")
     ensure_dict_key_is_dict(cache, "last_updated")
     if update_from_files or force:
+        if not preferences["STEAM_FOLDER"].endswith(DIR_SEP):
+            preferences["STEAM_FOLDER"] = f"{preferences['STEAM_FOLDER']}{DIR_SEP}"
         if not isdir(preferences["STEAM_FOLDER"]):
             log.error(f"Steam folder path '{preferences['STEAM_FOLDER']}' is invalid")
         else:
@@ -399,10 +401,11 @@ def build_cache(
                         cache_app["size_on_disk"] = app_info["size_on_disk"]
                     elif "size_on_disk" in cache_app.keys():
                         del cache_app["size_on_disk"]
-                    if compare_last_launched(app_info, cache_app):
-                        cache_app["last_launched"] = datetime_to_timestamp(
-                            app_info["last_launched"]
-                        )
+                    if app_info["last_launched"] is not None:
+                        if compare_last_launched(app_info, cache_app):
+                            cache_app["last_launched"] = datetime_to_timestamp(
+                                app_info["last_launched"]
+                            )
                 from_files_updated = True
             log.info("Getting installed Steam apps from appmanifest_#.acf files")
             steamapps_folder: str = f"{preferences['STEAM_FOLDER']}steamapps{DIR_SEP}"
@@ -443,10 +446,11 @@ def build_cache(
                         cache_app["last_updated"] = datetime_to_timestamp(
                             app_info["last_updated"]
                         )
-                    if compare_last_launched(app_info, cache_app):
-                        cache_app["last_launched"] = datetime_to_timestamp(
-                            app_info["last_launched"]
-                        )
+                    if app_info["last_launched"] is not None:
+                        if compare_last_launched(app_info, cache_app):
+                            cache_app["last_launched"] = datetime_to_timestamp(
+                                app_info["last_launched"]
+                            )
                 if len(installed_steam_apps) >= 1:
                     if "CACHE_SORT" in preferences.keys() and bool(
                         preferences["CACHE_SORT"]

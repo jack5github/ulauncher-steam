@@ -9,7 +9,7 @@
             "id": "KEYWORD",
             "type": "keyword",
             "name": "Steam",
-            "description": "Search through Steam games, apps and menus",
+            "description": "Search through Steam games, apps, friends and menus",
             "default_value": "s"
         },
         {
@@ -23,35 +23,35 @@
             "id": "STEAM_USERDATA_ID",
             "type": "input",
             "name": "Steam userdata folder name",
-            "description": "The name of the userdata subfolder (a number) that describes the current user",
+            "description": "The name of the userdata subfolder (a number) belonging to the user",
             "default_value": ""
         },
         {
             "id": "STEAM_API_KEY",
             "type": "input",
             "name": "Steam API key",
-            "description": "The Steam API key to use when fetching owned apps, found at steamcommunity.com/dev/apikey",
+            "description": "The Steam API key to use when fetching data, found at steamcommunity.com/dev/apikey",
             "default_value": ""
         },
         {
             "id": "STEAMID64",
             "type": "input",
             "name": "steamid64 for current user",
-            "description": "The Steam ID to fetch owned apps for, found at steamid.io  # TODO: Find native alternative",
+            "description": "The steamid64 to use when fetching data, found at steamid.io",
             "default_value": ""
         },
         {
             "id": "UPDATE_FROM_FILES_DELAY",
             "type": "input",
-            "name": "Time between cache updates from files",
-            "description": "The time to wait before updating the cache by reading files on disk",
+            "name": "Time between file reads",
+            "description": "The time to wait before reading files on disk to update the cache",
             "default_value": "1m"
         },
         {
             "id": "UPDATE_FROM_STEAM_API_DELAY",
             "type": "input",
-            "name": "Time between cache updates from Steam API",
-            "description": "The time to wait before updating the cache by querying the Steam API",
+            "name": "Time between Steam API calls",
+            "description": "The time to wait before querying the Steam API to update the cache",
             "default_value": "1h"
         },
         {
@@ -65,14 +65,14 @@
             "id": "LANGUAGE_CODE",
             "type": "input",
             "name": "Language code",
-            "description": "The preferred language of the current user",
+            "description": "Your preferred ISO 639-1 language code, fallback is 'en-GB'",
             "default_value": "en-GB"
         },
         {
             "id": "SORT_KEYS",
             "type": "input",
-            "name": "Sort keys",
-            "description": "The values to use for sorting, separated by commas in priority order",
+            "name": "Sort priorities",
+            "description": "How to sort list items when not searching, keys separated by commas in priority order",
             "default_value": "ulaunched_last,ulaunched_times,name,description"
         },
         {
