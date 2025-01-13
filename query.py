@@ -506,19 +506,15 @@ def steam_extension_event(
 
 
 if __name__ == "__main__":
-    from configparser import ConfigParser
+    from const import get_preferences_from_env
     import sys
 
-    preferences_file = ConfigParser()
-    preferences_file.read(".env")
     print(
         "\n".join(
             f"{index + 1}. {item}"
             for index, item in enumerate(
                 steam_extension_event(
-                    preferences={
-                        k.upper(): v for k, v in preferences_file.items("PREFERENCES")
-                    },
+                    preferences=get_preferences_from_env(),
                     search=" ".join(sys.argv[1:]),
                 )
             )

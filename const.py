@@ -41,6 +41,21 @@ def get_logger(module_name: str) -> Logger:
 
 log: Logger = get_logger(__name__)
 
+
+def get_preferences_from_env() -> dict[str, Any]:
+    """
+    Gets the preferences from the .env file and returns them as a dictionary. Used for testing of individual modules.
+
+    Returns:
+        dict[str, Any]: The preferences dictionary.
+    """
+    from configparser import ConfigParser
+
+    preferences_file = ConfigParser()
+    preferences_file.read(".env")
+    return {k.upper(): v for k, v in preferences_file.items("PREFERENCES")}
+
+
 REQUIRED_PREFERENCES: tuple[str, ...] = ()
 if os.name == "nt":
     with open(f"{EXTENSION_PATH}manifest.json", "r", encoding="utf-8") as f:

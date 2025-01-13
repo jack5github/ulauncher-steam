@@ -490,11 +490,6 @@ def build_cache(
 
 
 if __name__ == "__main__":
-    from configparser import ConfigParser
+    from const import get_preferences_from_env
 
-    preferences_file = ConfigParser()
-    preferences_file.read(".env")
-    preferences: dict[str, Any] = {
-        k.upper(): v for k, v in preferences_file.items("PREFERENCES")
-    }
-    build_cache(preferences)
+    build_cache(get_preferences_from_env())
