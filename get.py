@@ -84,9 +84,9 @@ class InstalledSteamApp(TypedDict):
     Args:
         name (str): The name of the Steam app.
         install_dir (str): The name of the folder containing the Steam app.
+        size_on_disk (int): The size of the Steam app on disk in bytes.
         last_updated (datetime | None): The time the app was last updated, or None if not updated.
         last_launched (datetime | None): The time the app was last launched, or None if not launched.
-        size_on_disk (int): The size of the Steam app on disk in bytes.
     """
 
     name: str
