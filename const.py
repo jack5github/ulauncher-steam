@@ -83,6 +83,8 @@ def check_required_preferences(preferences: dict[str, Any]) -> None:
         pass
 
 
+DEFAULT_ICON: str = f"{EXTENSION_PATH}images{DIR_SEP}icon.png"
+DEFAULT_LANGUAGE: str = "en-GB"
 # Navigation
 # https://developer.valvesoftware.com/wiki/Steam_browser_protocol
 # TODO: Add more friends actions
