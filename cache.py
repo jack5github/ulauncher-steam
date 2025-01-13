@@ -120,6 +120,30 @@ def load_cache(clear: bool = False) -> dict[str, Any]:
     return cache
 
 
+def get_blacklist(type: str, preferences: dict[str, Any]) -> list[int]:
+    """
+    Returns a list of IDs from the specified blacklist property in the preferences dictionary, provided they are integers separated by commas.
+
+    Args:
+        type (str): The type of blacklist to retrieve, whether "app" or "friend".
+        preferences (dict[str, Any]): The preferences dictionary.
+
+    Returns:
+        list[int]: The blacklisted IDs.
+    """
+    blacklist_str: str = preferences[f"{type.upper()}_BLACKLIST"].strip()
+    if blacklist_str != "":
+        blacklist_str_list: list[str] = blacklist_str.split(",")
+        try:
+            return [int(id.strip()) for id in blacklist_str_list]
+        except Exception:
+            log.error(
+                f"Failed to parse {type} blacklist value '{blacklist_str}'",
+                exc_info=True,
+            )
+    return []
+
+
 def str_to_timedelta(string: str) -> timedelta:
     """
     Converts a string to a timedelta object, using regex to parse time units. The string can contain the following units: y, mo, w, d, h, m, s, ms, us. If the string has no units, the timedelta will be 0.
@@ -270,23 +294,9 @@ def build_cache(
     log.info("Building Steam extension cache")
     cache: dict[str, Any] = load_cache(clear=clear)
     log.debug("Getting blacklists from preferences")
-
-    def get_blacklist(type: str) -> list[int]:
-        blacklist_str: str = preferences[f"{type.upper()}_BLACKLIST"].strip()
-        if blacklist_str != "":
-            blacklist_str_list: list[str] = blacklist_str.split(",")
-            try:
-                return [int(id.strip()) for id in blacklist_str_list]
-            except Exception:
-                log.error(
-                    f"Failed to parse {type} blacklist value '{blacklist_str}'",
-                    exc_info=True,
-                )
-        return []
-
-    app_blacklist: list[int] = get_blacklist("app")
+    app_blacklist: list[int] = get_blacklist("app", preferences)
     """
-    friend_blacklist: list[int] = get_blacklist("friend")
+    friend_blacklist: list[int] = get_blacklist("friend", preferences)
     """
     log.debug("Getting delays from preferences")
     update_from_files: bool = True
