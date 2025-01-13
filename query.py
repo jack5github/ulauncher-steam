@@ -2,7 +2,6 @@ from const import DEFAULT_LANGUAGE, EXTENSION_PATH, get_logger, STEAM_NAVIGATION
 from datetime import datetime
 from logging import Logger
 from os.path import isfile
-import sys
 from typing import Any
 
 log: Logger = get_logger(__name__)
@@ -15,6 +14,7 @@ class SteamExtensionItem:
 
     def __init__(
         self,
+        preferences: dict[str, Any],
         appid: str | None = None,
         name: str | None = None,
         non_steam: bool = False,
@@ -29,6 +29,7 @@ class SteamExtensionItem:
         Initialises a new SteamExtensionItem instance.
 
         Args:
+            preferences (dict[str, Any]): The preferences dictionary.
             appid (str | None, optional): The ID of the application, if this is a Steam application. Stored as a string due to JSON limitations. Defaults to None.
             name (str | None, optional): The name of the application or action this item represents. Defaults to None.
             non_steam (bool, optional): Whether this is a non-Steam application. Defaults to False.
@@ -39,6 +40,7 @@ class SteamExtensionItem:
             ulaunched_times (int, optional): The number of times this item has been launched from uLauncher. Defaults to 0.
             is_error (bool, optional): Whether this item represents an error. Defaults to False.
         """
+        self.preferences: dict[str, Any] = preferences
         self.appid: str | None = appid
         self.name: str | None = name
         self.non_steam: bool = non_steam
@@ -56,24 +58,32 @@ class SteamExtensionItem:
         Returns:
             str: The verbose representation.
         """
-        if "tiny-repr" in sys.argv:
+        if "RESULT_TINY_REPR" in self.preferences.keys() and bool(
+            self.preferences["RESULT_TINY_REPR"]
+        ):
             return f"({repr(self.appid)}, name={repr(self.name)}, non={repr(self.non_steam)}, inst={repr(self.installed)}, desc={repr(self.description)}, act={repr(self.action)}, ulast={repr(self.ulaunched_last)}, utimes={repr(self.ulaunched_times)}, err={self.is_error})"
         return f"SteamExtensionItem(appid={repr(self.appid)}, name={repr(self.name)}, non_steam={repr(self.non_steam)}, installed={repr(self.installed)}, description={repr(self.description)}, action={repr(self.action)}, ulaunched_last={repr(self.ulaunched_last)}, ulaunched_times={repr(self.ulaunched_times)}, is_error={self.is_error})"
 
     @classmethod
-    def from_error(cls, err: Exception) -> "SteamExtensionItem":
+    def from_error(
+        cls, err: Exception, preferences: dict[str, Any]
+    ) -> "SteamExtensionItem":
         """
         Creates a new SteamExtensionItem instance from an error.
 
         Args:
             err (Exception): The error.
+            preferences (dict[str, Any]): The preferences dictionary.
 
         Returns:
             SteamExtensionItem: A new SteamExtensionItem instance.
         """
         log.error(f"{err.__class__.__name__}: {err}", exc_info=True)
         return SteamExtensionItem(
-            name=err.__class__.__name__, description=str(err), is_error=True
+            preferences,
+            name=err.__class__.__name__,
+            description=str(err),
+            is_error=True,
         )
 
     def to_result_dict(self) -> dict[str, Any]:
@@ -218,13 +228,14 @@ def steam_extension_event(
                 with open(f"{EXTENSION_PATH}lang.json", "r", encoding="utf-8") as f:
                     lang = json_loads(f.read())
             except Exception as err:
-                items.insert(0, SteamExtensionItem.from_error(err))
+                items.insert(0, SteamExtensionItem.from_error(err, preferences))
                 populate_items = False
             if language not in lang.keys():
                 items.insert(
                     0,
                     SteamExtensionItem.from_error(
-                        KeyError(f"Language '{language}' not found in lang.json")
+                        KeyError(f"Language '{language}' not found in lang.json"),
+                        preferences,
                     ),
                 )
                 language = DEFAULT_LANGUAGE
@@ -237,7 +248,8 @@ def steam_extension_event(
                     items.insert(
                         0,
                         SteamExtensionItem.from_error(
-                            TypeError("'steam_apps' in cache.json is not a dictionary")
+                            TypeError("'steam_apps' in cache.json is not a dictionary"),
+                            preferences,
                         ),
                     )
                     cache["steam_apps"] = {}
@@ -248,7 +260,8 @@ def steam_extension_event(
                             SteamExtensionItem.from_error(
                                 TypeError(
                                     f"'steam_apps' app ID {appid} in cache.json is not a dictionary"
-                                )
+                                ),
+                                preferences,
                             ),
                         )
                         continue
@@ -268,6 +281,7 @@ def steam_extension_event(
                         ulaunched_times = int(appinfo["times_launched"])
                     steam_apps.append(
                         SteamExtensionItem(
+                            preferences,
                             appid=appid,
                             name=name,
                             installed=installed,
@@ -284,7 +298,8 @@ def steam_extension_event(
                         SteamExtensionItem.from_error(
                             TypeError(
                                 "'non_steam_apps' in cache.json is not a dictionary"
-                            )
+                            ),
+                            preferences,
                         ),
                     )
                     cache["non_steam_apps"] = {}
@@ -295,7 +310,8 @@ def steam_extension_event(
                             SteamExtensionItem.from_error(
                                 TypeError(
                                     f"'non_steam_apps' app ID {appid} in cache.json is not a dictionary"
-                                )
+                                ),
+                                preferences,
                             ),
                         )
                         continue
@@ -312,6 +328,7 @@ def steam_extension_event(
                         ulaunched_times = int(appinfo["times_launched"])
                     items.append(
                         SteamExtensionItem(
+                            preferences,
                             appid=appid,
                             name=name,
                             non_steam=True,
@@ -328,7 +345,8 @@ def steam_extension_event(
                 items.insert(
                     0,
                     SteamExtensionItem.from_error(
-                        TypeError("'steam_navs' in cache.json is not a dictionary")
+                        TypeError("'steam_navs' in cache.json is not a dictionary"),
+                        preferences,
                     ),
                 )
                 cache["steam_navs"] = {}
@@ -340,7 +358,7 @@ def steam_extension_event(
                 try:
                     nav_name = get_lang_string(lang, language, navigation)
                 except KeyError as err:
-                    items.insert(0, SteamExtensionItem.from_error(err))
+                    items.insert(0, SteamExtensionItem.from_error(err, preferences))
                 nav_description: str | None = None
                 try:
                     nav_description = get_lang_string(lang, language, f"{navigation}%d")
@@ -363,6 +381,7 @@ def steam_extension_event(
                             ulaunched_times = int(appinfo["times_launched"])
                     items.append(
                         SteamExtensionItem(
+                            preferences,
                             name=nav_name,
                             description=nav_description,
                             action=nav_action,
@@ -381,7 +400,8 @@ def steam_extension_event(
                             SteamExtensionItem.from_error(
                                 RuntimeError(
                                     f"An in-memory Steam app has a missing app ID or name: ({app_id}, {repr(app_name)})"
-                                )
+                                ),
+                                preferences,
                             ),
                         )
                         break
@@ -396,6 +416,7 @@ def steam_extension_event(
                     ulaunched_times: int = 0
                     items.append(
                         SteamExtensionItem(
+                            preferences,
                             appid=app_id,
                             name=specific_name,
                             description=specific_description,
@@ -421,6 +442,7 @@ def steam_extension_event(
                 )
             items.append(
                 SteamExtensionItem(
+                    preferences,
                     name=get_lang_string(lang, language, "rebuild_cache"),
                     non_steam=True,
                     description=get_lang_string(lang, language, "rebuild_cache%d"),
@@ -453,7 +475,7 @@ def steam_extension_event(
                     reverse=True,
                 )
     except Exception as err:
-        items.insert(0, SteamExtensionItem.from_error(err))
+        items.insert(0, SteamExtensionItem.from_error(err, preferences))
     max_items: int = 10
     try:
         max_items = int(preferences["MAX_ITEMS"])
@@ -463,7 +485,7 @@ def steam_extension_event(
         items.insert(
             0,
             SteamExtensionItem.from_error(
-                ValueError("Maximum items is not a valid positive integer")
+                ValueError("Maximum items is not a valid positive integer"), preferences
             ),
         )
     if len(items) >= 1:
@@ -472,18 +494,20 @@ def steam_extension_event(
         try:
             items.append(
                 SteamExtensionItem(
+                    preferences,
                     name=get_lang_string(lang, language, "no_results"),
                     description=get_lang_string(lang, language, "no_results%d"),
                     is_error=True,
                 )
             )
         except KeyError as err:
-            items.append(SteamExtensionItem.from_error(err))
+            items.append(SteamExtensionItem.from_error(err, preferences))
     return items
 
 
 if __name__ == "__main__":
     from configparser import ConfigParser
+    import sys
 
     preferences_file = ConfigParser()
     preferences_file.read(".env")
