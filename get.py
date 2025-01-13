@@ -92,23 +92,23 @@ class InstalledSteamApp(TypedDict):
 
     name: str
     install_dir: str
+    size_on_disk: int
     last_updated: datetime | None
     last_launched: datetime | None
-    size_on_disk: int
 
 
 def get_installed_steam_apps(
     steamapps_folder: str, app_blacklist: list[int]
 ) -> dict[int, InstalledSteamApp]:
     """
-    Returns a list of InstalledSteamApp instances for all installed Steam apps.
+    Returns a dictionary of InstalledSteamApp instances for all installed Steam apps.
 
     Args:
         steamapps_folder (str): The path to the steamapps folder.
         app_blacklist (list[int]): A list of app IDs to ignore.
 
     Returns:
-        dict[int, InstalledSteamApp]: A list of InstalledSteamApp instances for all installed Steam apps, indexed by app ID.
+        dict[int, InstalledSteamApp]: A dictionary of InstalledSteamApp instances for all installed Steam apps, indexed by app ID.
     """
     from os import listdir
     from os.path import join as path_join
@@ -147,9 +147,9 @@ def get_installed_steam_apps(
         installed_steam_apps[app_id] = InstalledSteamApp(
             name=name,
             install_dir=install_dir,
+            size_on_disk=size_on_disk,
             last_updated=last_updated,
             last_launched=last_launched,
-            size_on_disk=size_on_disk,
         )
     return installed_steam_apps
 
@@ -167,87 +167,86 @@ class NonSteamApp(TypedDict):
 
     name: str
     exe: str
-    last_launched: datetime | None
     size_on_disk: int
+    last_launched: datetime | None
 
 
-# TODO: Make this more efficient by reducing number of keys to check for
 def get_non_steam_apps(
-    userdata_folder: str, app_blacklist: list[int]
+    shortcuts_path: str, app_blacklist: list[int]
 ) -> dict[int, NonSteamApp]:
+    """
+    Returns a dictionary of NonSteamApp instances for all non-Steam apps.
+
+    Args:
+        shortcuts_path (str): The path to the user's shortcuts.vdf file.
+        app_blacklist (list[int]): A list of app IDs to ignore.
+
+    Returns:
+        dict[int, NonSteamApp]: A dictionary of NonSteamApp instances for all non-Steam apps, indexed by app ID.
+    """
     from binascii import hexlify
+    from os.path import getsize
     from typing import Any
 
-    # Locate the user shortcuts file
-    user_shortcuts_file: str = path_join(userdata_folder, "config")
-    user_shortcuts_file = path_join(user_shortcuts_file, "shortcuts.vdf")
-    # Shortcuts are represented as hex, flanked by keys in plain English
-    # https://steamcommunity.com/discussions/forum/1/5560306947036116992/
+    non_steam_apps: dict[int, NonSteamApp] = {}
     buffer: bytearray
-    with open(user_shortcuts_file, "rb") as f:
+    with open(shortcuts_path, "rb") as f:
         buffer = bytearray.fromhex(hexlify(f.read()).decode())
-    cursor: int = 20
-    shortcut_id: int = 0
-    shortcuts: dict[int, dict[str, Any]] = {}
+    cursor: int = 11
+    shortcut_id: int = -1
+    shortcuts_dict: dict[int, dict[str, Any]] = {}
     while cursor < len(buffer):
-        if buffer[cursor] != 0:
-            cursor += 1
-            continue
-        next_shortcut_id_len: int = len(str(shortcut_id + 1))
-        if buffer[cursor - next_shortcut_id_len - 1] == 0 and (
-            buffer[cursor - next_shortcut_id_len : cursor].decode(errors="ignore")
-            == str(shortcut_id + 1)
-        ):
+        cursor_moved: bool = False
+
+        def cursor_match(string: str) -> bool:
+            nonlocal cursor
+            nonlocal cursor_moved
+
+            cursor_matched: bool = string == buffer[cursor : cursor + len(string)].decode(errors="ignore")
+            if cursor_matched:
+                cursor += len(string)
+                cursor_moved = True
+
+        if cursor_match(f"\x00{shortcut_id + 1}\x00"):
             shortcut_id += 1
-            cursor += 1
-            continue
-        # TODO: Get last launched time and get size on disk (os.path.getsize)
-        vdf_keys: tuple[str, ...] = "appid", "AppName", "Exe", "StartDir"
-        try:
-            vdf_key: str = next(
-                key
-                for key in vdf_keys
-                if buffer[cursor - len(key) : cursor].decode(errors="ignore") == key
+            shortcuts_dict[shortcut_id] = {}
+        if cursor_match("\x02appid\x00"):
+            shortcuts_dict[shortcut_id]["app_id"] = int.from_bytes(
+                buffer[cursor + 3 : cursor - 1 : -1] + b"\x02\x00\x00\x00", "big"
             )
-
-            def insert_key_value(value: str | int) -> None:
-                nonlocal shortcuts
-
-                if shortcut_id not in shortcuts.keys():
-                    shortcuts[shortcut_id] = {}
-                shortcuts[shortcut_id][vdf_key] = value
-
-            if vdf_key == "appid":
-                # The next four bytes are the app ID (reversed), followed by 02 00 00 00
-                insert_key_value(
-                    int.from_bytes(
-                        buffer[cursor + 4 : cursor : -1] + b"\x02\x00\x00\x00", "big"
-                    )
-                )
+            cursor += 4
+        if cursor_match("\x01AppName\x00"):
+            app_name_start: int = cursor
+            while buffer[cursor] != "\x00":
                 cursor += 1
-                continue
-            value_cursor: int = cursor + 1
-            if vdf_key == "Icon" and buffer[value_cursor] == 0:
-                # No icon
+            shortcuts_dict[shortcut_id]["name"] = buffer[
+                app_name_start : cursor
+            ].decode()
+            cursor += 1
+        if cursor_match("\x01Exe\x00"):
+            exe_start: int = cursor
+            while buffer[cursor] != "\x00":
                 cursor += 1
-                continue
-            # Everything until the next zero_byte is the value
-            while buffer[value_cursor] != 0:
-                value_cursor += 1
-            insert_key_value(buffer[cursor + 1 : value_cursor].decode(errors="ignore"))
-        except StopIteration:
-            pass
-        cursor += 1
-    non_steam_apps: dict[int, NonSteamApp] = {
-        v["appid"]: NonSteamApp(
-            name=v["AppName"].strip(),
-            exe=v["Exe"],
-            last_launched=None,
-            size_on_disk=0,
+            shortcuts_dict[shortcut_id]["exe"] = buffer[exe_start : cursor].decode()
+            shortcuts_dict[shortcut_id]["size_on_disk"] = getsize(shortcuts_dict[shortcut_id]["exe"])
+            cursor += 1
+        if cursor_match("\x02LastPlayTime\x00"):
+            last_launched_int: int = int.from_bytes(buffer[cursor : cursor + 4], "little")
+            shortcuts_dict[shortcut_id]["last_launched"] = datetime.fromtimestamp(
+                last_launched_int
+            ) if last_launched_int != 0 else None
+            cursor += 4
+        if not cursor_moved:
+            cursor += 1
+    for app_info in shortcuts_dict.values():
+        if app_info["app_id"] in app_blacklist:
+            continue
+        non_steam_apps[app_info["app_id"]] = NonSteamApp(
+            name=app_info["name"],
+            exe=app_info["exe"],
+            size_on_disk=app_info["size_on_disk"],
+            last_launched=app_info["last_launched"],
         )
-        for v in shortcuts.values()
-        if v["appid"] not in app_blacklist
-    }
     return non_steam_apps
 
 
@@ -268,7 +267,7 @@ class OwnedSteamApp(TypedDict):
 
 def get_owned_steam_apps(api_key: str, steam_id64: str) -> dict[int, OwnedSteamApp]:
     """
-    Returns a dictionary of owned Steam apps.
+    Returns a dictionary of owned Steam apps, retrieved from the Steam API.
 
     Args:
         api_key (str): The Steam API key.

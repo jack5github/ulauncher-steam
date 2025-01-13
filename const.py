@@ -19,7 +19,7 @@ if EXTENSION_PATH[-1] != DIR_SEP:
 
 def get_logger(module_name: str) -> Logger:
     """
-    Gets the logger for the given module name. If on Windows, the logging configuration file logging.conf is loaded if it exists.
+    Gets the logger for the given module name. The logging configuration file logging.conf is loaded if it exists.
 
     Args:
         module_name (str): The name of the module.
@@ -28,14 +28,12 @@ def get_logger(module_name: str) -> Logger:
         Logger: The logger.
     """
     from logging import getLogger
+    from os.path import isfile
 
-    if os.name == "nt":
-        try:
-            logging_fileConfig(
-                f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False
-            )
-        except FileNotFoundError:
-            pass
+    if isfile(f"{EXTENSION_PATH}logging.conf"):
+        logging_fileConfig(
+            f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False
+        )
     return getLogger(module_name)
 
 
@@ -57,16 +55,15 @@ def get_preferences_from_env() -> dict[str, Any]:
 
 
 REQUIRED_PREFERENCES: tuple[str, ...] = ()
-if os.name == "nt":
-    with open(f"{EXTENSION_PATH}manifest.json", "r", encoding="utf-8") as f:
-        REQUIRED_PREFERENCES = tuple(
-            preference["id"] for preference in json_loads(f.read())["preferences"]
-        )
+with open(f"{EXTENSION_PATH}manifest.json", "r", encoding="utf-8") as f:
+    REQUIRED_PREFERENCES = tuple(
+        preference["id"] for preference in json_loads(f.read())["preferences"]
+    )
 
 
 def check_required_preferences(preferences: dict[str, Any]) -> None:
     """
-    Checks if all required preferences are present in the preferences dictionary on Windows.
+    Checks if all required preferences are present in the preferences dictionary.
 
     Args:
         preferences (dict[str, Any]): The preferences dictionary.
@@ -74,17 +71,16 @@ def check_required_preferences(preferences: dict[str, Any]) -> None:
     Raises:
         ValueError: If a required preference is missing.
     """
-    if os.name == "nt":
-        log.debug("Checking all required preferences are present")
-        try:
-            missing_preference: str = next(
-                key for key in REQUIRED_PREFERENCES if key not in preferences.keys()
-            )
-            raise ValueError(
-                f"Missing preference key '{missing_preference}', add to .env file"
-            )
-        except StopIteration:
-            pass
+    log.debug("Checking all required preferences are present")
+    try:
+        missing_preference: str = next(
+            key for key in REQUIRED_PREFERENCES if key not in preferences.keys()
+        )
+        raise ValueError(
+            f"Missing preference key '{missing_preference}', add to .env file"
+        )
+    except StopIteration:
+        pass
 
 
 # Navigation

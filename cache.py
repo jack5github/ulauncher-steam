@@ -13,19 +13,19 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
         "APP_ID": {
             "name": "APP_NAME",
             "exe": "INSTALL_LOCATION",
+            "size_on_disk": 0
             "last_launched": TIMESTAMP,
             "times_launched": 0,
-            "size_on_disk": 0
         }
     },
     "steam_apps": {
         "APP_ID": {
             "name": "APP_NAME",
             "install_dir": "INSTALL_DIR_NAME",
+            "size_on_disk": 0,
             "last_updated": TIMESTAMP,
             "last_launched": TIMESTAMP,
             "times_launched": 0,
-            "size_on_disk": 0,
             "total_playtime": 0,
             "icon_hash": "ICON_HASH"
         }
@@ -233,7 +233,7 @@ def save_cache(cache: dict[str, Any], preferences: dict[str, Any]) -> None:
                     cache,
                     indent=(
                         int(preferences["CACHE_INDENT"])
-                        if "CACHE_INDENT" in preferences.keys()
+                        if "CACHE_INDENT" in preferences.keys() and preferences["CACHE_INDENT"] != ""
                         else None
                     ),
                 )
@@ -257,10 +257,10 @@ def build_cache(
     from const import check_required_preferences
     from get import (
         get_installed_steam_apps,
-        # get_non_steam_apps,
+        get_non_steam_apps,
         get_owned_steam_apps,
         InstalledSteamApp,
-        # NonSteamApp,
+        NonSteamApp,
         OwnedSteamApp,
     )
     from os.path import isdir
@@ -296,7 +296,7 @@ def build_cache(
         log.warning("'last_updated' in cache.json is not a dictionary")
     elif not force:
 
-        def compare_updated_last(key: str) -> bool:
+        def compare_last_updated(key: str) -> bool:
             if key not in cache["last_updated"].keys():
                 log.warning(
                     f"'last_updated' in cache.json does not contain '{key}' key"
@@ -321,14 +321,32 @@ def build_cache(
             log.debug(f"{key.replace('_', ' ').capitalize()} cache is up to date")
             return False
 
-        update_from_files = compare_updated_last("from_files")
-        update_from_steam_api = compare_updated_last("from_steam_api")
+        update_from_files = compare_last_updated("from_files")
+        update_from_steam_api = compare_last_updated("from_steam_api")
     ensure_dict_key_is_dict(cache, "last_updated")
     if update_from_files or force:
         if not isdir(preferences["STEAM_FOLDER"]):
             log.error(f"Steam folder path '{preferences['STEAM_FOLDER']}' is invalid")
         else:
             from_files_updated: bool = False
+
+            def compare_last_launched(app: dict, cache_app: dict) -> bool:
+                if app["last_launched"] is None:
+                    return True
+                if "last_launched" in cache_app.keys():
+                    try:
+                        cache_last_launched: datetime = datetime.fromtimestamp(
+                            cache_app["last_launched"]
+                        )
+                        if app["last_launched"] < cache_last_launched:
+                            return False
+                    except Exception:
+                        log.warning(
+                            f"Failed to parse app {app['app_id']} 'last_launched' timestamp '{cache_app['last_launched']}'",
+                            exc_info=True,
+                        )
+                return True
+
             log.info("Getting non-Steam apps from shortcuts.vdf")
             userdata_folder: str = (
                 f"{preferences['STEAM_FOLDER']}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}"
@@ -345,7 +363,6 @@ def build_cache(
                     f"Steam shortcuts file '{shortcuts_file}' unexpectedly not found"
                 )
             else:
-                """
                 non_steam_apps: dict[int, NonSteamApp] = {}
                 try:
                     non_steam_apps = get_non_steam_apps(shortcuts_file, app_blacklist)
@@ -361,10 +378,10 @@ def build_cache(
                         cache["non_steam_apps"], str(app_id)
                     )[0]
                     cache_app["name"] = app_info["name"]
-                    cache_app["install_dir"] = app_info["install_dir"]
-                    cache_app["last_launched"] = app_info["last_launched"]
+                    cache_app["exe"] = app_info["exe"]
                     cache_app["size_on_disk"] = app_info["size_on_disk"]
-                """
+                    if compare_last_launched(app_info, cache_app):
+                        cache_app["last_launched"] = datetime_to_timestamp(app_info["last_launched"])
                 from_files_updated = True
             log.info("Getting installed Steam apps from appmanifest_#.acf files")
             steamapps_folder: str = f"{preferences['STEAM_FOLDER']}steamapps{DIR_SEP}"
@@ -400,29 +417,15 @@ def build_cache(
                     )[0]
                     cache_app["name"] = app_info["name"]
                     cache_app["install_dir"] = app_info["install_dir"]
+                    cache_app["size_on_disk"] = app_info["size_on_disk"]
                     if app_info["last_updated"] is not None:
                         cache_app["last_updated"] = datetime_to_timestamp(
                             app_info["last_updated"]
                         )
-                    if app_info["last_launched"] is not None:
-                        set_last_launched: bool = True
-                        if "last_launched" in cache_app.keys():
-                            try:
-                                old_last_launched: datetime = datetime.fromtimestamp(
-                                    cache_app["last_launched"]
-                                )
-                                if app_info["last_launched"] < old_last_launched:
-                                    set_last_launched = False
-                            except Exception:
-                                log.warning(
-                                    f"Failed to parse 'steam_apps' app {app_info['app_id']} 'last_launched' timestamp '{cache_app['last_launched']}'",
-                                    exc_info=True,
-                                )
-                        if set_last_launched:
-                            cache_app["last_launched"] = datetime_to_timestamp(
-                                app_info["last_launched"]
-                            )
-                    cache_app["size_on_disk"] = app_info["size_on_disk"]
+                    if compare_last_launched(app_info, cache_app):
+                        cache_app["last_launched"] = datetime_to_timestamp(
+                            app_info["last_launched"]
+                        )
                 if len(installed_steam_apps) >= 1:
                     if "CACHE_SORT" in preferences.keys() and bool(
                         preferences["CACHE_SORT"]
