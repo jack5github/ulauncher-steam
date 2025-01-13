@@ -5,15 +5,15 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
 {
     # TODO: Store times as timestamps
     "last_updated": {
-        "from_files": "YYYY-MM-DD HH:MM:SS",
-        "from_steam_api": "YYYY-MM-DD HH:MM:SS",
-        "cache": "YYYY-MM-DD HH:MM:SS",
+        "from_files": TIMESTAMP,
+        "from_steam_api": TIMESTAMP,
+        "cache": TIMESTAMP,
     },
     "non_steam_apps": {
         "APP_ID": {
             "name": "APP_NAME",
             "exe": "INSTALL_LOCATION",
-            "last_launched": "YYYY-MM-DD HH:MM:SS",
+            "last_launched": TIMESTAMP,
             "times_launched": 0,
             "size_on_disk": 0
         }
@@ -22,8 +22,8 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
         "APP_ID": {
             "name": "APP_NAME",
             "install_dir": "INSTALL_DIR_NAME",
-            "last_updated": "YYYY-MM-DD HH:MM:SS",
-            "last_launched": "YYYY-MM-DD HH:MM:SS",
+            "last_updated": TIMESTAMP,
+            "last_launched": TIMESTAMP,
             "times_launched": 0,
             "size_on_disk": 0,
             "total_playtime": 0,
@@ -39,13 +39,13 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
     }
     "steam_navs": {
         "NAVIGATION": {
-            "last_launched": "YYYY-MM-DD HH:MM:SS",
+            "last_launched": TIMESTAMP,
             "times_launched": 0
         }
     },
     "actions": {
         "ACTION": {
-            "last_launched": "YYYY-MM-DD HH:MM:SS",
+            "last_launched": TIMESTAMP,
             "times_launched": 0
         }
     }
@@ -53,7 +53,7 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
 """
 
 from const import DIR_SEP, EXTENSION_PATH, get_logger
-from datetime import timedelta
+from datetime import datetime, timedelta
 from logging import Logger
 from os.path import isfile
 from typing import Any
@@ -197,6 +197,24 @@ def ensure_dict_key_is_dict(dictionary: dict, key: Any) -> tuple[dict, bool]:
     return dictionary[key], False
 
 
+def datetime_to_timestamp(dt: datetime | None = None) -> float | int:
+    """
+    Converts a datetime object to a timestamp, rounding to an integer if possible.
+
+    Args:
+        dt (datetime | None, optional): The datetime object to convert. If this is None, the current datetime is used. Defaults to None.
+
+    Returns:
+        float | int: The timestamp of the datetime object.
+    """
+    if dt is None:
+        dt = datetime.now()
+    timestamp: float | int = dt.timestamp()
+    if dt.hour == 0 and dt.minute == 0 and dt.second == 0 and dt.microsecond == 0:
+        timestamp = int(timestamp)
+    return timestamp
+
+
 def save_cache(cache: dict[str, Any], preferences: dict[str, Any]) -> None:
     """
     Saves the updated cache dictionary to its JSON file.
@@ -237,7 +255,6 @@ def build_cache(
         clear (bool, optional): Whether to clear the cache entirely before building it. Defaults to False.
     """
     from const import check_required_preferences
-    from datetime import datetime
     from get import (
         get_installed_steam_apps,
         # get_non_steam_apps,
@@ -287,12 +304,10 @@ def build_cache(
                 return True
             updated_last: datetime = datetime.min
             try:
-                updated_last = datetime.strptime(
-                    cache["last_updated"][key], "%Y-%m-%d %H:%M:%S"
-                )
+                updated_last = datetime.fromtimestamp(cache["last_updated"][key])
             except Exception:
                 log.warning(
-                    f"Failed to parse 'last_updated' key '{key}' date '{cache['last_updated'][key]}'",
+                    f"Failed to parse 'last_updated' key '{key}' timestamp '{cache['last_updated'][key]}'",
                     exc_info=True,
                 )
             wait_time: timedelta = str_to_timedelta(
@@ -386,27 +401,26 @@ def build_cache(
                     cache_app["name"] = app_info["name"]
                     cache_app["install_dir"] = app_info["install_dir"]
                     if app_info["last_updated"] is not None:
-                        cache_app["last_updated"] = datetime.strftime(
-                            app_info["last_updated"], "%Y-%m-%d %H:%M:%S"
+                        cache_app["last_updated"] = datetime_to_timestamp(
+                            app_info["last_updated"]
                         )
                     if app_info["last_launched"] is not None:
                         set_last_launched: bool = True
                         if "last_launched" in cache_app.keys():
                             try:
-                                old_last_launched: datetime = datetime.strptime(
-                                    cache_app["last_launched"], "%Y-%m-%d %H:%M:%S"
+                                old_last_launched: datetime = datetime.fromtimestamp(
+                                    cache_app["last_launched"]
                                 )
                                 if app_info["last_launched"] < old_last_launched:
                                     set_last_launched = False
                             except Exception:
                                 log.warning(
-                                    f"Failed to parse 'steam_apps' app {app_info['app_id']} 'last_launched' date '{cache_app['last_launched']}'",
+                                    f"Failed to parse 'steam_apps' app {app_info['app_id']} 'last_launched' timestamp '{cache_app['last_launched']}'",
                                     exc_info=True,
                                 )
                         if set_last_launched:
-                            cache_app["last_launched"] = datetime.strftime(
-                                app_info["last_launched"],
-                                "%Y-%m-%d %H:%M:%S",
+                            cache_app["last_launched"] = datetime_to_timestamp(
+                                app_info["last_launched"]
                             )
                     cache_app["size_on_disk"] = app_info["size_on_disk"]
                 if len(installed_steam_apps) >= 1:
@@ -421,8 +435,8 @@ def build_cache(
                         }
                     from_files_updated = True
             if from_files_updated:
-                cache["last_updated"]["from_files"] = datetime.now().strftime(
-                    "%Y-%m-%d %H:%M:%S"
+                cache["last_updated"]["from_files"] = datetime_to_timestamp(
+                    datetime.now()
                 )
                 save_cache(cache, preferences)
     if update_from_steam_api or force:
@@ -456,9 +470,7 @@ def build_cache(
                 }
             from_steam_api_updated = True
         if from_steam_api_updated:
-            cache["last_updated"]["from_steam_api"] = datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
+            cache["last_updated"]["from_steam_api"] = datetime_to_timestamp()
             save_cache(cache, preferences)
         """
         log.info("Getting friends from Steam API")
@@ -466,16 +478,14 @@ def build_cache(
         if True:
             from_steam_api_updated = True
         if friends_from_steam_api_updated:
-            cache["last_updated"]["from_steam_api"] = datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
+            cache["last_updated"]["from_steam_api"] = datetime_to_timestamp()
             save_cache(cache)
         """
         if len(app_icons_to_download) >= 1:
             log.info(f"Downloading {len(app_icons_to_download)} Steam app icons")
             for download in app_icons_to_download:
                 download_steam_app_icon(download[0], download[1])
-    cache["last_updated"]["cache"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cache["last_updated"]["cache"] = datetime_to_timestamp()
     save_cache(cache, preferences)
     log.info("Steam extension cache built")
 
