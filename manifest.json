@@ -72,7 +72,7 @@
             "id": "SORT_KEYS",
             "type": "input",
             "name": "Sort keys",
-            "description": "Separated by commas in priority order. appid,name,description,non_steam,ulaunched_last,ulaunched_times",
+            "description": "The values to use for sorting, separated by commas in priority order",
             "default_value": "ulaunched_last,ulaunched_times,name,description"
         },
         {
