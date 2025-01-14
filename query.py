@@ -365,7 +365,9 @@ def query_cache(
                     ).replace("%a", name)
                 total_playtime: int = app_info.get("total_playtime", 0)
                 icon: str | None = None
-                icon_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id_int}.jpg"
+                icon_path: str = (
+                    f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id_int}.jpg"
+                )
                 if isfile(icon_path):
                     icon = icon_path
                 last_launched: datetime | None
@@ -387,7 +389,9 @@ def query_cache(
                         times_launched=times_launched,
                     )
                 )
-        if "non_steam_apps" in cache.keys() and isinstance(cache["non_steam_apps"], dict):
+        if "non_steam_apps" in cache.keys() and isinstance(
+            cache["non_steam_apps"], dict
+        ):
             for app_id, app_info in cache["non_steam_apps"].items():
                 app_id_int: int
                 try:
@@ -428,7 +432,9 @@ def query_cache(
                     )
                 )
     if keyword in (preferences["KEYWORD"], preferences["KEYWORD_APPS"]):
-        if "steam_navs" not in cache.keys() or not isinstance(cache["steam_navs"], dict):
+        if "steam_navs" not in cache.keys() or not isinstance(
+            cache["steam_navs"], dict
+        ):
             log.warning("cache.json does not contain valid 'steam_navs' key")
             cache["steam_navs"] = {}
         for name in STEAM_NAVIGATIONS:
@@ -450,7 +456,9 @@ def query_cache(
                     ids = [int(app_id) for app_id in cache["steam_apps"].keys()]
                 else:
                     log.warning(
-                        "cache.json does not contain any valid Steam apps", exc_info=True)
+                        "cache.json does not contain any valid Steam apps",
+                        exc_info=True,
+                    )
                     ids = []
             elif keyword == preferences["KEYWORD_APPS"]:
                 continue
@@ -469,7 +477,9 @@ def query_cache(
                     id_display_name = nav_display_name.replace("%a", app_name)
                     if id_description is not None:
                         id_description = id_description.replace("%a", app_name)
-                    icon_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{id}.jpg"
+                    icon_path: str = (
+                        f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{id}.jpg"
+                    )
                     if isfile(icon_path):
                         icon = icon_path
                 last_launched: datetime | None = None
@@ -502,7 +512,9 @@ def query_cache(
                     lang,
                     type="action",
                     name=name,
-                    display_name=get_lang_string(lang, preferences["LANGUAGE_CODE"], name),
+                    display_name=get_lang_string(
+                        lang, preferences["LANGUAGE_CODE"], name
+                    ),
                     description=get_lang_string(
                         lang, preferences["LANGUAGE_CODE"], f"{name}%d"
                     ),

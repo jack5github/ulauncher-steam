@@ -83,9 +83,7 @@ def download_steam_app_icon(app_id: int, icon_hash: str) -> None:
         f"http://media.steampowered.com/steamcommunity/public/images/apps/{app_id}/{icon_hash}.jpg"
     )
     try:
-        urlretrieve(
-            icon_url, f"{app_images_path}{app_id}.jpg"
-        )
+        urlretrieve(icon_url, f"{app_images_path}{app_id}.jpg")
     except HTTPError:
         log.warning(
             f"Failed to download Steam icon for app ID {app_id} at '{icon_url}'",
@@ -272,9 +270,7 @@ def clear_cache() -> None:
     remove(f"{EXTENSION_PATH}cache.json")
 
 
-def build_cache(
-    preferences: dict[str, Any], force: bool = False
-) -> None:
+def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
     """
     Builds the Steam extension cache, saving it to cache.json. This includes non-Steam apps, installed Steam apps and owned Steam apps.
 

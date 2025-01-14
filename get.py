@@ -243,9 +243,12 @@ def get_non_steam_apps(
                 buffer[exe_start:cursor].decode(errors="ignore").strip('"')
             )
             if os.name != "nt":
-                exe = subprocess_check_output(f"type {exe}", shell=True).decode().split(
-                    " is "
-                )[1].strip()
+                exe = (
+                    subprocess_check_output(f"type {exe}", shell=True)
+                    .decode()
+                    .split(" is ")[1]
+                    .strip()
+                )
             size_on_disk: int | None = None
             if isfile(exe):
                 size_on_disk = getsize(exe)

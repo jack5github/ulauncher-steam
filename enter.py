@@ -23,7 +23,10 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         cache_app: dict[str, Any]
         if "steam_apps" in cache.keys() and str(app_id) in cache["steam_apps"].keys():
             cache_app = cache["steam_apps"][str(app_id)]
-        elif "non_steam_apps" in cache.keys() and str(app_id) in cache["non_steam_apps"].keys():
+        elif (
+            "non_steam_apps" in cache.keys()
+            and str(app_id) in cache["non_steam_apps"].keys()
+        ):
             cache_app = cache["non_steam_apps"][str(app_id)]
         else:
             log.error(f"Cannot execute '{action}', app ID {app_id} not found in cache")
@@ -71,9 +74,10 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
     save_cache(cache, preferences)
     build_cache(preferences)
 
+
 if __name__ == "__main__":
     from const import get_preferences_from_env
     import sys
 
     preferences: dict[str, Any] = get_preferences_from_env()
-    execute_action(" ".join(sys.argv[1:], preferences)
+    execute_action(" ".join(sys.argv[1:]), preferences)
