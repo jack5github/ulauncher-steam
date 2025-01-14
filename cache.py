@@ -289,7 +289,7 @@ def save_cache(cache: dict[str, Any], preferences: dict[str, Any]) -> None:
             )
         log.debug("Saved cache.json")
     except Exception:
-        log.error("Failed to save cache.json", exc_info=True)
+        log.error(f"Failed to save cache.json: {cache}", exc_info=True)
 
 
 def clear_cache() -> None:
@@ -493,9 +493,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                         }
                     from_files_updated = True
             if from_files_updated:
-                cache["last_updated"]["from_files"] = datetime_to_timestamp(
-                    datetime.now()
-                )
+                cache["last_updated"]["from_files"] = datetime_to_timestamp()
                 save_cache(cache, preferences)
     if update_from_steam_api or force:
         log.info("Getting owned Steam apps from Steam API")
@@ -543,7 +541,9 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             cache_friend: dict[str, Any] = ensure_dict_key_is_dict(
                 cache["friends"], str(friend_id)
             )[0]
-            cache_friend["friend_since"] = friend_info["friend_since"]
+            cache_friend["friend_since"] = datetime_to_timestamp(
+                friend_info["friend_since"]
+            )
         if len(steam_friends_list) >= 1:
             from_steam_api_updated = True
         log.info("Getting friends info from Steam API")

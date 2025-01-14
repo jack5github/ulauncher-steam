@@ -551,7 +551,7 @@ if __name__ == "__main__":
             "\n".join(
                 f"{k} {v}"
                 for k, v in get_installed_steam_apps(
-                    f"{preferences["STEAM_FOLDER"]}steamapps", app_blacklist
+                    f"{preferences['STEAM_FOLDER']}steamapps", app_blacklist
                 ).items()
             )
         )
@@ -560,7 +560,7 @@ if __name__ == "__main__":
             "\n".join(
                 f"{k} {v}"
                 for k, v in get_non_steam_apps(
-                    f"{preferences["STEAM_FOLDER"]}userdata{DIR_SEP}{preferences["STEAM_USERDATA_ID"]}{DIR_SEP}config{DIR_SEP}shortcuts.vdf",
+                    f"{preferences['STEAM_FOLDER']}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf",
                     app_blacklist,
                 ).items()
             )

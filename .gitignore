@@ -1,6 +1,7 @@
 __pycache__
 .vscode
 images/apps
+images/friends
 rnd
 venv
 .env
