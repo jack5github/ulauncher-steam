@@ -1,5 +1,5 @@
 from const import DEFAULT_ICON, DIR_SEP, EXTENSION_PATH, get_logger
-from datetime import datetime
+from datetime import datetime, timezone
 from logging import Logger
 from typing import Any, Literal
 
@@ -15,16 +15,19 @@ class SteamExtensionItem:
         self,
         preferences: dict[str, Any],
         lang: dict[str, dict[str, str]],
-        type: Literal["app", "nav", "action"],
+        type: Literal["app", "friend", "nav", "action"],
         id: int | None = None,
         non_steam: bool = False,
         name: str | None = None,
         display_name: str | None = None,
+        real_name: str | None = None,
         description: str | None = None,
+        time_created: datetime | None = None,
         location: str | None = None,
         size_on_disk: int = 0,
         total_playtime: int = 0,
         icon: str | None = None,
+        last_updated: datetime | None = None,
         last_launched: datetime | None = None,
         times_launched: int = 0,
     ) -> None:
@@ -34,27 +37,32 @@ class SteamExtensionItem:
         Args:
             preferences (dict[str, Any]): The preferences dictionary.
             lang (dict[str, dict[str, str]]): The language dictionary.
-            type (Literal["app", "nav", "action"]): The type of the item.
+            type (Literal["app", "friend", "nav", "action"]): The type of the item.
             id (int | None, optional): The ID of the item, whether app ID or steamid64. Defaults to None.
             non_steam (bool, optional): Whether this is a non-Steam application. Defaults to False.
             name (str | None, optional): The name of the item, which may be an action ID in the case of navigations and actions. Defaults to None.
             display_name (str | None, optional): The display name of the item, not to be confused with get_name(). Defaults to None.
+            real_name (str | None, optional): The real name of the friend, not to be confused with get_name(). Defaults to None.
             description (str | None, optional): The description of the item, not to be confused with get_description(). Defaults to None.
+            time_created (datetime | None, optional): The time the item was created on the Steam servers. Defaults to None.
             location (str | None, optional): The location of the item on disk. Defaults to None.
             size_on_disk (int, optional): The size of the item on disk in bytes. Defaults to 0.
             total_playtime (int, optional): The total playtime of the item in minutes. Defaults to 0.
             icon (str | None, optional): The path to the icon of the item, must include the extension path. If None, the default icon will be used. Defaults to None.
+            last_updated (datetime | None, optional): The last time the item was updated. Defaults to None.
             last_launched (datetime | None, optional): The last time the item was launched. Defaults to None.
             times_launched (int, optional): The number of times the item has been launched. Defaults to 0.
         """
         self.preferences: dict[str, Any] = preferences
         self.lang: dict[str, dict[str, str]] = lang
-        self.type: Literal["app", "nav", "action"] = type
+        self.type: Literal["app", "friend", "nav", "action"] = type
         self.id: int | None = id
         self.non_steam: bool = non_steam
         self.name: str | None = name
         self.display_name: str | None = display_name
+        self.real_name: str | None = real_name
         self.description: str | None = description
+        self.time_created: datetime | None = time_created
         self.location: str | None = location
         self.size_on_disk: int = size_on_disk
         self.total_playtime: int = total_playtime
@@ -66,6 +74,7 @@ class SteamExtensionItem:
                 log.error(
                     f"Icon path '{icon}' does not start with '{EXTENSION_PATH}', ignoring"
                 )
+        self.last_updated: datetime | None = last_updated
         self.last_launched: datetime | None = last_launched
         self.times_launched: int = times_launched
 
@@ -109,17 +118,22 @@ class SteamExtensionItem:
             str: The description string of the SteamExtensionItem to display in uLauncher.
         """
         description: str = ""
+
+        def add_divider() -> None:
+            nonlocal description
+
+            if description != "":
+                description += " | "
+
         if self.type == "app":
             location_added: bool = False
             if self.total_playtime > 0:
                 description += f"{self.total_playtime / 60:.1f} hrs"
             if self.last_launched is not None:
-                if description != "":
-                    description += " | "
+                add_divider()
                 description += datetime.strftime(self.last_launched, "%b %d, %Y")
             if self.location is not None:
-                if description != "":
-                    description += " | "
+                add_divider()
                 description += f"{self.location.lstrip(DIR_SEP).split(DIR_SEP)[0]}"
                 location_added = True
             if self.size_on_disk > 0:
@@ -127,8 +141,8 @@ class SteamExtensionItem:
                     if not description.endswith(":"):
                         description += ":"
                     description += " "
-                elif description != "":
-                    description += " | "
+                else:
+                    add_divider()
                 if self.size_on_disk < 1000:
                     description += f"{self.size_on_disk} B"
                 elif self.size_on_disk < 1000**2:
@@ -139,6 +153,12 @@ class SteamExtensionItem:
                     description += f"{self.size_on_disk / 1000 ** 3:.2f} GB"
                 else:
                     description += f"{self.size_on_disk / 1000 ** 4:.2f} TB"
+        elif self.type == "friend":
+            if self.real_name is not None:
+                description += self.real_name
+            if self.location is not None:
+                add_divider()
+                description += self.location
         elif self.description is not None:
             description: str = self.description
         return description
@@ -173,11 +193,21 @@ class SteamExtensionItem:
                         if self.display_name is not None
                         else "ÿÿ"
                     )
+                elif sort_key == "real_name":
+                    sort_list.append(
+                        self.real_name.lower() if self.real_name is not None else "ÿÿ"
+                    )
                 elif sort_key == "description":
                     sort_list.append(
                         self.description.lower()
                         if self.description is not None
                         else "ÿÿ"
+                    )
+                elif sort_key == "time_created":
+                    sort_list.append(
+                        -datetime.timestamp(self.time_created)
+                        if self.time_created is not None
+                        else 0
                     )
                 elif sort_key == "location":
                     sort_list.append(
@@ -190,6 +220,12 @@ class SteamExtensionItem:
                 elif sort_key == "icon":
                     sort_list.append(
                         self.icon.lower() if self.icon is not None else "ÿÿ"
+                    )
+                elif sort_key == "last_updated":
+                    sort_list.append(
+                        -datetime.timestamp(self.last_updated)
+                        if self.last_updated is not None
+                        else 0
                     )
                 elif sort_key == "last_launched":
                     sort_list.append(
@@ -210,7 +246,7 @@ class SteamExtensionItem:
 
     def get_action(self) -> str:
         """
-        Returns the script action of the SteamExtensionItem. If the type is "app", the "steam://rungameid/{id}" action is returned, if the type is "nav", the item's name as a Steam protocol is returned. Otherwise, the item's name is returned. All actions are preceded by their type in uppercase, except for the "action" type.
+        Returns the script action of the SteamExtensionItem. If the type is "app", the "steam://rungameid/{id}" action is returned. If the type is "friend", the item's steamid64 is returned. If the type is "nav", the item's name as a Steam protocol is returned. Otherwise, the item's name is returned. All actions are preceded by their type in uppercase, except for the "action" type.
 
         Returns:
             str: The script action of the SteamExtensionItem.
@@ -218,9 +254,11 @@ class SteamExtensionItem:
         action: str = str(self.name)
         if self.type == "app":
             action = f"steam://rungameid/{self.id}"
+        elif self.type == "friend":
+            action = str(self.id)
         elif self.type == "nav":
             action = f"steam://{self.name}"
-        else:
+        elif self.type == "action":
             return action
         action = f"{self.type.upper()}{action}"
         return action
@@ -269,6 +307,26 @@ def get_lang_string(
     return str(lang[DEFAULT_LANGUAGE][key])
 
 
+def timestamp_to_datetime(info: dict[str, Any], key: str) -> datetime | None:
+    """
+    Converts a timestamp in a dictionary to a datetime object.
+
+    Args:
+        info (dict[str, Any]): The dictionary theoretically containing the timestamp.
+        key (str): The key of the timestamp in the dictionary.
+
+    Returns:
+        datetime | None: The datetime object, or None if the timestamp is not found.
+    """
+    date: datetime | None = None
+    timestamp: int | None = info.get(key)
+    if timestamp is not None:
+        date = datetime.fromtimestamp(timestamp, timezone.utc)
+        # TODO: Implement basic timezone support?
+        # last_launched = last_launched.astimezone()
+    return date
+
+
 def query_cache(
     keyword: str, preferences: dict[str, Any], search: str | None = None
 ) -> list[SteamExtensionItem]:
@@ -303,29 +361,20 @@ def query_cache(
         log.error("Failed to read lang.json", exc_info=True)
     log.debug("Getting blacklists from preferences")
     app_blacklist: list[int] = get_blacklist("app", preferences)
-    """
     friend_blacklist: list[int] = get_blacklist("friend", preferences)
-    """
     items: list[SteamExtensionItem] = []
 
     def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
         """
-        Returns the last time the app was launched and the number of times it has been launched from an item dictionary's values.
+        Returns the last time an item was launched and the number of times it has been launched from an item dictionary's values.
 
         Args:
             info (dict[str, Any]): The item dictionary.
 
         Returns:
-            tuple[datetime | None, int]: The last time the app was launched and the number of times it has been launched.
+            tuple[datetime | None, int]: The last time the item was launched and the number of times it has been launched.
         """
-        from datetime import timezone
-
-        last_launched: datetime | None = None
-        last_launched_int: int | None = info.get("last_launched")
-        if last_launched_int is not None:
-            last_launched = datetime.fromtimestamp(last_launched_int, timezone.utc)
-            # TODO: Implement basic timezone support?
-            # last_launched = last_launched.astimezone()
+        last_launched: datetime | None = timestamp_to_datetime(info, "last_launched")
         times_launched: int = info.get("times_launched", 0)
         return last_launched, times_launched
 
@@ -431,7 +480,73 @@ def query_cache(
                         times_launched=times_launched,
                     )
                 )
-    if keyword in (preferences["KEYWORD"], preferences["KEYWORD_APPS"]):
+    if (
+        keyword in (preferences["KEYWORD"], preferences["KEYWORD_FRIENDS"])
+        and "friends" in cache.keys()
+        and isinstance(cache["friends"], dict)
+    ):
+        for friend_id, friend_info in cache["friends"].items():
+            friend_id_int: int
+            try:
+                friend_id_int = int(friend_id)
+            except Exception:
+                log.error(f"Invalid friend ID '{friend_id}'", exc_info=True)
+                continue
+            if friend_id_int in friend_blacklist:
+                log.debug(f"Skipping blacklisted friend ID {friend_id_int}")
+                continue
+            if not isinstance(friend_info, dict):
+                log.error(
+                    f"Invalid dictionary for Steam friend ID {friend_id_int}: {friend_info}",
+                    exc_info=True,
+                )
+                continue
+            name: str = friend_info["name"]
+            real_name: str | None = friend_info["real_name"]
+            time_created: datetime | None = friend_info.get("time_created")
+            location: str | None = None
+            if "country" in friend_info.keys():
+                location = friend_info["country"]
+                if "state" in friend_info.keys():
+                    location = f"{friend_info['state']}, {location}"
+                    if "city" in friend_info.keys():
+                        location = f"{friend_info['city']}, {location}"
+            icon: str | None = None
+            icon_path: str = (
+                f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{app_id_int}.jpg"
+            )
+            if isfile(icon_path):
+                icon = icon_path
+            last_updated: datetime | None = timestamp_to_datetime(
+                friend_info, "last_updated"
+            )
+            time_created: datetime | None = timestamp_to_datetime(
+                friend_info, "time_created"
+            )
+            last_launched: datetime | None
+            times_launched: int
+            last_launched, times_launched = get_launches(friend_info)
+            items.append(
+                SteamExtensionItem(
+                    preferences,
+                    lang,
+                    type="friend",
+                    id=friend_id_int,
+                    name=name,
+                    real_name=real_name,
+                    time_created=time_created,
+                    location=location,
+                    icon=icon,
+                    last_updated=last_updated,
+                    last_launched=last_launched,
+                    times_launched=times_launched,
+                )
+            )
+    if keyword in (
+        preferences["KEYWORD"],
+        preferences["KEYWORD_APPS"],
+        preferences["KEYWORD_FRIENDS"],
+    ):
         if "steam_navs" not in cache.keys() or not isinstance(
             cache["steam_navs"], dict
         ):
@@ -449,7 +564,10 @@ def query_cache(
             except KeyError:
                 pass
             ids: list[int | None] = [None]
-            if "%a" in name:
+            if "%a" in name and keyword in (
+                preferences["KEYWORD"],
+                preferences["KEYWORD_APPS"],
+            ):
                 if "steam_apps" in cache.keys() and isinstance(
                     cache["steam_apps"], dict
                 ):
@@ -460,13 +578,29 @@ def query_cache(
                         exc_info=True,
                     )
                     ids = []
-            elif keyword == preferences["KEYWORD_APPS"]:
+            elif "%f" in name and keyword in (
+                preferences["KEYWORD"],
+                preferences["KEYWORD_FRIENDS"],
+            ):
+                if "friends" in cache.keys() and isinstance(cache["friends"], dict):
+                    ids = [int(friend_id) for friend_id in cache["friends"].keys()]
+                else:
+                    log.warning(
+                        "cache.json does not contain any valid Steam friends",
+                        exc_info=True,
+                    )
+                    ids = []
+            elif keyword in (
+                preferences["KEYWORD_APPS"],
+                preferences["KEYWORD_FRIENDS"],
+            ):
                 continue
             for id in ids:
                 if id in app_blacklist:
                     log.debug(f"Skipping blacklisted app ID {id}")
                     continue
-                id_name: str = name.replace("%a", str(id))
+                for modifier in ("%a", "%f"):
+                    id_name: str = name.replace(modifier, str(id))
                 id_display_name: str = nav_display_name
                 id_description: str | None = description
                 icon: str | None = None
@@ -479,6 +613,18 @@ def query_cache(
                         id_description = id_description.replace("%a", app_name)
                     icon_path: str = (
                         f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{id}.jpg"
+                    )
+                    if isfile(icon_path):
+                        icon = icon_path
+                elif "%f" in name:
+                    friend_name: str = str(id)
+                    if "name" in cache["friends"][str(id)].keys():
+                        friend_name = str(cache["friends"][str(id)]["name"])
+                    id_display_name = nav_display_name.replace("%f", friend_name)
+                    if id_description is not None:
+                        id_description = id_description.replace("%f", friend_name)
+                    icon_path: str = (
+                        f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{id}.jpg"
                     )
                     if isfile(icon_path):
                         icon = icon_path

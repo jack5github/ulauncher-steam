@@ -424,9 +424,10 @@ class SteamFriendInfo(TypedDict):
     A dictionary representation of a Steam friend from the Steam API when retrieving their info.
     """
 
-    name: str
-    icon_hash: str
-    last_updated: datetime
+    # TODO: Add nickname support
+    name: str | None
+    icon_hash: str | None
+    last_updated: datetime | None
     real_name: str | None
     time_created: datetime | None
     country: str | None
@@ -464,17 +465,24 @@ def get_steam_friends_info(
             log.error("Failed to retrieve friends info from Steam API", exc_info=True)
         for steam_friend_info in steam_friend_info_response:
             steamid64: int = int(steam_friend_info["steamid"])
-            name: str = steam_friend_info["personaname"]
-            icon_hash: str = steam_friend_info["avatarhash"]
-            last_updated: datetime = datetime.fromtimestamp(
-                steam_friend_info["lastlogoff"]
-            )
+            name: str | None = steam_friend_info["personaname"]
+            icon_hash: str | None = None
+            if (
+                steam_friend_info["avatarhash"]
+                != "fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb"
+            ):
+                icon_hash = steam_friend_info["avatarhash"]
+            last_updated: datetime | None = None
             real_name: str | None = None
             time_created: datetime | None = None
             country: str | None = None
             state: str | None = None
             city: str | None = None
             if steam_friend_info["communityvisibilitystate"] == 3:
+                if "lastlogoff" in steam_friend_info.keys():
+                    last_updated = datetime.fromtimestamp(
+                        steam_friend_info["lastlogoff"]
+                    )
                 if "realname" in steam_friend_info.keys():
                     real_name = steam_friend_info["realname"]
                 time_created = datetime.fromtimestamp(steam_friend_info["timecreated"])

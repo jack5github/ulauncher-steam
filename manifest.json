@@ -20,11 +20,18 @@
             "default_value": "sa"
         },
         {
+            "id": "KEYWORD_FRIENDS",
+            "type": "keyword",
+            "name": "Steam friends",
+            "description": "Search through Steam friends",
+            "default_value": "sf"
+        },
+        {
             "id": "KEYWORD_ACTIONS",
             "type": "keyword",
             "name": "Steam extension actions",
             "description": "Search through Steam extension actions",
-            "default_value": "ss"
+            "default_value": "se"
         },
         {
             "id": "STEAM_FOLDER",
@@ -53,6 +60,17 @@
             "name": "Steam ID",
             "description": "64-bit Steam ID to use when fetching data (found at store.steampowered.com/account)",
             "default_value": ""
+        },
+        {
+            "id": "FRIEND_DEFAULT_ACTION",
+            "type": "select",
+            "name": "Default friend action",
+            "description": "The default action to perform when a friend is selected",
+            "default_value": "chat",
+            "options": [
+                {"value": "chat", "text": "Open chat window"},
+                {"value": "profile", "text": "Open Steam profile"}
+            ]
         },
         {
             "id": "UPDATE_FROM_FILES_DELAY",

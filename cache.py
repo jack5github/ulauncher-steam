@@ -3,7 +3,6 @@ This module contains functions for building and saving the Steam extension cache
 
 The cache dictionary is saved to a JSON file named "cache.json" in the extension directory. It has the following structure:
 {
-    # TODO: Store times as timestamps
     "last_updated": {
         "from_files": TIMESTAMP,
         "from_steam_api": TIMESTAMP,
@@ -33,8 +32,16 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
     "friends": {
         "STEAMID64": {
             "name": "NAME",
-            "avatar_url": "URL",
-            "nickname": "NICKNAME"
+            "friend_since": TIMESTAMP,
+            "icon_hash": "ICON_HASH",
+            "last_updated": TIMESTAMP,
+            "real_name": "REAL_NAME",
+            "time_created": TIMESTAMP,
+            "country": "COUNTRY",
+            "state": "STATE",
+            "city": "CITY",
+            "last_launched": TIMESTAMP,
+            "times_launched": 0
         }
     }
     "steam_navs": {
@@ -55,9 +62,11 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
 from const import DIR_SEP, EXTENSION_PATH, get_logger
 from datetime import datetime, timedelta
 from logging import Logger
-from os import remove
+from os import makedirs, remove
 from os.path import isdir, isfile
 from typing import Any, Literal
+from urllib.error import HTTPError
+from urllib.request import urlretrieve
 
 log: Logger = get_logger(__name__)
 
@@ -70,10 +79,6 @@ def download_steam_app_icon(app_id: int, icon_hash: str) -> None:
         appid (int): The ID of the Steam app.
         icon_hash (str): The hash of the icon of the Steam app.
     """
-    from os import makedirs
-    from urllib.error import HTTPError
-    from urllib.request import urlretrieve
-
     app_images_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}"
     if not isdir(app_images_path):
         makedirs(app_images_path)
@@ -87,6 +92,29 @@ def download_steam_app_icon(app_id: int, icon_hash: str) -> None:
     except HTTPError:
         log.warning(
             f"Failed to download Steam icon for app ID {app_id} at '{icon_url}'",
+            exc_info=True,
+        )
+
+
+def download_steam_friend_icon(steamid64: int, icon_hash: str) -> None:
+    """
+    Downloads the Steam icon for the given Steam ID and hash and saves it to the images/friends folder.
+
+    Args:
+        steamid64 (int): The Steam ID of the Steam friend.
+        icon_hash (str): The hash of the icon of the Steam friend.
+    """
+    friend_images_path: str = f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}"
+    if not isdir(friend_images_path):
+        makedirs(friend_images_path)
+    if isfile(f"{friend_images_path}{steamid64}.jpg"):
+        remove(f"{friend_images_path}{steamid64}.jpg")
+    icon_url: str = f"http://avatars.steamstatic.com/{icon_hash}_full.jpg"
+    try:
+        urlretrieve(icon_url, f"{friend_images_path}{steamid64}.jpg")
+    except HTTPError:
+        log.warning(
+            f"Failed to download Steam icon for steamid64 {steamid64} at '{icon_url}'",
             exc_info=True,
         )
 
@@ -285,9 +313,13 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         get_installed_steam_apps,
         get_non_steam_apps,
         get_owned_steam_apps,
+        get_steam_friends_info,
+        get_steam_friends_list,
         InstalledSteamApp,
         NonSteamApp,
         OwnedSteamApp,
+        SteamFriendFromList,
+        SteamFriendInfo,
     )
 
     check_required_preferences(preferences)
@@ -295,9 +327,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
     cache: dict[str, Any] = load_cache()
     log.debug("Getting blacklists from preferences")
     app_blacklist: list[int] = get_blacklist("app", preferences)
-    """
     friend_blacklist: list[int] = get_blacklist("friend", preferences)
-    """
     log.debug("Getting delays from preferences")
     update_from_files: bool = True
     update_from_steam_api: bool = True
@@ -500,19 +530,66 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         if from_steam_api_updated:
             cache["last_updated"]["from_steam_api"] = datetime_to_timestamp()
             save_cache(cache, preferences)
-        """
-        log.info("Getting friends from Steam API")
-        # TODO: Get friends from Steam API
-        if True:
+        log.info("Getting friends list from Steam API")
+        steam_friends_list: dict[int, SteamFriendFromList] = {}
+        try:
+            steam_friends_list = get_steam_friends_list(
+                preferences["STEAM_API_KEY"], int(preferences["STEAMID64"])
+            )
+        except Exception:
+            log.error("Failed to get Steam friends list", exc_info=True)
+        ensure_dict_key_is_dict(cache, "friends")
+        for friend_id, friend_info in steam_friends_list.items():
+            cache_friend: dict[str, Any] = ensure_dict_key_is_dict(
+                cache["friends"], str(friend_id)
+            )[0]
+            cache_friend["friend_since"] = friend_info["friend_since"]
+        if len(steam_friends_list) >= 1:
             from_steam_api_updated = True
-        if friends_from_steam_api_updated:
+        log.info("Getting friends info from Steam API")
+        steam_friends_info: dict[int, SteamFriendInfo] = {}
+        try:
+            steam_friends_info = get_steam_friends_info(
+                preferences["STEAM_API_KEY"], list(steam_friends_list.keys())
+            )
+        except Exception:
+            log.error("Failed to get Steam friends info", exc_info=True)
+        friend_icons_to_download: list[tuple[int, str]] = []
+        for friend_id, friend_info in steam_friends_info.items():
+            cache_friend: dict[str, Any] = ensure_dict_key_is_dict(
+                cache["friends"], str(friend_id)
+            )[0]
+            cache_friend["name"] = friend_info["name"]
+            if friend_info["icon_hash"] is not None:
+                cache_friend["icon_hash"] = friend_info["icon_hash"]
+                friend_icons_to_download.append((friend_id, cache_friend["icon_hash"]))
+            if friend_info["last_updated"] is not None:
+                cache_friend["last_updated"] = datetime_to_timestamp(
+                    friend_info["last_updated"]
+                )
+            if friend_info["real_name"] is not None:
+                cache_friend["real_name"] = friend_info["real_name"]
+            if friend_info["time_created"] is not None:
+                cache_friend["time_created"] = datetime_to_timestamp(
+                    friend_info["time_created"]
+                )
+            if friend_info["country"] is not None:
+                cache_friend["country"] = friend_info["country"]
+            if friend_info["state"] is not None:
+                cache_friend["state"] = friend_info["state"]
+            if friend_info["city"] is not None:
+                cache_friend["city"] = friend_info["city"]
+        if from_steam_api_updated:
             cache["last_updated"]["from_steam_api"] = datetime_to_timestamp()
-            save_cache(cache)
-        """
+            save_cache(cache, preferences)
         if len(app_icons_to_download) >= 1:
             log.info(f"Downloading {len(app_icons_to_download)} Steam app icons")
             for download in app_icons_to_download:
                 download_steam_app_icon(download[0], download[1])
+        if len(friend_icons_to_download) >= 1:
+            log.info(f"Downloading {len(friend_icons_to_download)} Steam friend icons")
+            for download in friend_icons_to_download:
+                download_steam_friend_icon(download[0], download[1])
     cache["last_updated"]["cache"] = datetime_to_timestamp()
     save_cache(cache, preferences)
     log.info("Steam extension cache built")

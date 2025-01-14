@@ -39,6 +39,33 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
             cache_app["times_launched"] += 1
         else:
             cache_app["times_launched"] = 1
+    elif action.startswith("FRIEND"):
+        friend_id: int = int(action[6:])
+        cache_friend: dict[str, Any]
+        if "friends" in cache.keys() and str(friend_id) in cache["friends"].keys():
+            cache_friend = cache["friends"][str(friend_id)]
+        else:
+            log.error(
+                f"Cannot execute action, friend ID {friend_id} not found in cache"
+            )
+            return
+        friend_action: str
+        if preferences["FRIEND_DEFAULT_ACTION"] == "chat":
+            friend_action = f"steam steam://joinchat/{friend_id}"
+        elif preferences["FRIEND_DEFAULT_ACTION"] == "profile":
+            friend_action = f"steam steam://url/SteamIDPage/{friend_id}"
+        else:
+            log.error(
+                f"Unknown default friend action '{preferences['FRIEND_DEFAULT_ACTION']}'"
+            )
+            return
+        log.info(f"Launching friend ID {friend_id} via '{friend_action}'")
+        SubprocessPopen(friend_action, shell=True)
+        cache_friend["last_launched"] = datetime.now().timestamp()
+        if "times_launched" in cache_friend.keys():
+            cache_friend["times_launched"] += 1
+        else:
+            cache_friend["times_launched"] = 1
     elif action.startswith("NAV"):
         nav_action: str = f"steam {action[3:]}"
         log.info(f"Launching navigation '{nav_action}'")
