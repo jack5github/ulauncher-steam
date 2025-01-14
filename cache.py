@@ -57,7 +57,7 @@ from datetime import datetime, timedelta
 from logging import Logger
 from os import remove
 from os.path import isdir, isfile
-from typing import Any
+from typing import Any, Literal
 
 log: Logger = get_logger(__name__)
 
@@ -114,12 +114,14 @@ def load_cache() -> dict[str, Any]:
     return cache
 
 
-def get_blacklist(type: str, preferences: dict[str, Any]) -> list[int]:
+def get_blacklist(
+    type: Literal["app", "friend"], preferences: dict[str, Any]
+) -> list[int]:
     """
     Returns a list of IDs from the specified blacklist property in the preferences dictionary, provided they are integers separated by commas.
 
     Args:
-        type (str): The type of blacklist to retrieve, whether "app" or "friend".
+        type (Literal["app", "friend"]): The type of blacklist to retrieve.
         preferences (dict[str, Any]): The preferences dictionary.
 
     Returns:

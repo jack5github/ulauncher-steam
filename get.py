@@ -8,7 +8,7 @@ This module contains functions for retrieving data from Steam for the purposes o
 from const import get_logger
 from datetime import datetime
 from logging import Logger
-from typing import TypeAlias, TypedDict, Union
+from typing import Any, TypeAlias, TypedDict, Union
 
 log: Logger = get_logger(__name__)
 
@@ -195,7 +195,6 @@ def get_non_steam_apps(
     import os
     from os.path import getsize, isfile
     from subprocess import check_output as subprocess_check_output
-    from typing import Any
 
     non_steam_apps: dict[int, NonSteamApp] = {}
     buffer: bytearray
@@ -355,3 +354,50 @@ def get_owned_steam_apps(api_key: str, steamid64: str) -> dict[int, OwnedSteamAp
             icon_hash=icon_hash,
         )
     return owned_steam_apps
+
+
+if __name__ == "__main__":
+    from cache import get_blacklist
+    from const import DIR_SEP, get_preferences_from_env
+
+    preferences: dict[str, Any] = get_preferences_from_env()
+    app_blacklist: list[int] = get_blacklist("app", preferences)
+    option: str = input(
+        "\n".join(
+            (
+                "Enter an option:",
+                "ins - Get installed Steam apps",
+                "non - Get non-Steam apps",
+                "own - Get owned Steam apps\n",
+            )
+        )
+    )
+    if option == "ins":
+        print(
+            "\n".join(
+                f"{k} {v}"
+                for k, v in get_installed_steam_apps(
+                    f"{preferences["STEAM_FOLDER"]}steamapps", app_blacklist
+                ).items()
+            )
+        )
+    elif option == "non":
+        print(
+            "\n".join(
+                f"{k} {v}"
+                for k, v in get_non_steam_apps(
+                    f"{preferences["STEAM_FOLDER"]}userdata{DIR_SEP}{preferences["STEAM_USERDATA_ID"]}{DIR_SEP}config{DIR_SEP}shortcuts.vdf",
+                    app_blacklist,
+                ).items()
+            )
+        )
+    elif option == "own":
+        print(
+            "\n".join(
+                f"{k} {v}"
+                for k, v in get_owned_steam_apps(
+                    preferences["STEAM_API_KEY"],
+                    preferences["STEAMID64"],
+                ).items()
+            )
+        )
