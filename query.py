@@ -502,7 +502,7 @@ def query_cache(
                 )
                 continue
             name: str = friend_info["name"]
-            real_name: str | None = friend_info["real_name"]
+            real_name: str | None = friend_info.get("real_name")
             time_created: datetime | None = friend_info.get("time_created")
             location: str | None = None
             if "country" in friend_info.keys():
@@ -513,7 +513,7 @@ def query_cache(
                         location = f"{friend_info['city']}, {location}"
             icon: str | None = None
             icon_path: str = (
-                f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{app_id_int}.jpg"
+                f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{friend_id_int}.jpg"
             )
             if isfile(icon_path):
                 icon = icon_path
