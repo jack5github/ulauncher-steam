@@ -70,3 +70,10 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         return
     save_cache(cache, preferences)
     build_cache(preferences)
+
+if __name__ == "__main__":
+    from const import get_preferences_from_env
+    import sys
+
+    preferences: dict[str, Any] = get_preferences_from_env()
+    execute_action(" ".join(sys.argv[1:], preferences)
