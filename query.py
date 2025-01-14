@@ -571,6 +571,7 @@ if __name__ == "__main__":
             f"{index + 1}. {item}"
             for index, item in enumerate(
                 query_cache(
+                    preferences["KEYWORD"],
                     preferences,
                     search=" ".join(sys.argv[1:]),
                 )
