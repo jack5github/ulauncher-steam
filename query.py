@@ -322,12 +322,18 @@ def query_cache(
         if not preferences["STEAM_FOLDER"].endswith(DIR_SEP):
             preferences["STEAM_FOLDER"] = f"{preferences['STEAM_FOLDER']}{DIR_SEP}"
         for app_id, app_info in cache["steam_apps"].items():
-            if app_id in app_blacklist:
-                log.debug(f"Skipping blacklisted app ID {app_id}")
+            app_id_int: int = int(app_id)
+            try:
+                app_id_int = int(app_id)
+            except Exception:
+                log.error(f"Invalid app ID '{app_id}'", exc_info=True)
+                continue
+            if app_id_int in app_blacklist:
+                log.debug(f"Skipping blacklisted app ID {app_id_int}")
                 continue
             if not isinstance(app_info, dict):
                 log.error(
-                    f"Invalid dictionary for Steam app ID {app_id}: {app_info}",
+                    f"Invalid dictionary for Steam app ID {app_id_int}: {app_info}",
                     exc_info=True,
                 )
                 continue
@@ -347,7 +353,7 @@ def query_cache(
                 ).replace("%a", name)
             total_playtime: int = app_info.get("total_playtime", 0)
             icon: str | None = None
-            icon_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id}.jpg"
+            icon_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id_int}.jpg"
             if isfile(icon_path):
                 icon = icon_path
             last_launched: datetime | None
@@ -358,7 +364,7 @@ def query_cache(
                     preferences,
                     lang,
                     type="app",
-                    id=int(app_id),
+                    id=app_id_int,
                     name=name,
                     display_name=display_name,
                     location=location,
@@ -371,12 +377,18 @@ def query_cache(
             )
     if "non_steam_apps" in cache.keys() and isinstance(cache["non_steam_apps"], dict):
         for app_id, app_info in cache["non_steam_apps"].items():
-            if app_id in app_blacklist:
-                log.debug(f"Skipping blacklisted app ID {app_id}")
+            app_id_int: int
+            try:
+                app_id_int = int(app_id)
+            except Exception:
+                log.error(f"Invalid app ID '{app_id}'", exc_info=True)
+                continue
+            if app_id_int in app_blacklist:
+                log.debug(f"Skipping blacklisted app ID {app_id_int}")
                 continue
             if not isinstance(app_info, dict):
                 log.error(
-                    f"Invalid dictionary for non-Steam app ID {app_id}: {app_info}",
+                    f"Invalid dictionary for non-Steam app ID {app_id_int}: {app_info}",
                     exc_info=True,
                 )
             name: str = app_info["name"]
@@ -393,7 +405,7 @@ def query_cache(
                     preferences,
                     lang,
                     type="app",
-                    id=int(app_id),
+                    id=app_id_int,
                     non_steam=True,
                     name=name,
                     display_name=non_steam_display_name,
@@ -428,6 +440,9 @@ def query_cache(
                     "cache.json does not contain any valid Steam apps", exc_info=True)
                 ids = []
         for id in ids:
+            if id in app_blacklist:
+                log.debug(f"Skipping blacklisted app ID {id}")
+                continue
             id_name: str = name.replace("%a", str(id))
             id_display_name: str = nav_display_name
             id_description: str | None = description

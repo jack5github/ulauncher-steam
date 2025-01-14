@@ -14,7 +14,8 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         preferences (dict[str, Any]): The preferences dictionary.
     """
     from cache import build_cache, clear_cache, load_cache, save_cache
-    import os
+    from datetime import datetime
+    from subprocess import Popen as SubprocessPopen
 
     cache: dict[str, Any] = load_cache()
     if action.startswith("APP"):
@@ -27,17 +28,18 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         else:
             log.error(f"Cannot execute '{action}', app ID {app_id} not found in cache")
             return
-        log.info(f"Launching app ID {app_id}")
-        os.system(action[3:])
+        app_action: str = f"steam {action[3:]}"
+        log.info(f"Launching app ID {app_id} via '{app_action}'")
+        SubprocessPopen(app_action, shell=True)
         cache_app["last_launched"] = datetime.now().timestamp()
         if "times_launched" in cache_app.keys():
             cache_app["times_launched"] += 1
         else:
             cache_app["times_launched"] = 1
     elif action.startswith("NAV"):
-        nav_action: str = action[3:]
+        nav_action: str = f"steam {action[3:]}"
         log.info(f"Launching navigation '{nav_action}'")
-        os.system(nav_action)
+        SubprocessPopen(nav_action, shell=True)
         if "steam_navs" not in cache.keys():
             cache["steam_navs"] = {}
         if nav_action not in cache["steam_navs"].keys():
@@ -60,6 +62,11 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         log.info("Rebuilding cache")
         clear_cache()
         build_cache(preferences)
+        return
+    elif action == "no_results":
+        return
+    else:
+        log.error(f"Invalid action '{action}'")
         return
     save_cache(cache, preferences)
     build_cache(preferences)
