@@ -192,7 +192,9 @@ def get_non_steam_apps(
         dict[int, NonSteamApp]: A dictionary of NonSteamApp instances for all non-Steam apps, indexed by app ID.
     """
     from binascii import hexlify
+    import os
     from os.path import getsize, isfile
+    from subprocess import check_output as subprocess_check_output
     from typing import Any
 
     non_steam_apps: dict[int, NonSteamApp] = {}
@@ -213,7 +215,6 @@ def get_non_steam_apps(
                 cursor : cursor + len(string)
             ].decode(errors="ignore")
             if cursor_matched:
-                log.debug(f"Found shortcut ID {shortcut_id} key '{string}'")
                 cursor += len(string)
                 cursor_moved = True
             return cursor_matched
@@ -241,6 +242,10 @@ def get_non_steam_apps(
             exe: str | None = (
                 buffer[exe_start:cursor].decode(errors="ignore").strip('"')
             )
+            if os.name != "nt":
+                exe = subprocess_check_output(f"type {exe}", shell=True).decode().split(
+                    " is "
+                )[1].strip()
             size_on_disk: int | None = None
             if isfile(exe):
                 size_on_disk = getsize(exe)

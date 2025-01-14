@@ -55,7 +55,7 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
 from const import DIR_SEP, EXTENSION_PATH, get_logger
 from datetime import datetime, timedelta
 from logging import Logger
-from os.path import isfile
+from os.path import isdir, isfile
 from typing import Any
 
 log: Logger = get_logger(__name__)
@@ -69,18 +69,21 @@ def download_steam_app_icon(app_id: int, icon_hash: str) -> None:
         appid (int): The ID of the Steam app.
         icon_hash (str): The hash of the icon of the Steam app.
     """
-    from os import remove
+    from os import makedirs, remove
     from urllib.error import HTTPError
     from urllib.request import urlretrieve
 
-    if isfile(f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id}.jpg"):
-        remove(f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id}.jpg")
+    app_images_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}"
+    if not isdir(app_images_path):
+        makedirs(app_images_path)
+    if isfile(f"{app_images_path}{app_id}.jpg"):
+        remove(f"{app_images_path}{app_id}.jpg")
     icon_url: str = (
         f"http://media.steampowered.com/steamcommunity/public/images/apps/{app_id}/{icon_hash}.jpg"
     )
     try:
         urlretrieve(
-            icon_url, f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id}.jpg"
+            icon_url, f"{app_images_path}{app_id}.jpg"
         )
     except HTTPError:
         log.warning(
@@ -288,7 +291,6 @@ def build_cache(
         NonSteamApp,
         OwnedSteamApp,
     )
-    from os.path import isdir
 
     check_required_preferences(preferences)
     log.info("Building Steam extension cache")

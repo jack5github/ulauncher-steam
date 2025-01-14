@@ -203,7 +203,7 @@ class SteamExtensionItem:
                     log.warning(f"Sort key '{sort_key}' not recognised")
             if len(sort_list) == 0:
                 log.warning(
-                    f"No valid sort key found in '{sort_keys_str}', defaulting to 'last_launched, total_playtime, name'"
+                    f"No valid sort key found in '{sort_keys_str}', defaulting to 'last_launched,total_playtime,name'"
                 )
                 sort_keys = ["last_launched", "total_playtime", "name"]
         return sort_list
