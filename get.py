@@ -15,7 +15,7 @@ log: Logger = get_logger(__name__)
 NestedStrDict: TypeAlias = dict[str, Union[str, "NestedStrDict"]]
 
 
-def vdf_to_dict(path: str) -> dict[str, NestedStrDict]:
+def _vdf_to_dict(path: str) -> dict[str, NestedStrDict]:
     """
     Converts a file of uncompressed VDF data to a dictionary. This function is not compatible with compressed VDF files.
 
@@ -124,7 +124,7 @@ def get_installed_steam_apps(
             if app_id in app_blacklist:
                 log.debug(f"Skipping blacklisted app ID {app_id}")
                 continue
-            app_vdf: dict[str, NestedStrDict] = vdf_to_dict(
+            app_vdf: dict[str, NestedStrDict] = _vdf_to_dict(
                 path_join(steamapps_folder, appmanifest_file)
             )
             name: str = app_vdf["AppState"]["name"].strip()  # type: ignore
@@ -288,6 +288,42 @@ def get_non_steam_apps(
     return non_steam_apps
 
 
+def _get_response_from_steam_api(url: str) -> dict[str, Any]:
+    """
+    Gets a response from the Steam API.
+
+    Args:
+        url (str): The URL to get the response from.
+
+    Raises:
+        ValueError: If the Steam API key is invalid.
+        ValueError: If the parameters sent to the Steam API are invalid.
+        ConnectionError: If an unknown error occurs with the Steam API.
+
+    Returns:
+        dict[str, Any]: The response from the Steam API.
+    """
+    from http.client import HTTPSConnection
+    from json import loads as json_loads
+
+    conn: HTTPSConnection = HTTPSConnection("api.steampowered.com")
+    conn.request("GET", url)
+    response: bytes = conn.getresponse().read()
+    if (
+        response
+        == b"<html><head><title>Unauthorized</title></head><body><h1>Unauthorized</h1>Access is denied. Retrying will not help. Please verify your <pre>key=</pre> parameter.</body></html>"
+    ):
+        raise ValueError("Steam API key is invalid")
+    elif (
+        response
+        == b"<html><head><title>Bad Request</title></head><body><h1>Bad Request</h1>Please verify that all required parameters are being sent</body></html>"
+    ):
+        raise ValueError("Parameters sent to Steam API are invalid")
+    elif response.startswith(b"<html>"):
+        raise ConnectionError(f"Unknown error with Steam API: {response.decode()}")
+    return json_loads(response)
+
+
 class OwnedSteamApp(TypedDict):
     """
     A dictionary representation of an owned Steam app.
@@ -303,7 +339,7 @@ class OwnedSteamApp(TypedDict):
     icon_hash: str | None
 
 
-def get_owned_steam_apps(api_key: str, steamid64: str) -> dict[int, OwnedSteamApp]:
+def get_owned_steam_apps(api_key: str, steamid64: int) -> dict[int, OwnedSteamApp]:
     """
     Returns a dictionary of owned Steam apps, retrieved from the Steam API.
 
@@ -314,34 +350,19 @@ def get_owned_steam_apps(api_key: str, steamid64: str) -> dict[int, OwnedSteamAp
     Returns:
         dict[int, OwnedSteamApp]: The dictionary of owned Steam apps.
     """
-    from http.client import HTTPSConnection
-    from json import loads as json_loads
-
     log.info(f"Getting owned Steam apps from Steam API for user {steamid64}")
     owned_steam_apps: dict[int, OwnedSteamApp] = {}
     owned_apps_url: str = (
-        "https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key="
-        + api_key
-        + "&steamid="
-        + steamid64
-        + "&include_appinfo=1&include_played_free_games=1&format=json"
+        f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={api_key}&steamid={steamid64}&include_appinfo=1&include_played_free_games=1&format=json"
     )
-    conn: HTTPSConnection = HTTPSConnection("api.steampowered.com")
-    conn.request("GET", owned_apps_url)
-    response: bytes = conn.getresponse().read()
-    if (
-        response
-        == b"<html><head><title>Unauthorized</title></head><body><h1>Unauthorized</h1>Access is denied. Retrying will not help. Please verify your <pre>key=</pre> parameter.</body></html>"
-    ):
-        log.error(f"Steam API key '{api_key}' is invalid")
-        return {}
-    elif (
-        response
-        == b"<html><head><title>Bad Request</title></head><body><h1>Bad Request</h1>Please verify that all required parameters are being sent</body></html>"
-    ):
-        log.error(f"User steamid64 '{steamid64}' is invalid")
-        return {}
-    for owned_steam_app in json_loads(response)["response"]["games"]:
+    owned_apps_response: list[dict[str, Any]] = []
+    try:
+        owned_apps_response = _get_response_from_steam_api(owned_apps_url)["response"][
+            "games"
+        ]
+    except Exception:
+        log.error("Failed to retrieve owned apps from Steam API", exc_info=True)
+    for owned_steam_app in owned_apps_response:
         app_id: int = owned_steam_app["appid"]
         name: str = owned_steam_app["name"].strip()
         total_playtime: int = owned_steam_app["playtime_forever"]
@@ -356,6 +377,127 @@ def get_owned_steam_apps(api_key: str, steamid64: str) -> dict[int, OwnedSteamAp
     return owned_steam_apps
 
 
+class SteamFriendFromList(TypedDict):
+    """
+    A dictionary representation of a Steam friend from the Steam API when retrieving a list of friends.
+    """
+
+    friend_since: datetime
+
+
+def get_steam_friends_list(
+    api_key: str, steamid64: int
+) -> dict[int, SteamFriendFromList]:
+    """
+    Returns a dictionary of Steam friends in the user's friend list, retrieved from the Steam API.
+
+    Args:
+        api_key (str): The Steam API key.
+        steamid64 (int): The steamid64 of the user.
+
+    Returns:
+        dict[int, SteamFriendFromList]: The dictionary of Steam friends in the user's friend list.
+    """
+    log.info(f"Getting Steam friends from Steam API for user {steamid64}")
+    steam_friends: dict[int, SteamFriendFromList] = {}
+    steam_friends_url: str = (
+        f"https://api.steampowered.com/ISteamUser/GetFriendList/v1/?key={api_key}&steamid={steamid64}&relationship=friend"
+    )
+    steam_friends_response: list[dict[str, Any]] = []
+    try:
+        steam_friends_response = _get_response_from_steam_api(steam_friends_url)[
+            "friendslist"
+        ]["friends"]
+    except Exception:
+        log.error("Failed to retrieve friends from Steam API", exc_info=True)
+    for steam_friend in steam_friends_response:
+        steam_friend_id64: int = int(steam_friend["steamid"])
+        friend_since: datetime = datetime.fromtimestamp(steam_friend["friend_since"])
+        steam_friends[steam_friend_id64] = SteamFriendFromList(
+            friend_since=friend_since
+        )
+    return steam_friends
+
+
+class SteamFriendInfo(TypedDict):
+    """
+    A dictionary representation of a Steam friend from the Steam API when retrieving their info.
+    """
+
+    name: str
+    icon_hash: str
+    last_updated: datetime
+    real_name: str | None
+    time_created: datetime | None
+    country: str | None
+    state: str | None
+    city: str | None
+
+
+def get_steam_friends_info(
+    api_key: str, steamid64s: list[int]
+) -> dict[int, SteamFriendInfo]:
+    """
+    Returns a dictionary of Steam friends info, retrieved from the Steam API.
+
+    Args:
+        api_key (str): The Steam API key.
+        steamid64s (list[int]): The list of steamid64s of the friends.
+
+    Returns:
+        dict[int, SteamFriendInfo]: The dictionary of Steam friends info.
+    """
+    log.info(f"Getting Steam friends info from Steam API for users")
+    steam_friend_infos: dict[int, SteamFriendInfo] = {}
+    for i in range(0, len(steamid64s), 100):
+        batch_steamid64s = steamid64s[i : min(i + 100, len(steamid64s))]
+        log.debug(f"Getting Steam friends info for batch {batch_steamid64s}")
+        steam_friend_info_url: str = (
+            f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={api_key}&steamids={','.join(map(str, batch_steamid64s))}"
+        )
+        steam_friend_info_response: list[dict[str, Any]] = []
+        try:
+            steam_friend_info_response = _get_response_from_steam_api(
+                steam_friend_info_url
+            )["response"]["players"]
+        except Exception:
+            log.error("Failed to retrieve friends info from Steam API", exc_info=True)
+        for steam_friend_info in steam_friend_info_response:
+            steamid64: int = int(steam_friend_info["steamid"])
+            name: str = steam_friend_info["personaname"]
+            icon_hash: str = steam_friend_info["avatarhash"]
+            last_updated: datetime = datetime.fromtimestamp(
+                steam_friend_info["lastlogoff"]
+            )
+            real_name: str | None = None
+            time_created: datetime | None = None
+            country: str | None = None
+            state: str | None = None
+            city: str | None = None
+            if steam_friend_info["communityvisibilitystate"] == 3:
+                if "realname" in steam_friend_info.keys():
+                    real_name = steam_friend_info["realname"]
+                time_created = datetime.fromtimestamp(steam_friend_info["timecreated"])
+                # TODO: Convert to strings using https://steamcommunity.com/actions/QueryLocations/{country}/{state}
+                if "loccountrycode" in steam_friend_info.keys():
+                    country = steam_friend_info["loccountrycode"]
+                if "locstatecode" in steam_friend_info.keys():
+                    state = steam_friend_info["locstatecode"]
+                if "loccityid" in steam_friend_info.keys():
+                    city = str(steam_friend_info["loccityid"])
+            steam_friend_infos[steamid64] = SteamFriendInfo(
+                name=name,
+                icon_hash=icon_hash,
+                last_updated=last_updated,
+                real_name=real_name,
+                time_created=time_created,
+                country=country,
+                state=state,
+                city=city,
+            )
+    return steam_friend_infos
+
+
 if __name__ == "__main__":
     from cache import get_blacklist
     from const import DIR_SEP, get_preferences_from_env
@@ -366,13 +508,37 @@ if __name__ == "__main__":
         "\n".join(
             (
                 "Enter an option:",
+                "fri - Get Steam friends information",
+                "frl - Get Steam friends list",
                 "ins - Get installed Steam apps",
                 "non - Get non-Steam apps",
                 "own - Get owned Steam apps\n",
             )
         )
     )
-    if option == "ins":
+    if option == "fri":
+        steamid64s: list[int] = [
+            int(steamid64)
+            for steamid64 in input("Enter steamid64s separated by commas: ").split(",")
+        ]
+        print(
+            "\n".join(
+                f"{k} {v}"
+                for k, v in get_steam_friends_info(
+                    preferences["STEAM_API_KEY"], steamid64s
+                ).items()
+            )
+        )
+    elif option == "frl":
+        print(
+            "\n".join(
+                f"{k} {v}"
+                for k, v in get_steam_friends_list(
+                    preferences["STEAM_API_KEY"], int(preferences["STEAMID64"])
+                ).items()
+            )
+        )
+    elif option == "ins":
         print(
             "\n".join(
                 f"{k} {v}"
@@ -396,8 +562,7 @@ if __name__ == "__main__":
             "\n".join(
                 f"{k} {v}"
                 for k, v in get_owned_steam_apps(
-                    preferences["STEAM_API_KEY"],
-                    preferences["STEAMID64"],
+                    preferences["STEAM_API_KEY"], int(preferences["STEAMID64"])
                 ).items()
             )
         )

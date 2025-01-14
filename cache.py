@@ -473,7 +473,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         owned_steam_apps: dict[int, OwnedSteamApp] = {}
         try:
             owned_steam_apps = get_owned_steam_apps(
-                preferences["STEAM_API_KEY"], preferences["STEAMID64"]
+                preferences["STEAM_API_KEY"], int(preferences["STEAMID64"])
             )
         except Exception:
             log.error("Failed to get owned Steam apps", exc_info=True)

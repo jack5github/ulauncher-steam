@@ -44,14 +44,14 @@
             "id": "STEAM_API_KEY",
             "type": "input",
             "name": "Steam Web API key",
-            "description": "API key to use when fetching data, found at steamcommunity.com/dev/apikey",
+            "description": "API key to use when fetching data (found at steamcommunity.com/dev/apikey)",
             "default_value": ""
         },
         {
             "id": "STEAMID64",
             "type": "input",
-            "name": "steamid64",
-            "description": "Steam ID to use when fetching data, found at store.steampowered.com/account",
+            "name": "Steam ID",
+            "description": "64-bit Steam ID to use when fetching data (found at store.steampowered.com/account)",
             "default_value": ""
         },
         {
@@ -72,7 +72,14 @@
             "id": "APP_BLACKLIST",
             "type": "input",
             "name": "App blacklist",
-            "description": "App IDs to hide from the list, separated by commas",
+            "description": "IDs of apps to hide from the list, separated by commas",
+            "default_value": ""
+        },
+        {
+            "id": "FRIEND_BLACKLIST",
+            "type": "input",
+            "name": "Friend blacklist",
+            "description": "64-bit Steam IDs of friends (found at steamdb.info/calculator) to hide from the list, separated by commas",
             "default_value": ""
         },
         {
