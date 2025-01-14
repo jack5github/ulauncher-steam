@@ -17,7 +17,13 @@ log: Logger = get_logger(__name__)
 
 
 class SteamExtension(Extension):
+    """
+    The uLauncher Steam extension class.
+    """
     def __init__(self) -> None:
+        """
+        Initialises a new SteamExtension instance.
+        """
         log.debug("Initialising Steam extension")
         super().__init__()
         self.subscribe(PreferencesEvent, SteamExtensionStartListener())
@@ -28,6 +34,13 @@ class SteamExtension(Extension):
 
 class SteamExtensionStartListener(EventListener):
     def on_event(self, event, _) -> None:
+        """
+        Called when the Steam extension is started.
+
+        Args:
+            event (PreferencesEvent): The event that triggered this listener.
+            _ (Extension): The Steam extension, unused in this context due to it being empty.
+        """
         log.debug("Steam extension started, building cache")
         preferences: dict[str, Any] = event.preferences
         build_cache(preferences)
@@ -35,16 +48,24 @@ class SteamExtensionStartListener(EventListener):
 
 class SteamExtensionQueryListener(EventListener):
     def on_event(self, event, extension) -> RenderResultListAction:
+        """
+        Called when the Steam extension is queried.
+
+        Args:
+            event (KeywordQueryEvent): The event that triggered this listener, containing the search argument.
+            extension (Extension): The Steam extension, containing the preferences dictionary.
+
+        Returns:
+            RenderResultListAction: A call for uLauncher to render the query results.
+        """
         from const import EXTENSION_PATH
         from query import SteamExtensionItem, query_cache
 
-        log.debug("Entering Steam extension event listener main function")
         preferences: dict[str, Any] = extension.preferences
         items: list[SteamExtensionItem] = query_cache(preferences, event.get_argument())
-        log.debug("Steam extension event listener main function finished")
+        log.debug("Converting query results to ExtensionResultItems")
         result_items: list[ExtensionResultItem] = []
         for item in items:
-            log.debug(f"Converting to ExtensionResultItem: {item}")
             result_items.append(
                 ExtensionResultItem(
                     icon=item.icon.replace(EXTENSION_PATH, ""),
@@ -57,11 +78,19 @@ class SteamExtensionQueryListener(EventListener):
 
 
 class SteamExtensionItemListener(EventListener):
-    # TODO: Add tracking of last time item was used and number of times used
     def on_event(self, event, extension) -> None:
-        log.debug("User requested to rebuild cache")
+        """
+        Called when an item as presented in uLauncher is selected.
+
+        Args:
+            event (ItemEnterEvent): The event that triggered this listener, containing the selected action.
+            extension (Extension): The Steam extension, containing the preferences dictionary.
+        """
+        from enter import execute_action
+
+        action: str = event.get_data()
         preferences: dict[str, Any] = extension.preferences
-        build_cache(preferences, force=True)
+        execute_action(action, preferences)
 
 
 if __name__ == "__main__":

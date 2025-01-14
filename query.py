@@ -210,17 +210,20 @@ class SteamExtensionItem:
 
     def get_action(self) -> str:
         """
-        Returns the script action of the SteamExtensionItem. If the type is "app", the "steam://rungameid/{id}" action is returned, if the type is "nav", the item's name as a Steam protocol is returned. Otherwise, the item's name is returned.
+        Returns the script action of the SteamExtensionItem. If the type is "app", the "steam://rungameid/{id}" action is returned, if the type is "nav", the item's name as a Steam protocol is returned. Otherwise, the item's name is returned. All actions are preceded by their type in uppercase, except for the "action" type.
 
         Returns:
             str: The script action of the SteamExtensionItem.
         """
+        action: str = str(self.name)
         if self.type == "app":
-            return f"steam://rungameid/{self.id}"
+            action = f"steam://rungameid/{self.id}"
         elif self.type == "nav":
-            return f"steam://{self.name}"
+            action = f"steam://{self.name}"
         else:
-            return str(self.name)
+            return action
+        action = f"{self.type.upper()}{action}"
+        return action
 
 
 def get_lang_string(
@@ -416,7 +419,14 @@ def query_cache(
             pass
         ids: list[int | None] = [None]
         if "%a" in name:
-            ids = [int(app_id) for app_id in cache["steam_apps"].keys()]
+            if "steam_apps" in cache.keys() and isinstance(
+                cache["steam_apps"], dict
+            ):
+                ids = [int(app_id) for app_id in cache["steam_apps"].keys()]
+            else:
+                log.warning(
+                    "cache.json does not contain any valid Steam apps", exc_info=True)
+                ids = []
         for id in ids:
             id_name: str = name.replace("%a", str(id))
             id_display_name: str = nav_display_name
@@ -454,7 +464,7 @@ def query_cache(
                     times_launched=times_launched,
                 )
             )
-    for name in ("rebuild_cache", "clear_cache", "clear_and_rebuild_cache"):
+    for name in ("update_cache", "clear_cache", "rebuild_cache"):
         items.append(
             SteamExtensionItem(
                 preferences,

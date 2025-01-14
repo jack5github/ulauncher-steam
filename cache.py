@@ -55,6 +55,7 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
 from const import DIR_SEP, EXTENSION_PATH, get_logger
 from datetime import datetime, timedelta
 from logging import Logger
+from os import remove
 from os.path import isdir, isfile
 from typing import Any
 
@@ -69,7 +70,7 @@ def download_steam_app_icon(app_id: int, icon_hash: str) -> None:
         appid (int): The ID of the Steam app.
         icon_hash (str): The hash of the icon of the Steam app.
     """
-    from os import makedirs, remove
+    from os import makedirs
     from urllib.error import HTTPError
     from urllib.request import urlretrieve
 
@@ -92,32 +93,24 @@ def download_steam_app_icon(app_id: int, icon_hash: str) -> None:
         )
 
 
-def load_cache(clear: bool = False) -> dict[str, Any]:
+def load_cache() -> dict[str, Any]:
     """
     Loads the cache dictionary from its JSON file. If the file does not exist or an error occurs, an empty dictionary is returned.
-
-    Args:
-        clear (bool, optional): If True, the cache dictionary is cleared before loading. Defaults to False.
 
     Returns:
         dict[str, Any]: The cache dictionary.
     """
     from json import loads as json_loads
-    from os import remove
 
     cache: dict[str, Any] = {}
     if isfile(f"{EXTENSION_PATH}cache.json"):
-        if clear:
-            log.debug("Deleting cache.json")
-            remove(f"{EXTENSION_PATH}cache.json")
-        else:
-            log.debug("Loading cache.json")
-            try:
-                with open(f"{EXTENSION_PATH}cache.json", "r", encoding="utf-8") as f:
-                    cache = json_loads(f.read())
-                log.debug("cache.json loaded")
-            except Exception:
-                log.error("Failed to read cache.json", exc_info=True)
+        log.debug("Loading cache.json")
+        try:
+            with open(f"{EXTENSION_PATH}cache.json", "r", encoding="utf-8") as f:
+                cache = json_loads(f.read())
+            log.debug("cache.json loaded")
+        except Exception:
+            log.error("Failed to read cache.json", exc_info=True)
     else:
         log.warning("cache.json does not exist")
     return cache
@@ -271,8 +264,16 @@ def save_cache(cache: dict[str, Any], preferences: dict[str, Any]) -> None:
         log.error("Failed to save cache.json", exc_info=True)
 
 
+def clear_cache() -> None:
+    """
+    Clears the cache of the Steam extension.
+    """
+    log.debug("Deleting cache.json")
+    remove(f"{EXTENSION_PATH}cache.json")
+
+
 def build_cache(
-    preferences: dict[str, Any], force: bool = False, clear: bool = False
+    preferences: dict[str, Any], force: bool = False
 ) -> None:
     """
     Builds the Steam extension cache, saving it to cache.json. This includes non-Steam apps, installed Steam apps and owned Steam apps.
@@ -280,7 +281,6 @@ def build_cache(
     Args:
         preferences (dict[str, Any]): The preferences dictionary.
         force (bool, optional): Whether to force a rebuild of all parts of the cache, regardless of whether enough time has passed for each. Defaults to False.
-        clear (bool, optional): Whether to clear the cache entirely before building it. Defaults to False.
     """
     from const import check_required_preferences
     from get import (
@@ -294,7 +294,7 @@ def build_cache(
 
     check_required_preferences(preferences)
     log.info("Building Steam extension cache")
-    cache: dict[str, Any] = load_cache(clear=clear)
+    cache: dict[str, Any] = load_cache()
     log.debug("Getting blacklists from preferences")
     app_blacklist: list[int] = get_blacklist("app", preferences)
     """

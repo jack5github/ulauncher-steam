@@ -1,7 +1,7 @@
 {
     "en-GB": {
-        "launch_%a": "Launch %a",
-        "install_%a": "Install %a",
+        "launch_%a": "%a",
+        "install_%a": "%a (Install)",
         "AddNonSteamGame": "Add a Non-Steam Game",
         "advertise/%a": "%a Store Page (Ad)",
         "appnews/%a": "%a News",
@@ -107,12 +107,12 @@
         "url/SupportFrontPage": "Steam Support",
         "validate/%a": "Verify integrity of %a",
         "validate/%a%d": "Verify the app's files to ensure that they are installed correctly",
-        "rebuild_cache": "Rebuild Cache",
-        "rebuild_cache%d": "Rebuilds the cache of the Steam extension",
+        "update_cache": "Update Cache",
+        "update_cache%d": "Updates the cache of the Steam extension, bypassing wait times",
         "clear_cache": "Clear Cache",
         "clear_cache%d": "Clears the cache of the Steam extension",
-        "clear_and_rebuild_cache": "Clear and Rebuild Cache",
-        "clear_and_rebuild_cache%d": "Clears and rebuilds the cache of the Steam extension",
+        "rebuild_cache": "Rebuild Cache",
+        "rebuild_cache%d": "Completely rebuilds the cache of the Steam extension",
         "no_results": "No Results",
         "no_results%d": "No results found that match your search",
         "name_missing": "Name missing"
