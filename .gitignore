@@ -5,3 +5,4 @@ rnd
 venv
 .env
 cache.json
+logging.conf

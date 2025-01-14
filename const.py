@@ -1,26 +1,104 @@
+from json import loads as json_loads
+from logging import Logger
+from logging.config import fileConfig as logging_fileConfig
+import os
 from os.path import abspath
+from typing import Any
 
-EXTENSION_PATH: str = f"{'/'.join(__file__.split('/')[:-1])}/"
+DIR_SEP: str = "/"
+if os.name == "nt":
+    DIR_SEP = "\\"
+
+EXTENSION_PATH: str = f"{DIR_SEP.join(__file__.split(DIR_SEP)[:-1])}{DIR_SEP}"
 if len(EXTENSION_PATH) <= 1:
     EXTENSION_PATH = "."
 EXTENSION_PATH = abspath(EXTENSION_PATH)
-if EXTENSION_PATH[-1] != "/":
-    EXTENSION_PATH += "/"
+if EXTENSION_PATH[-1] != DIR_SEP:
+    EXTENSION_PATH += DIR_SEP
 
+
+def get_logger(module_name: str) -> Logger:
+    """
+    Gets the logger for the given module name. The logging configuration file logging.conf is loaded if it exists.
+
+    Args:
+        module_name (str): The name of the module.
+
+    Returns:
+        Logger: The logger.
+    """
+    from logging import getLogger
+    from os.path import isfile
+
+    if isfile(f"{EXTENSION_PATH}logging.conf"):
+        logging_fileConfig(
+            f"{EXTENSION_PATH}logging.conf", disable_existing_loggers=False
+        )
+    return getLogger(module_name)
+
+
+log: Logger = get_logger(__name__)
+
+
+def get_preferences_from_env() -> dict[str, Any]:
+    """
+    Gets the preferences from the .env file and returns them as a dictionary. Used for testing of individual modules.
+
+    Returns:
+        dict[str, Any]: The preferences dictionary.
+    """
+    from configparser import ConfigParser
+
+    preferences_file = ConfigParser()
+    preferences_file.read(".env")
+    return {k.upper(): v for k, v in preferences_file.items("PREFERENCES")}
+
+
+REQUIRED_PREFERENCES: tuple[str, ...] = ()
+with open(f"{EXTENSION_PATH}manifest.json", "r", encoding="utf-8") as f:
+    REQUIRED_PREFERENCES = tuple(
+        preference["id"] for preference in json_loads(f.read())["preferences"]
+    )
+
+
+def check_required_preferences(preferences: dict[str, Any]) -> None:
+    """
+    Checks if all required preferences are present in the preferences dictionary.
+
+    Args:
+        preferences (dict[str, Any]): The preferences dictionary.
+
+    Raises:
+        ValueError: If a required preference is missing.
+    """
+    log.debug("Checking all required preferences are present")
+    try:
+        missing_preference: str = next(
+            key for key in REQUIRED_PREFERENCES if key not in preferences.keys()
+        )
+        raise ValueError(
+            f"Missing preference key '{missing_preference}', add to .env file"
+        )
+    except StopIteration:
+        pass
+
+
+DEFAULT_ICON: str = f"{EXTENSION_PATH}images{DIR_SEP}icon.png"
+DEFAULT_LANGUAGE: str = "en-GB"
 # Navigation
 # https://developer.valvesoftware.com/wiki/Steam_browser_protocol
 # TODO: Add more friends actions
 # TODO: Add groups actions
 STEAM_NAVIGATIONS: list[str] = [
     "AddNonSteamGame",
-    "advertise/%g",
-    "appnews/%g",
-    "backup/%g",
+    "advertise/%a",
+    "appnews/%a",
+    "backup/%a",
     "browsemedia",
-    "cdkeys/%g",
-    "checksysreqs/%g",
-    "controllerconfig/%g",
-    "defrag/%g",
+    "cdkeys/%a",
+    "checksysreqs/%a",
+    "controllerconfig/%a",
+    "defrag/%a",
     "exit",
     "friends",
     "friends/players",
@@ -35,8 +113,8 @@ STEAM_NAVIGATIONS: list[str] = [
     "friends/status/offline",
     "friends/status/online",
     "flushconfig",
-    "forceinputappid/%g",
-    "gameproperties/%g",
+    "forceinputappid/%a",
+    "gameproperties/%a",
     "guestpasses",
     "musicplayer/play",
     "musicplayer/pause",
@@ -65,7 +143,7 @@ STEAM_NAVIGATIONS: list[str] = [
     "open/mymedia",
     "open/news",
     "open/registerproduct",
-    "open/screenshots/%g",
+    "open/screenshots/%a",
     "open/servers",
     "open/settings",
     "open/tools",
@@ -77,18 +155,18 @@ STEAM_NAVIGATIONS: list[str] = [
     "settings/voice",
     "stopstreaming",
     "store",
-    "store/%g",
-    "uninstall/%g",
+    "store/%a",
+    "uninstall/%a",
     "UpdateFirmware",
-    "updatenews/%g",
+    "updatenews/%a",
     "url/CommentNotifications",
-    "url/CommunityFriendsThatPlay/%g",
+    "url/CommunityFriendsThatPlay/%a",
     "url/CommunityHome",
     "url/CommunityInventory",
     "url/CommunitySearch",
     "url/DownloadsSupportInfo",
     "url/FamilySharing",
-    "url/GameHub/%g",
+    "url/GameHub/%a",
     "url/LeaveGroupPage",
     "url/LegalInformation",
     "url/MyHelpRequests",
@@ -100,17 +178,17 @@ STEAM_NAVIGATIONS: list[str] = [
     "url/SteamIDFriendsPage",
     "url/SteamIDMyProfile",
     "url/SteamWorkshop",
-    "url/SteamWorkshopPage/%g",
+    "url/SteamWorkshopPage/%a",
     "url/SteamGreenlight",
     "url/Store",
     "url/StoreAccount",
-    "url/StoreAppPage/%g",
-    "url/StoreDLCPage/%g",
+    "url/StoreAppPage/%a",
+    "url/StoreDLCPage/%a",
     "url/StoreCart",
     "url/Storefront",
     "url/StoreFrontPage",
     "url/SupportFrontPage",
-    "validate/%g",
+    "validate/%a",
 ]
 
 DEFAULT_LANGUAGE: str = "en-GB"

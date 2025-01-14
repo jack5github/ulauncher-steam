@@ -8,58 +8,86 @@
         {
             "id": "KEYWORD",
             "type": "keyword",
-            "name": "Steam",
-            "description": "Search through Steam games, apps and menus",
+            "name": "Steam search",
+            "description": "Search through Steam games, apps, friends and menus",
             "default_value": "s"
         },
         {
-            "id": "STEAMAPPS_FOLDER",
-            "type": "input",
-            "name": "Steam steamapps folder",
-            "description": "The path to the steamapps folder, used to fetch installed apps",
-            "default_value": "/home/<username>/.steam/debian-installation/steamapps/"
+            "id": "KEYWORD_APPS",
+            "type": "keyword",
+            "name": "Steam apps",
+            "description": "Search through Steam apps",
+            "default_value": "sa"
         },
         {
-            "id": "USERDATA_FOLDER",
+            "id": "KEYWORD_ACTIONS",
+            "type": "keyword",
+            "name": "Steam extension actions",
+            "description": "Search through Steam extension actions",
+            "default_value": "ss"
+        },
+        {
+            "id": "STEAM_FOLDER",
             "type": "input",
-            "name": "Steam userdata folder for current user, used to fetch non-Steam apps",
-            "description": "The path to the userdata subfolder that describes the current user",
-            "default_value": "/home/<username>/.steam/debian-installation/userdata/<number>/"
+            "name": "Steam folder path",
+            "description": "The path to the folder that contains the steamapps and userdata folders",
+            "default_value": "/home/<username>/.steam/debian-installation/"
+        },
+        {
+            "id": "STEAM_USERDATA_ID",
+            "type": "input",
+            "name": "Steam userdata folder name",
+            "description": "The name of the userdata subfolder (a number) belonging to the user",
+            "default_value": ""
         },
         {
             "id": "STEAM_API_KEY",
             "type": "input",
-            "name": "Steam API key",
-            "description": "The Steam API key to use when fetching owned apps, found at steamcommunity.com/dev/apikey",
+            "name": "Steam Web API key",
+            "description": "API key to use when fetching data, found at steamcommunity.com/dev/apikey",
             "default_value": ""
         },
         {
             "id": "STEAMID64",
             "type": "input",
-            "name": "steamid64 for current user",
-            "description": "The Steam ID to fetch owned apps for, found at steamid.io  # TODO: Find native alternative",
+            "name": "steamid64",
+            "description": "Steam ID to use when fetching data, found at store.steampowered.com/account",
             "default_value": ""
         },
         {
-            "id": "CACHE_UPDATE_DELAY",
+            "id": "UPDATE_FROM_FILES_DELAY",
             "type": "input",
-            "name": "Time before update (minutes)",
-            "description": "If this much time has passed since uLauncher was started, the cache will be rebuit",
-            "default_value": "60"
+            "name": "Time between file reads",
+            "description": "The time to wait before reading files on disk to update the cache",
+            "default_value": "1m"
+        },
+        {
+            "id": "UPDATE_FROM_STEAM_API_DELAY",
+            "type": "input",
+            "name": "Time between Steam API calls",
+            "description": "The time to wait before querying the Steam API to update the cache",
+            "default_value": "1h"
+        },
+        {
+            "id": "APP_BLACKLIST",
+            "type": "input",
+            "name": "App blacklist",
+            "description": "App IDs to hide from the list, separated by commas",
+            "default_value": ""
         },
         {
             "id": "LANGUAGE_CODE",
             "type": "input",
             "name": "Language code",
-            "description": "The preferred language of the current user",
+            "description": "Your preferred ISO 639-1 language code, fallback is 'en-GB'",
             "default_value": "en-GB"
         },
         {
             "id": "SORT_KEYS",
             "type": "input",
-            "name": "Sort keys",
-            "description": "Separated by commas in priority order. appid,name,description,non_steam,ulaunched_last,ulaunched_times",
-            "default_value": "ulaunched_last,ulaunched_times,name,description"
+            "name": "Sort priorities",
+            "description": "How to sort list items when not searching, keys separated by commas in priority order",
+            "default_value": "last_launched,total_playtime,name"
         },
         {
             "id": "MAX_ITEMS",

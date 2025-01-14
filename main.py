@@ -1,12 +1,11 @@
 from cache import build_cache
-from logging import getLogger, Logger
+from const import get_logger
+from logging import Logger
 from typing import Any
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
-from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
-from ulauncher.api.shared.action.RunScriptAction import RunScriptAction
 from ulauncher.api.shared.event import (
     ItemEnterEvent,
     KeywordQueryEvent,
@@ -14,11 +13,17 @@ from ulauncher.api.shared.event import (
 )
 from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
 
-log: Logger = getLogger(__name__)
+log: Logger = get_logger(__name__)
 
 
 class SteamExtension(Extension):
+    """
+    The uLauncher Steam extension class.
+    """
     def __init__(self) -> None:
+        """
+        Initialises a new SteamExtension instance.
+        """
         log.debug("Initialising Steam extension")
         super().__init__()
         self.subscribe(PreferencesEvent, SteamExtensionStartListener())
@@ -29,57 +34,46 @@ class SteamExtension(Extension):
 
 class SteamExtensionStartListener(EventListener):
     def on_event(self, event, _) -> None:
-        manifest: dict[str, Any] = event.preferences
+        """
+        Called when the Steam extension is started.
+
+        Args:
+            event (PreferencesEvent): The event that triggered this listener.
+            _ (Extension): The Steam extension, unused in this context due to it being empty.
+        """
         log.debug("Steam extension started, building cache")
-        build_cache(
-            steamapps_folder=manifest["STEAMAPPS_FOLDER"],
-            userdata_folder=manifest["USERDATA_FOLDER"],
-            steam_api_key=manifest["STEAM_API_KEY"],
-            steamid64=manifest["STEAMID64"],
-            time_before_update=manifest["CACHE_UPDATE_DELAY"],
-        )
+        preferences: dict[str, Any] = event.preferences
+        build_cache(preferences)
 
 
 class SteamExtensionQueryListener(EventListener):
     def on_event(self, event, extension) -> RenderResultListAction:
-        from query import SteamExtensionItem, steam_extension_event
+        """
+        Called when the Steam extension is queried.
 
-        log.debug("Entering Steam extension event listener main function")
-        manifest: dict[str, Any] = extension.preferences
-        items: list[SteamExtensionItem] = steam_extension_event(
-            manifest, event.get_argument()
+        Args:
+            event (KeywordQueryEvent): The event that triggered this listener, containing the search argument.
+            extension (Extension): The Steam extension, containing the preferences dictionary.
+
+        Returns:
+            RenderResultListAction: A call for uLauncher to render the query results.
+        """
+        from const import EXTENSION_PATH
+        from query import SteamExtensionItem, query_cache
+
+        preferences: dict[str, Any] = extension.preferences
+        items: list[SteamExtensionItem] = query_cache(
+            event.get_keyword(), preferences, event.get_argument()
         )
-        log.debug("Steam extension event listener main function finished")
+        log.debug("Converting query results to ExtensionResultItems")
         result_items: list[ExtensionResultItem] = []
         for item in items:
-            log.debug(f"Converting to ExtensionResultItem: {repr(item)}")
-            # TODO: Add tracking of last time item was used and number of times used
-            result_dict: dict[str, Any] = item.to_result_dict()
-            on_enter_class: (
-                RunScriptAction | ExtensionCustomAction | HideWindowAction
-            ) = (
-                RunScriptAction(result_dict["on_enter"]["argument"])
-                if result_dict["on_enter"]["class"] == "RunScriptAction"
-                else (
-                    ExtensionCustomAction(
-                        [
-                            manifest["STEAMAPPS_FOLDER"],
-                            manifest["USERDATA_FOLDER"],
-                            manifest["STEAM_API_KEY"],
-                            manifest["STEAMID64"],
-                            manifest["CACHE_UPDATE_DELAY"],
-                        ]
-                    )
-                    if result_dict["on_enter"]["class"] == "ExtensionCustomAction"
-                    else HideWindowAction()
-                )
-            )
             result_items.append(
                 ExtensionResultItem(
-                    icon=result_dict["icon"],
-                    name=result_dict["name"],
-                    description=result_dict["description"],
-                    on_enter=on_enter_class,
+                    icon=item.icon.replace(EXTENSION_PATH, ""),
+                    name=item.get_name(),
+                    description=item.get_description(),
+                    on_enter=ExtensionCustomAction(item.get_action()),
                 )
             )
         return RenderResultListAction(result_items)
@@ -87,15 +81,18 @@ class SteamExtensionQueryListener(EventListener):
 
 class SteamExtensionItemListener(EventListener):
     def on_event(self, event, extension) -> None:
-        manifest: dict[str, Any] = extension.preferences
+        """
+        Called when an item as presented in uLauncher is selected.
 
-        log.debug("User requested to rebuild cache")
-        build_cache(
-            steamapps_folder=manifest["STEAMAPPS_FOLDER"],
-            userdata_folder=manifest["USERDATA_FOLDER"],
-            steam_api_key=manifest["STEAM_API_KEY"],
-            steamid64=manifest["STEAMID64"],
-        )
+        Args:
+            event (ItemEnterEvent): The event that triggered this listener, containing the selected action.
+            extension (Extension): The Steam extension, containing the preferences dictionary.
+        """
+        from enter import execute_action
+
+        action: str = event.get_data()
+        preferences: dict[str, Any] = extension.preferences
+        execute_action(action, preferences)
 
 
 if __name__ == "__main__":
