@@ -5,9 +5,7 @@ from typing import Any
 from ulauncher.api.client.EventListener import EventListener
 from ulauncher.api.client.Extension import Extension
 from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
-from ulauncher.api.shared.action.HideWindowAction import HideWindowAction
 from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
-from ulauncher.api.shared.action.RunScriptAction import RunScriptAction
 from ulauncher.api.shared.event import (
     ItemEnterEvent,
     KeywordQueryEvent,
@@ -37,42 +35,29 @@ class SteamExtensionStartListener(EventListener):
 
 class SteamExtensionQueryListener(EventListener):
     def on_event(self, event, extension) -> RenderResultListAction:
-        from query import SteamExtensionItem, steam_extension_event
+        from const import EXTENSION_PATH
+        from query import SteamExtensionItem, query_cache
 
         log.debug("Entering Steam extension event listener main function")
         preferences: dict[str, Any] = extension.preferences
-        items: list[SteamExtensionItem] = steam_extension_event(
-            preferences, event.get_argument()
-        )
+        items: list[SteamExtensionItem] = query_cache(preferences, event.get_argument())
         log.debug("Steam extension event listener main function finished")
         result_items: list[ExtensionResultItem] = []
         for item in items:
-            log.debug(f"Converting to ExtensionResultItem: {repr(item)}")
-            # TODO: Add tracking of last time item was used and number of times used
-            result_dict: dict[str, Any] = item.to_result_dict()
-            on_enter_class: (
-                RunScriptAction | ExtensionCustomAction | HideWindowAction
-            ) = (
-                RunScriptAction(result_dict["on_enter"]["argument"])
-                if result_dict["on_enter"]["class"] == "RunScriptAction"
-                else (
-                    ExtensionCustomAction(preferences)
-                    if result_dict["on_enter"]["class"] == "ExtensionCustomAction"
-                    else HideWindowAction()
-                )
-            )
+            log.debug(f"Converting to ExtensionResultItem: {item}")
             result_items.append(
                 ExtensionResultItem(
-                    icon=result_dict["icon"],
-                    name=result_dict["name"],
-                    description=result_dict["description"],
-                    on_enter=on_enter_class,
+                    icon=item.icon.replace(EXTENSION_PATH, ""),
+                    name=item.get_name(),
+                    description=item.get_description(),
+                    on_enter=ExtensionCustomAction(item.get_action()),
                 )
             )
         return RenderResultListAction(result_items)
 
 
 class SteamExtensionItemListener(EventListener):
+    # TODO: Add tracking of last time item was used and number of times used
     def on_event(self, event, extension) -> None:
         log.debug("User requested to rebuild cache")
         preferences: dict[str, Any] = extension.preferences

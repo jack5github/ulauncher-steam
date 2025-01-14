@@ -1,9 +1,7 @@
-# TODO: from zoneinfo import ZoneInfo, requires Python 3.9+ (convert timestamps from UTC (ZoneInfo("UTC")) to local timezone (ZoneInfo("localtime")))
-from const import DEFAULT_LANGUAGE, EXTENSION_PATH, get_logger, STEAM_NAVIGATIONS
+from const import DEFAULT_ICON, DIR_SEP, EXTENSION_PATH, get_logger
 from datetime import datetime
 from logging import Logger
-from os.path import isfile
-from typing import Any
+from typing import Any, Literal
 
 log: Logger = get_logger(__name__)
 
@@ -16,165 +14,226 @@ class SteamExtensionItem:
     def __init__(
         self,
         preferences: dict[str, Any],
-        appid: str | None = None,
-        name: str | None = None,
+        lang: dict[str, dict[str, str]],
+        type: Literal["app", "nav", "action"],
+        id: int | None = None,
         non_steam: bool = False,
-        installed: bool = True,
+        name: str | None = None,
+        display_name: str | None = None,
         description: str | None = None,
-        action: str | None = None,
-        ulaunched_last: datetime | None = None,
-        ulaunched_times: int = 0,
-        is_error: bool = False,
+        location: str | None = None,
+        size_on_disk: int = 0,
+        total_playtime: int = 0,
+        icon: str | None = None,
+        last_launched: datetime | None = None,
+        times_launched: int = 0,
     ) -> None:
         """
         Initialises a new SteamExtensionItem instance.
 
         Args:
             preferences (dict[str, Any]): The preferences dictionary.
-            appid (str | None, optional): The ID of the application, if this is a Steam application. Stored as a string due to JSON limitations. Defaults to None.
-            name (str | None, optional): The name of the application or action this item represents. Defaults to None.
+            lang (dict[str, dict[str, str]]): The language dictionary.
+            type (Literal["app", "nav", "action"]): The type of the item.
+            id (int | None, optional): The ID of the item, whether app ID or steamid64. Defaults to None.
             non_steam (bool, optional): Whether this is a non-Steam application. Defaults to False.
-            installed (bool, optional): Whether this is an installed Steam application. Defaults to True.
-            description (str | None, optional): The description of the application or action this item represents. Defaults to None.
-            action (str | None, optional): The action to perform when this item is launched, if necessary to specify. Defaults to None.
-            ulaunched_last (datetime | None, optional): The last time this item was launched from uLauncher. Defaults to None.
-            ulaunched_times (int, optional): The number of times this item has been launched from uLauncher. Defaults to 0.
-            is_error (bool, optional): Whether this item represents an error. Defaults to False.
+            name (str | None, optional): The name of the item, which may be an action ID in the case of navigations and actions. Defaults to None.
+            display_name (str | None, optional): The display name of the item, not to be confused with get_name(). Defaults to None.
+            description (str | None, optional): The description of the item, not to be confused with get_description(). Defaults to None.
+            location (str | None, optional): The location of the item on disk. Defaults to None.
+            size_on_disk (int, optional): The size of the item on disk in bytes. Defaults to 0.
+            total_playtime (int, optional): The total playtime of the item in minutes. Defaults to 0.
+            icon (str | None, optional): The path to the icon of the item, must include the extension path. If None, the default icon will be used. Defaults to None.
+            last_launched (datetime | None, optional): The last time the item was launched. Defaults to None.
+            times_launched (int, optional): The number of times the item has been launched. Defaults to 0.
         """
         self.preferences: dict[str, Any] = preferences
-        self.appid: str | None = appid
-        self.name: str | None = name
+        self.lang: dict[str, dict[str, str]] = lang
+        self.type: Literal["app", "nav", "action"] = type
+        self.id: int | None = id
         self.non_steam: bool = non_steam
-        self.installed: bool = installed
+        self.name: str | None = name
+        self.display_name: str | None = display_name
         self.description: str | None = description
-        self.action: str | None = action
-        self.ulaunched_last: datetime | None = ulaunched_last
-        self.ulaunched_times: int = ulaunched_times
-        self.is_error: bool = is_error
+        self.location: str | None = location
+        self.size_on_disk: int = size_on_disk
+        self.total_playtime: int = total_playtime
+        self.icon: str = DEFAULT_ICON
+        if icon is not None:
+            if icon.startswith(EXTENSION_PATH):
+                self.icon = icon
+            else:
+                log.error(
+                    f"Icon path '{icon}' does not start with '{EXTENSION_PATH}', ignoring"
+                )
+        self.last_launched: datetime | None = last_launched
+        self.times_launched: int = times_launched
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         """
-        Returns a verbose representation of the SteamExtensionItem instance.
+        Returns a string representation of the SteamExtensionItem.
 
         Returns:
-            str: The verbose representation.
+            str: The string representation of the SteamExtensionItem.
         """
-        if "RESULT_TINY_REPR" in self.preferences.keys() and bool(
-            self.preferences["RESULT_TINY_REPR"]
-        ):
-            return f"({repr(self.appid)}, name={repr(self.name)}, non={repr(self.non_steam)}, inst={repr(self.installed)}, desc={repr(self.description)}, act={repr(self.action)}, ulast={repr(self.ulaunched_last)}, utimes={repr(self.ulaunched_times)}, err={self.is_error})"
-        return f"SteamExtensionItem(appid={repr(self.appid)}, name={repr(self.name)}, non_steam={repr(self.non_steam)}, installed={repr(self.installed)}, description={repr(self.description)}, action={repr(self.action)}, ulaunched_last={repr(self.ulaunched_last)}, ulaunched_times={repr(self.ulaunched_times)}, is_error={self.is_error})"
+        str_rep: str = self.get_name()
+        description: str = self.get_description()
+        if description != "":
+            str_rep += f" --- {description}"
+        return str_rep
 
-    @classmethod
-    def from_error(
-        cls, err: Exception, preferences: dict[str, Any]
-    ) -> "SteamExtensionItem":
+    def get_name(self) -> str:
         """
-        Creates a new SteamExtensionItem instance from an error.
-
-        Args:
-            err (Exception): The error.
-            preferences (dict[str, Any]): The preferences dictionary.
+        Returns the name of the SteamExtensionItem that can be safely displayed for and filtered through by the user.
 
         Returns:
-            SteamExtensionItem: A new SteamExtensionItem instance.
+            str: The name string of the SteamExtensionItem to display in uLauncher.
         """
-        log.error(f"{err.__class__.__name__}: {err}", exc_info=True)
-        return SteamExtensionItem(
-            preferences,
-            name=err.__class__.__name__,
-            description=str(err),
-            is_error=True,
+        return (
+            self.display_name
+            if self.display_name is not None
+            else (
+                self.name
+                if self.name is not None
+                else get_lang_string(
+                    self.lang, self.preferences["LANGUAGE_CODE"], "name_missing"
+                )
+            )
         )
 
-    def to_result_dict(self) -> dict[str, Any]:
+    def get_description(self) -> str:
         """
-        Converts the SteamExtensionItem instance to a dictionary representation for uLauncher, which after minimal adjustments can be passed into the uLauncher API.
+        Returns the description of the SteamExtensionItem that can be safely displayed for and filtered through by the user.
 
         Returns:
-            dict[str, Any]: The dictionary representation.
+            str: The description string of the SteamExtensionItem to display in uLauncher.
         """
-        from const import DIR_SEP
+        description: str = ""
+        if self.type == "app":
+            location_added: bool = False
+            if self.total_playtime > 0:
+                description += f"{self.total_playtime / 60:.1f} hrs"
+            if self.last_launched is not None:
+                if description != "":
+                    description += " | "
+                description += datetime.strftime(self.last_launched, "%b %d, %Y")
+            if self.location is not None:
+                if description != "":
+                    description += " | "
+                description += f"{self.location.lstrip(DIR_SEP).split(DIR_SEP)[0]}"
+                location_added = True
+            if self.size_on_disk > 0:
+                if location_added:
+                    if not description.endswith(":"):
+                        description += ":"
+                    description += " "
+                elif description != "":
+                    description += " | "
+                if self.size_on_disk < 1000:
+                    description += f"{self.size_on_disk} B"
+                elif self.size_on_disk < 1000**2:
+                    description += f"{self.size_on_disk / 1000:.2f} KB"
+                elif self.size_on_disk < 1000**3:
+                    description += f"{self.size_on_disk / 1000 ** 2:.2f} MB"
+                elif self.size_on_disk < 1000**4:
+                    description += f"{self.size_on_disk / 1000 ** 3:.2f} GB"
+                else:
+                    description += f"{self.size_on_disk / 1000 ** 4:.2f} TB"
+        elif self.description is not None:
+            description: str = self.description
+        return description
 
-        icon_file: str = "images/icon.png"
-        if isfile(f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{self.appid}.jpg"):
-            icon_file = f"images/apps/{self.appid}.jpg"
-        result_dict: dict[str, Any] = {
-            "icon": icon_file,
-            "name": self.name if self.name is not None else str(self.appid),
-            "description": self.description if self.description is not None else "",
-            "on_enter": {
-                "class": (
-                    "ExtensionCustomAction"
-                    if self.action is not None and self.action == "rebuild_cache"
-                    else (
-                        "RunScriptAction"
-                        if self.appid is not None or self.action is not None
-                        else "HideWindowAction"
+    def to_sort_list(self) -> list[Any]:
+        """
+        Creates a list of the SteamExtensionItem's attributes that can be used for sorting. Attributes are selected using the SORT_KEYS preference.
+
+        Returns:
+            list[Any]: The list of the SteamExtensionItem's attributes.
+        """
+        sort_keys_str: str = preferences["SORT_KEYS"]
+        sort_keys: list[str] = [key.strip() for key in sort_keys_str.split(",")]
+        sort_list: list[Any] = []
+        while len(sort_list) == 0:
+            for sort_key in sort_keys:
+                if sort_key == "type":
+                    sort_list.append(
+                        0 if self.type is "app" else 1 if self.type is "nav" else 2
                     )
+                elif sort_key == "id":
+                    sort_list.append(self.id if self.id is not None else float("inf"))
+                elif sort_key == "non_steam":
+                    sort_list.append(0 if self.non_steam else 1)
+                elif sort_key == "name":
+                    sort_list.append(
+                        self.name.lower() if self.name is not None else "ÿÿ"
+                    )
+                elif sort_key == "display_name":
+                    sort_list.append(
+                        self.display_name.lower()
+                        if self.display_name is not None
+                        else "ÿÿ"
+                    )
+                elif sort_key == "description":
+                    sort_list.append(
+                        self.description.lower()
+                        if self.description is not None
+                        else "ÿÿ"
+                    )
+                elif sort_key == "location":
+                    sort_list.append(
+                        self.location.lower() if self.location is not None else "ÿÿ"
+                    )
+                elif sort_key == "size_on_disk":
+                    sort_list.append(-self.size_on_disk)
+                elif sort_key == "total_playtime":
+                    sort_list.append(-self.total_playtime)
+                elif sort_key == "icon":
+                    sort_list.append(
+                        self.icon.lower() if self.icon is not None else "ÿÿ"
+                    )
+                elif sort_key == "last_launched":
+                    sort_list.append(
+                        -datetime.timestamp(self.last_launched)
+                        if self.last_launched is not None
+                        else 0
+                    )
+                elif sort_key == "times_launched":
+                    sort_list.append(-self.times_launched)
+                else:
+                    log.warning(f"Sort key '{sort_key}' not recognised")
+            if len(sort_list) == 0:
+                log.warning(
+                    f"No valid sort key found in '{sort_keys_str}', defaulting to 'last_launched, total_playtime, name'"
                 )
-            },
-        }
-        if self.appid is not None or self.action is not None:
-            result_dict["on_enter"]["argument"] = (
-                self.action
-                if self.action is not None
-                else f"steam steam://rungameid/{self.appid}"
-            )
-        return result_dict
+                sort_keys = ["last_launched", "total_playtime", "name"]
+        return sort_list
 
-    def to_sort_string(self, sort_keys_string: str) -> str:
+    def get_action(self) -> str:
         """
-        Converts the SteamExtensionItem instance to a string representation for sorting, used when no search is provided.
-
-        Args:
-            sort_keys_string (str): The desired sort keys as a string, separated by commas.
+        Returns the script action of the SteamExtensionItem. If the type is "app", the "steam://rungameid/{id}" action is returned, if the type is "nav", the item's name as a Steam protocol is returned. Otherwise, the item's name is returned.
 
         Returns:
-            str: The string representation for sorting.
+            str: The script action of the SteamExtensionItem.
         """
-        sort_string: str = "0" if {self.is_error} else "1"
-        sort_keys: list[str] = sort_keys_string.split(",")
-        for index, key in enumerate(sort_keys):
-            key = key.strip()
-            if key == "appid":
-                sort_string += self.appid if self.appid is not None else ""
-            elif key == "name":
-                sort_string += self.name if self.name is not None else ""
-            elif key == "description":
-                sort_string += self.description if self.description is not None else ""
-            elif key == "non_steam":
-                sort_string += str(self.non_steam)
-            elif key == "ulaunched_last":
-                sort_string += (
-                    str(self.ulaunched_last.timestamp()).zfill(20)
-                    if self.ulaunched_last is not None
-                    else ""
-                )
-            elif key == "ulaunched_times":
-                sort_string += str(self.ulaunched_times)
-            if index != len(sort_keys) - 1:
-                sort_string += "\t"
-        return sort_string.lower()
-
-    def to_search_string(self) -> str:
-        """
-        Converts the SteamExtensionItem instance to a string representation for searching.
-
-        Returns:
-            str: The string representation for searching.
-        """
-        return f"{self.name if self.name is not None else ''}{self.description if self.description is not None else ''}".lower()
+        if self.type == "app":
+            return f"steam://rungameid/{self.id}"
+        elif self.type == "nav":
+            return f"steam://{self.name}"
+        else:
+            return str(self.name)
 
 
-def get_lang_string(lang: dict[str, Any], language: str, key: str) -> str:
+def get_lang_string(
+    lang: dict[str, dict[str, str]], language: str, key: str, strict: bool = False
+) -> str:
     """
     Gets a string from the language dictionary, which is loaded from lang.json.
 
     Args:
-        lang (dict[str, Any]): The language dictionary.
-        language (str): The desired language.
+        lang (dict[str, dict[str, str]]): The language dictionary.
+        language (str): The desired language code.
         key (str): The string to retrieve from the language dictionary.
+        strict (bool, optional): Whether to raise an exception if the key is not found. Defaults to False.
 
     Raises:
         KeyError: If the default language is not in the language dictionary.
@@ -183,326 +242,280 @@ def get_lang_string(lang: dict[str, Any], language: str, key: str) -> str:
     Returns:
         str: The string from the language dictionary, either from the desired or the default language.
     """
+    from const import DEFAULT_LANGUAGE
+
     log.debug(f"Getting '{key}' for language '{language}' from lang.json")
     if language in lang.keys():
         if key in lang[language].keys():
             return str(lang[language][key])
     if DEFAULT_LANGUAGE not in lang.keys():
-        raise KeyError(f"Default language '{DEFAULT_LANGUAGE}' is not in lang.json")
+        log.error(f"Default language '{DEFAULT_LANGUAGE}' is not in lang.json")
+        if strict:
+            raise KeyError(f"Default language '{DEFAULT_LANGUAGE}' is not in lang.json")
+        return key
     if key not in lang[DEFAULT_LANGUAGE].keys():
-        raise KeyError(
+        log.warning(
             f"'{key}' is not in lang.json for '{language}' or '{DEFAULT_LANGUAGE}'"
         )
+        if strict:
+            raise KeyError(
+                f"'{key}' is not in lang.json for '{language}' or '{DEFAULT_LANGUAGE}'"
+            )
+        return key
+    log.warning(f"'{key}' is not in lang.json for '{language}'")
     return str(lang[DEFAULT_LANGUAGE][key])
 
 
-def steam_extension_event(
+def query_cache(
     preferences: dict[str, Any], search: str | None = None
 ) -> list[SteamExtensionItem]:
-    """
-    The main code that is run when the Steam extension keyword is entered into uLauncher. This function looks for Steam and non-Steam apps and menus using cache.json and returns a list of SteamExtensionItem instances. It is designed to be run on its own without needing to import the uLauncher API.
-
-    Args:
-        preferences (dict[str, Any]): The preferences dictionary, a set of variables that are passed into the extension from uLauncher's extension settings.
-        search (str | None, optional): The search string entered after the Steam extension keyword, or None if no search is provided. Defaults to None.
-
-    Returns:
-        list[SteamExtensionItem]: A list of SteamExtensionItem instances.
-    """
-    from cache import load_cache
-    from const import check_required_preferences
+    from cache import get_blacklist, load_cache
+    from const import check_required_preferences, STEAM_NAVIGATIONS
     from difflib import SequenceMatcher
     from json import loads as json_loads
+    from os.path import isfile
 
-    log.info(f"Triggering Steam extension event with search '{search}'")
-    items: list[SteamExtensionItem] = []
-    populate_items: bool = True
+    check_required_preferences(preferences)
+    log.info(
+        f"Querying Steam extension cache{f' with search \'{search}\'' if search else ''}"
+    )
+    cache: dict[str, Any] = load_cache()
+    lang: dict[str, dict[str, str]] = {}
     try:
-        check_required_preferences(preferences)
-        if populate_items:
-            log.debug("Loading lang.json")
-            language: str = DEFAULT_LANGUAGE
-            if "LANGUAGE_CODE" in preferences.keys():
-                language = preferences["LANGUAGE_CODE"]
-            lang: dict[str, Any] = {}
-            try:
-                with open(f"{EXTENSION_PATH}lang.json", "r", encoding="utf-8") as f:
-                    lang = json_loads(f.read())
-            except Exception as err:
-                items.insert(0, SteamExtensionItem.from_error(err, preferences))
-                populate_items = False
-            if language not in lang.keys():
-                items.insert(
-                    0,
-                    SteamExtensionItem.from_error(
-                        KeyError(f"Language '{language}' not found in lang.json"),
-                        preferences,
-                    ),
+        with open(f"{EXTENSION_PATH}lang.json", "r", encoding="utf-8") as f:
+            lang = json_loads(f.read())
+    except Exception:
+        log.error("Failed to read lang.json", exc_info=True)
+    log.debug("Getting blacklists from preferences")
+    app_blacklist: list[int] = get_blacklist("app", preferences)
+    """
+    friend_blacklist: list[int] = get_blacklist("friend", preferences)
+    """
+    items: list[SteamExtensionItem] = []
+
+    def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
+        """
+        Returns the last time the app was launched and the number of times it has been launched from an item dictionary's values.
+
+        Args:
+            info (dict[str, Any]): The item dictionary.
+
+        Returns:
+            tuple[datetime | None, int]: The last time the app was launched and the number of times it has been launched.
+        """
+        from datetime import timezone
+
+        last_launched: datetime | None = None
+        last_launched_int: int | None = info.get("last_launched")
+        if last_launched_int is not None:
+            last_launched = datetime.fromtimestamp(last_launched_int, timezone.utc)
+            # TODO: Implement basic timezone support?
+            # last_launched = last_launched.astimezone()
+        times_launched: int = info.get("times_launched", 0)
+        return last_launched, times_launched
+
+    if "steam_apps" in cache.keys() and isinstance(cache["steam_apps"], dict):
+        if not preferences["STEAM_FOLDER"].endswith(DIR_SEP):
+            preferences["STEAM_FOLDER"] = f"{preferences['STEAM_FOLDER']}{DIR_SEP}"
+        for app_id, app_info in cache["steam_apps"].items():
+            if app_id in app_blacklist:
+                log.debug(f"Skipping blacklisted app ID {app_id}")
+                continue
+            if not isinstance(app_info, dict):
+                log.error(
+                    f"Invalid dictionary for Steam app ID {app_id}: {app_info}",
+                    exc_info=True,
                 )
-                language = DEFAULT_LANGUAGE
-        if populate_items:
-            cache: dict[str, Any] = load_cache()
-            steam_apps: list[SteamExtensionItem] = []
-            if "steam_apps" in cache.keys():
-                log.debug("Iterating through Steam apps")
-                if not isinstance(cache["steam_apps"], dict):
-                    items.insert(
-                        0,
-                        SteamExtensionItem.from_error(
-                            TypeError("'steam_apps' in cache.json is not a dictionary"),
-                            preferences,
-                        ),
-                    )
-                    cache["steam_apps"] = {}
-                for appid, appinfo in cache["steam_apps"].items():
-                    if not isinstance(appinfo, dict):
-                        items.insert(
-                            0,
-                            SteamExtensionItem.from_error(
-                                TypeError(
-                                    f"'steam_apps' app ID {appid} in cache.json is not a dictionary"
-                                ),
-                                preferences,
-                            ),
-                        )
-                        continue
-                    name: str = appid
-                    installed: bool = False
-                    ulaunched_last: datetime | None = None
-                    ulaunched_times: int = 0
-                    if "name" in appinfo.keys():
-                        name = str(appinfo["name"])
-                    if "installed" in appinfo.keys() and appinfo["installed"]:
-                        installed = True
-                    if "last_launched" in appinfo.keys():
-                        ulaunched_last = datetime.strptime(
-                            str(appinfo["last_launched"]), "%Y-%m-%d %H:%M:%S"
-                        )
-                    if "times_launched" in appinfo.keys():
-                        ulaunched_times = int(appinfo["times_launched"])
-                    steam_apps.append(
-                        SteamExtensionItem(
-                            preferences,
-                            appid=appid,
-                            name=name,
-                            installed=installed,
-                            ulaunched_last=ulaunched_last,
-                            ulaunched_times=ulaunched_times,
-                        )
-                    )
-                items.extend(steam_apps)
-            if "non_steam_apps" in cache.keys():
-                log.debug("Iterating through non-Steam apps")
-                if not isinstance(cache["non_steam_apps"], dict):
-                    items.insert(
-                        0,
-                        SteamExtensionItem.from_error(
-                            TypeError(
-                                "'non_steam_apps' in cache.json is not a dictionary"
-                            ),
-                            preferences,
-                        ),
-                    )
-                    cache["non_steam_apps"] = {}
-                for appid, appinfo in cache["non_steam_apps"].items():
-                    if not isinstance(appinfo, dict):
-                        items.insert(
-                            0,
-                            SteamExtensionItem.from_error(
-                                TypeError(
-                                    f"'non_steam_apps' app ID {appid} in cache.json is not a dictionary"
-                                ),
-                                preferences,
-                            ),
-                        )
-                        continue
-                    name: str = appid
-                    ulaunched_last: datetime | None = None
-                    ulaunched_times: int = 0
-                    if "name" in appinfo.keys():
-                        name = str(appinfo["name"])
-                    if "last_launched" in appinfo.keys():
-                        ulaunched_last = datetime.strptime(
-                            str(appinfo["last_launched"]), "%Y-%m-%d %H:%M:%S"
-                        )
-                    if "times_launched" in appinfo.keys():
-                        ulaunched_times = int(appinfo["times_launched"])
-                    items.append(
-                        SteamExtensionItem(
-                            preferences,
-                            appid=appid,
-                            name=name,
-                            non_steam=True,
-                            ulaunched_last=ulaunched_last,
-                            ulaunched_times=ulaunched_times,
-                        )
-                    )
-            # Navigation
-            # https://developer.valvesoftware.com/wiki/Steam_browser_protocol
-            log.debug("Iterating through Steam navigations")
-            if "steam_navs" not in cache.keys():
-                cache["steam_navs"] = {}
-            if not isinstance(cache["steam_navs"], dict):
-                items.insert(
-                    0,
-                    SteamExtensionItem.from_error(
-                        TypeError("'steam_navs' in cache.json is not a dictionary"),
-                        preferences,
-                    ),
+                continue
+            name: str = app_info["name"]
+            location: str | None = app_info.get("install_dir")
+            if location is not None:
+                location = f"{preferences["STEAM_FOLDER"]}steamapps{DIR_SEP}common{DIR_SEP}{location}"
+            size_on_disk: int = app_info.get("size_on_disk", 0)
+            display_name: str | None = None
+            if location is not None or size_on_disk > 0:
+                display_name = get_lang_string(
+                    lang, preferences["LANGUAGE_CODE"], f"launch_%a"
+                ).replace("%a", name)
+            else:
+                display_name = get_lang_string(
+                    lang, preferences["LANGUAGE_CODE"], f"install_%a"
+                ).replace("%a", name)
+            total_playtime: int = app_info.get("total_playtime", 0)
+            icon: str | None = None
+            icon_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id}.jpg"
+            if isfile(icon_path):
+                icon = icon_path
+            last_launched: datetime | None
+            times_launched: int
+            last_launched, times_launched = get_launches(app_info)
+            items.append(
+                SteamExtensionItem(
+                    preferences,
+                    lang,
+                    type="app",
+                    id=int(app_id),
+                    name=name,
+                    display_name=display_name,
+                    location=location,
+                    size_on_disk=size_on_disk,
+                    total_playtime=total_playtime,
+                    icon=icon,
+                    last_launched=last_launched,
+                    times_launched=times_launched,
                 )
-                cache["steam_navs"] = {}
-            navigations: list[str] = STEAM_NAVIGATIONS.copy()
-            for navigation in navigations:
-                log.debug(f"Adding navigation '{navigation}'")
-                nav_name: str = navigation
-                nav_action: str = f"steam steam://{navigation}"
-                try:
-                    nav_name = get_lang_string(lang, language, navigation)
-                except KeyError as err:
-                    items.insert(0, SteamExtensionItem.from_error(err, preferences))
-                nav_description: str | None = None
-                try:
-                    nav_description = get_lang_string(lang, language, f"{navigation}%d")
-                except KeyError as err:
-                    pass
-                if "%g" not in navigation:
-                    ulaunched_last: datetime | None = None
-                    ulaunched_times: int = 0
-                    if (
-                        "steam_navs" in cache.keys()
-                        and isinstance(cache["steam_navs"], dict)
-                        and navigation in cache["steam_navs"].keys()
-                        and isinstance(cache["steam_navs"][navigation], dict)
-                    ):
-                        if "last_launched" in appinfo.keys():
-                            ulaunched_last = datetime.strptime(
-                                str(appinfo["last_launched"]), "%Y-%m-%d %H:%M:%S"
-                            )
-                        if "times_launched" in appinfo.keys():
-                            ulaunched_times = int(appinfo["times_launched"])
-                    items.append(
-                        SteamExtensionItem(
-                            preferences,
-                            name=nav_name,
-                            description=nav_description,
-                            action=nav_action,
-                            ulaunched_last=ulaunched_last,
-                            ulaunched_times=ulaunched_times,
-                        )
-                    )
-                    continue
-                log.debug(f"Iterating through Steam apps for navigation '{navigation}'")
-                for steam_app in steam_apps:
-                    app_id: str = steam_app.appid  # type: ignore
-                    app_name: str = steam_app.name  # type: ignore
-                    if app_id is None or app_name is None:
-                        items.insert(
-                            0,
-                            SteamExtensionItem.from_error(
-                                RuntimeError(
-                                    f"An in-memory Steam app has a missing app ID or name: ({app_id}, {repr(app_name)})"
-                                ),
-                                preferences,
-                            ),
-                        )
-                        break
-                    specific_name: str = nav_name.replace("%g", app_name)
-                    specific_description: str | None = (
-                        nav_description.replace("%g", app_name)
-                        if nav_description is not None
-                        else None
-                    )
-                    specific_action: str = nav_action.replace("%g", str(app_id))
-                    ulaunched_last: datetime | None = None
-                    ulaunched_times: int = 0
-                    items.append(
-                        SteamExtensionItem(
-                            preferences,
-                            appid=app_id,
-                            name=specific_name,
-                            description=specific_description,
-                            action=specific_action,
-                            ulaunched_last=ulaunched_last,
-                            ulaunched_times=ulaunched_times,
-                        )
-                    )
-            if "actions" not in cache.keys():
-                cache["actions"] = {}
-            if "rebuild_cache" not in cache["actions"].keys():
-                cache["actions"]["rebuild_cache"] = {}
-            ulaunched_last: datetime | None = None
-            ulaunched_times: int = 0
-            if "last_launched" in cache["actions"]["rebuild_cache"].keys():
-                ulaunched_last = datetime.strptime(
-                    str(cache["actions"]["rebuild_cache"]["last_launched"]),
-                    "%Y-%m-%d %H:%M:%S",
+            )
+    if "non_steam_apps" in cache.keys() and isinstance(cache["non_steam_apps"], dict):
+        for app_id, app_info in cache["non_steam_apps"].items():
+            if app_id in app_blacklist:
+                log.debug(f"Skipping blacklisted app ID {app_id}")
+                continue
+            if not isinstance(app_info, dict):
+                log.error(
+                    f"Invalid dictionary for non-Steam app ID {app_id}: {app_info}",
+                    exc_info=True,
                 )
-            if "times_launched" in cache["actions"]["rebuild_cache"].keys():
-                ulaunched_times = int(
-                    cache["actions"]["rebuild_cache"]["times_launched"]
+            name: str = app_info["name"]
+            non_steam_display_name: str = get_lang_string(
+                lang, preferences["LANGUAGE_CODE"], f"launch_%a"
+            ).replace("%a", name)
+            location: str | None = app_info.get("exe")
+            size_on_disk: int = app_info.get("size_on_disk", 0)
+            last_launched: datetime | None
+            times_launched: int
+            last_launched, times_launched = get_launches(app_info)
+            items.append(
+                SteamExtensionItem(
+                    preferences,
+                    lang,
+                    type="app",
+                    id=int(app_id),
+                    non_steam=True,
+                    name=name,
+                    display_name=non_steam_display_name,
+                    location=location,
+                    size_on_disk=size_on_disk,
+                    last_launched=last_launched,
+                    times_launched=times_launched,
+                )
+            )
+    if "steam_navs" not in cache.keys() or not isinstance(cache["steam_navs"], dict):
+        log.warning("cache.json does not contain valid 'steam_navs' key")
+        cache["steam_navs"] = {}
+    for name in STEAM_NAVIGATIONS:
+        nav_display_name: str = get_lang_string(
+            lang, preferences["LANGUAGE_CODE"], name
+        )
+        description: str | None = None
+        try:
+            description = get_lang_string(
+                lang, preferences["LANGUAGE_CODE"], f"{name}%d", strict=True
+            )
+        except KeyError:
+            pass
+        ids: list[int | None] = [None]
+        if "%a" in name:
+            ids = [int(app_id) for app_id in cache["steam_apps"].keys()]
+        for id in ids:
+            id_name: str = name.replace("%a", str(id))
+            id_display_name: str = nav_display_name
+            id_description: str | None = description
+            icon: str | None = None
+            if "%a" in name:
+                app_name: str = str(id)
+                if "name" in cache["steam_apps"][str(id)].keys():
+                    app_name = str(cache["steam_apps"][str(id)]["name"])
+                id_display_name = nav_display_name.replace("%a", app_name)
+                if id_description is not None:
+                    id_description = id_description.replace("%a", app_name)
+                icon_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{id}.jpg"
+                if isfile(icon_path):
+                    icon = icon_path
+            last_launched: datetime | None = None
+            times_launched: int = 0
+            if id_name in cache["steam_navs"].keys() and isinstance(
+                cache["steam_navs"][id_name], dict
+            ):
+                last_launched, times_launched = get_launches(
+                    cache["steam_navs"][id_name]
                 )
             items.append(
                 SteamExtensionItem(
                     preferences,
-                    name=get_lang_string(lang, language, "rebuild_cache"),
-                    non_steam=True,
-                    description=get_lang_string(lang, language, "rebuild_cache%d"),
-                    action="rebuild_cache",
-                    ulaunched_last=ulaunched_last,
-                    ulaunched_times=ulaunched_times,
+                    lang,
+                    type="nav",
+                    id=id,
+                    name=id_name,
+                    display_name=id_display_name,
+                    description=id_description,
+                    icon=icon,
+                    last_launched=last_launched,
+                    times_launched=times_launched,
                 )
             )
-            if search is None:
-                search = ""
-            else:
-                search = search.strip().lower()
-            if search == "":
-                log.debug("Sorting items")
-                items = sorted(
-                    items, key=lambda x: x.to_sort_string(preferences["SORT_KEYS"])
-                )
-            else:
-                log.debug(f"Searching items for fuzzy match of '{search}'")
-                items = [
-                    item
-                    for item in items
-                    if all(word in item.to_search_string() for word in search.split())
-                ]
-                items = sorted(
-                    items,
-                    key=lambda x: SequenceMatcher(
-                        None, x.to_search_string(), search
-                    ).ratio(),
-                    reverse=True,
-                )
-    except Exception as err:
-        items.insert(0, SteamExtensionItem.from_error(err, preferences))
+    for name in ("rebuild_cache", "clear_cache", "clear_and_rebuild_cache"):
+        items.append(
+            SteamExtensionItem(
+                preferences,
+                lang,
+                type="action",
+                name=name,
+                display_name=get_lang_string(lang, preferences["LANGUAGE_CODE"], name),
+                description=get_lang_string(
+                    lang, preferences["LANGUAGE_CODE"], f"{name}%d"
+                ),
+            )
+        )
+    if search is None:
+        search = ""
+    else:
+        search = search.strip().lower()
+    if search == "":
+        items = sorted(items, key=lambda x: x.to_sort_list())
+    else:
+        log.debug(f"Searching items for fuzzy match of '{search}'")
+        items = [
+            item
+            for item in items
+            if all(
+                word in f"{item.get_name().lower()} {item.get_description().lower()}"
+                for word in search.split()
+            )
+        ]
+        items = sorted(
+            items,
+            key=lambda x: [
+                x.type == "app",
+                SequenceMatcher(None, x.get_name().lower(), search).ratio(),
+                SequenceMatcher(None, x.get_description().lower(), search).ratio(),
+            ],
+            reverse=True,
+        )
+    max_items_str: str = preferences["MAX_ITEMS"]
     max_items: int = 10
     try:
-        max_items = int(preferences["MAX_ITEMS"])
+        max_items = int(max_items_str)
         if max_items <= 0:
+            max_items = 10
             raise ValueError()
-    except ValueError:
-        items.insert(
-            0,
-            SteamExtensionItem.from_error(
-                ValueError("Maximum items is not a valid positive integer"), preferences
-            ),
-        )
-    if len(items) >= 1:
-        items = items[: min(max_items, len(items))]
-    else:
-        try:
-            items.append(
-                SteamExtensionItem(
-                    preferences,
-                    name=get_lang_string(lang, language, "no_results"),
-                    description=get_lang_string(lang, language, "no_results%d"),
-                    is_error=True,
-                )
+    except Exception:
+        log.warning(f"Maximum items from preferences '{max_items_str}' is invalid")
+    items = items[: min(max_items, len(items))]
+    if len(items) == 0:
+        items.append(
+            SteamExtensionItem(
+                preferences,
+                lang,
+                type="action",
+                name="no_results",
+                display_name=get_lang_string(
+                    lang, preferences["LANGUAGE_CODE"], "no_results"
+                ),
+                description=get_lang_string(
+                    lang, preferences["LANGUAGE_CODE"], f"no_results%d"
+                ),
             )
-        except KeyError as err:
-            items.append(SteamExtensionItem.from_error(err, preferences))
+        )
     return items
 
 
@@ -510,12 +523,13 @@ if __name__ == "__main__":
     from const import get_preferences_from_env
     import sys
 
+    preferences: dict[str, Any] = get_preferences_from_env()
     print(
         "\n".join(
             f"{index + 1}. {item}"
             for index, item in enumerate(
-                steam_extension_event(
-                    preferences=get_preferences_from_env(),
+                query_cache(
+                    preferences,
                     search=" ".join(sys.argv[1:]),
                 )
             )
