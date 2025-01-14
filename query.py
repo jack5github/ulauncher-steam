@@ -150,7 +150,7 @@ class SteamExtensionItem:
         Returns:
             list[Any]: The list of the SteamExtensionItem's attributes.
         """
-        sort_keys_str: str = preferences["SORT_KEYS"]
+        sort_keys_str: str = self.preferences["SORT_KEYS"]
         sort_keys: list[str] = [key.strip() for key in sort_keys_str.split(",")]
         sort_list: list[Any] = []
         while len(sort_list) == 0:
@@ -276,9 +276,10 @@ def query_cache(
     from os.path import isfile
 
     check_required_preferences(preferences)
-    log.info(
-        f"Querying Steam extension cache{f' with search \'{search}\'' if search else ''}"
-    )
+    if search is None:
+        log.info("Querying Steam extension cache")
+    else:
+        log.info(f"Querying Steam extension cache with search '{search}'")
     cache: dict[str, Any] = load_cache()
     lang: dict[str, dict[str, str]] = {}
     try:
@@ -330,7 +331,7 @@ def query_cache(
             name: str = app_info["name"]
             location: str | None = app_info.get("install_dir")
             if location is not None:
-                location = f"{preferences["STEAM_FOLDER"]}steamapps{DIR_SEP}common{DIR_SEP}{location}"
+                location = f"{preferences['STEAM_FOLDER']}steamapps{DIR_SEP}common{DIR_SEP}{location}"
             size_on_disk: int = app_info.get("size_on_disk", 0)
             display_name: str | None = None
             if location is not None or size_on_disk > 0:
