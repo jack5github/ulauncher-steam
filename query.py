@@ -258,6 +258,8 @@ class SteamExtensionItem:
             action = str(self.id)
         elif self.type == "nav":
             action = f"steam://{self.name}"
+            for modifier in ("%a", "%f"):
+                action = action.replace(modifier, str(self.id))
         elif self.type == "action":
             return action
         action = f"{self.type.upper()}{action}"

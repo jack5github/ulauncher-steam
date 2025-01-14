@@ -90,7 +90,7 @@ DEFAULT_LANGUAGE: str = "en-GB"
 # TODO: Add groups actions
 STEAM_NAVIGATIONS: list[str] = [
     "AddNonSteamGame",
-    "advertise/%a",
+    # "advertise/%a",  Duplicate of "store/%a"
     "appnews/%a",
     "backup/%a",
     "browsemedia",
@@ -138,15 +138,17 @@ STEAM_NAVIGATIONS: list[str] = [
     "open/games/list",
     "open/largegameslist",
     "open/main",
+    # TODO: Test the above
     "open/minigameslist",
+    # TODO: Test music player navigations with a soundtrack installed on the system
     "open/music",
     "open/musicplayer",
-    "open/mymedia",
-    "open/news",
-    "open/registerproduct",
+    # "open/mymedia",  Does nothing
+    # "open/news",  Does nothing
+    # "open/registerproduct",  Does nothing
     "open/screenshots/%a",
     "open/servers",
-    "open/settings",
+    # "open/settings",  Duplicate of "settings/account"
     "open/tools",
     "settings/account",
     "settings/downloads",
@@ -154,42 +156,42 @@ STEAM_NAVIGATIONS: list[str] = [
     "settings/ingame",
     "settings/interface",
     "settings/voice",
-    "stopstreaming",
+    # "stopstreaming",  Disabled as there is no way to start streaming from the extension
     "store",
     "store/%a",
     "uninstall/%a",
-    "UpdateFirmware",
+    "UpdateFirmware",  # TODO: Test this with a Steam controller
     "updatenews/%a",
-    "url/CommentNotifications",
+    # "url/CommentNotifications",  Encounters an error when processing the request
     "url/CommunityFriendsThatPlay/%a",
     "url/CommunityHome",
     "url/CommunityInventory",
-    "url/CommunitySearch",
-    "url/DownloadsSupportInfo",
+    # "url/CommunitySearch",  Does nothing
+    # "url/DownloadsSupportInfo",  Does nothing
     "url/FamilySharing",
     "url/GameHub/%a",
-    "url/LeaveGroupPage",
+    # "url/LeaveGroupPage",  Does nothing
     "url/LegalInformation",
     "url/MyHelpRequests",
     "url/ParentalSetup",
     "url/PrivacyPolicy",
     "url/SSA",
-    "url/SteamGreenlight",
-    "url/SteamIDControlPage",
+    # "url/SteamGreenlight",  Does nothing
+    # "url/SteamIDControlPage",  Does nothing
     "url/SteamIDEditPage",
     "url/SteamIDFriendsPage",
     "url/SteamIDMyProfile",
     "url/SteamIDPage/%f",
     "url/SteamWorkshop",
     "url/SteamWorkshopPage/%a",
-    "url/Store",
+    # "url/Store",  Duplicate of "store", does nothing if Steam is closed
     "url/StoreAccount",
-    "url/StoreAppPage/%a",
+    # "url/StoreAppPage/%a",  Duplicate of "store/%a"
     "url/StoreCart",
-    "url/StoreDLCPage/%a",
-    "url/Storefront",
-    "url/StoreFrontPage",
-    "url/SupportFrontPage",
+    # "url/StoreDLCPage/%a",  Does nothing
+    # "url/Storefront",  Does nothing
+    # "url/StoreFrontPage",  Duplicate of "store"
+    # "url/SupportFrontPage",  Does nothing
     "validate/%a",
     "viewfriendsgame/%f",
 ]
