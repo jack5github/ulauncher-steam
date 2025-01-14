@@ -270,8 +270,19 @@ def get_lang_string(
 
 
 def query_cache(
-    preferences: dict[str, Any], search: str | None = None
+    keyword: str, preferences: dict[str, Any], search: str | None = None
 ) -> list[SteamExtensionItem]:
+    """
+    Queries the Steam extension cache for items that match the search, or if there is no search, sorts them based on the user's preferences.
+
+    Args:
+        keyword (str): The keyword that indicates what type of items are allowed to appear.
+        preferences (dict[str, Any]): The preferences dictionary.
+        search (str | None, optional): The search query. Defaults to None.
+
+    Returns:
+        list[SteamExtensionItem]: The list of SteamExtensionItems that match the criteria.
+    """
     from cache import get_blacklist, load_cache
     from const import check_required_preferences, STEAM_NAVIGATIONS
     from difflib import SequenceMatcher
@@ -318,180 +329,185 @@ def query_cache(
         times_launched: int = info.get("times_launched", 0)
         return last_launched, times_launched
 
-    if "steam_apps" in cache.keys() and isinstance(cache["steam_apps"], dict):
-        if not preferences["STEAM_FOLDER"].endswith(DIR_SEP):
-            preferences["STEAM_FOLDER"] = f"{preferences['STEAM_FOLDER']}{DIR_SEP}"
-        for app_id, app_info in cache["steam_apps"].items():
-            app_id_int: int = int(app_id)
-            try:
-                app_id_int = int(app_id)
-            except Exception:
-                log.error(f"Invalid app ID '{app_id}'", exc_info=True)
-                continue
-            if app_id_int in app_blacklist:
-                log.debug(f"Skipping blacklisted app ID {app_id_int}")
-                continue
-            if not isinstance(app_info, dict):
-                log.error(
-                    f"Invalid dictionary for Steam app ID {app_id_int}: {app_info}",
-                    exc_info=True,
-                )
-                continue
-            name: str = app_info["name"]
-            location: str | None = app_info.get("install_dir")
-            if location is not None:
-                location = f"{preferences['STEAM_FOLDER']}steamapps{DIR_SEP}common{DIR_SEP}{location}"
-            size_on_disk: int = app_info.get("size_on_disk", 0)
-            display_name: str | None = None
-            if location is not None or size_on_disk > 0:
-                display_name = get_lang_string(
-                    lang, preferences["LANGUAGE_CODE"], f"launch_%a"
-                ).replace("%a", name)
-            else:
-                display_name = get_lang_string(
-                    lang, preferences["LANGUAGE_CODE"], f"install_%a"
-                ).replace("%a", name)
-            total_playtime: int = app_info.get("total_playtime", 0)
-            icon: str | None = None
-            icon_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id_int}.jpg"
-            if isfile(icon_path):
-                icon = icon_path
-            last_launched: datetime | None
-            times_launched: int
-            last_launched, times_launched = get_launches(app_info)
-            items.append(
-                SteamExtensionItem(
-                    preferences,
-                    lang,
-                    type="app",
-                    id=app_id_int,
-                    name=name,
-                    display_name=display_name,
-                    location=location,
-                    size_on_disk=size_on_disk,
-                    total_playtime=total_playtime,
-                    icon=icon,
-                    last_launched=last_launched,
-                    times_launched=times_launched,
-                )
-            )
-    if "non_steam_apps" in cache.keys() and isinstance(cache["non_steam_apps"], dict):
-        for app_id, app_info in cache["non_steam_apps"].items():
-            app_id_int: int
-            try:
-                app_id_int = int(app_id)
-            except Exception:
-                log.error(f"Invalid app ID '{app_id}'", exc_info=True)
-                continue
-            if app_id_int in app_blacklist:
-                log.debug(f"Skipping blacklisted app ID {app_id_int}")
-                continue
-            if not isinstance(app_info, dict):
-                log.error(
-                    f"Invalid dictionary for non-Steam app ID {app_id_int}: {app_info}",
-                    exc_info=True,
-                )
-            name: str = app_info["name"]
-            non_steam_display_name: str = get_lang_string(
-                lang, preferences["LANGUAGE_CODE"], f"launch_%a"
-            ).replace("%a", name)
-            location: str | None = app_info.get("exe")
-            size_on_disk: int = app_info.get("size_on_disk", 0)
-            last_launched: datetime | None
-            times_launched: int
-            last_launched, times_launched = get_launches(app_info)
-            items.append(
-                SteamExtensionItem(
-                    preferences,
-                    lang,
-                    type="app",
-                    id=app_id_int,
-                    non_steam=True,
-                    name=name,
-                    display_name=non_steam_display_name,
-                    location=location,
-                    size_on_disk=size_on_disk,
-                    last_launched=last_launched,
-                    times_launched=times_launched,
-                )
-            )
-    if "steam_navs" not in cache.keys() or not isinstance(cache["steam_navs"], dict):
-        log.warning("cache.json does not contain valid 'steam_navs' key")
-        cache["steam_navs"] = {}
-    for name in STEAM_NAVIGATIONS:
-        nav_display_name: str = get_lang_string(
-            lang, preferences["LANGUAGE_CODE"], name
-        )
-        description: str | None = None
-        try:
-            description = get_lang_string(
-                lang, preferences["LANGUAGE_CODE"], f"{name}%d", strict=True
-            )
-        except KeyError:
-            pass
-        ids: list[int | None] = [None]
-        if "%a" in name:
-            if "steam_apps" in cache.keys() and isinstance(
-                cache["steam_apps"], dict
-            ):
-                ids = [int(app_id) for app_id in cache["steam_apps"].keys()]
-            else:
-                log.warning(
-                    "cache.json does not contain any valid Steam apps", exc_info=True)
-                ids = []
-        for id in ids:
-            if id in app_blacklist:
-                log.debug(f"Skipping blacklisted app ID {id}")
-                continue
-            id_name: str = name.replace("%a", str(id))
-            id_display_name: str = nav_display_name
-            id_description: str | None = description
-            icon: str | None = None
-            if "%a" in name:
-                app_name: str = str(id)
-                if "name" in cache["steam_apps"][str(id)].keys():
-                    app_name = str(cache["steam_apps"][str(id)]["name"])
-                id_display_name = nav_display_name.replace("%a", app_name)
-                if id_description is not None:
-                    id_description = id_description.replace("%a", app_name)
-                icon_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{id}.jpg"
+    if keyword in (preferences["KEYWORD"], preferences["KEYWORD_APPS"]):
+        if "steam_apps" in cache.keys() and isinstance(cache["steam_apps"], dict):
+            if not preferences["STEAM_FOLDER"].endswith(DIR_SEP):
+                preferences["STEAM_FOLDER"] = f"{preferences['STEAM_FOLDER']}{DIR_SEP}"
+            for app_id, app_info in cache["steam_apps"].items():
+                app_id_int: int = int(app_id)
+                try:
+                    app_id_int = int(app_id)
+                except Exception:
+                    log.error(f"Invalid app ID '{app_id}'", exc_info=True)
+                    continue
+                if app_id_int in app_blacklist:
+                    log.debug(f"Skipping blacklisted app ID {app_id_int}")
+                    continue
+                if not isinstance(app_info, dict):
+                    log.error(
+                        f"Invalid dictionary for Steam app ID {app_id_int}: {app_info}",
+                        exc_info=True,
+                    )
+                    continue
+                name: str = app_info["name"]
+                location: str | None = app_info.get("install_dir")
+                if location is not None:
+                    location = f"{preferences['STEAM_FOLDER']}steamapps{DIR_SEP}common{DIR_SEP}{location}"
+                size_on_disk: int = app_info.get("size_on_disk", 0)
+                display_name: str | None = None
+                if location is not None or size_on_disk > 0:
+                    display_name = get_lang_string(
+                        lang, preferences["LANGUAGE_CODE"], f"launch_%a"
+                    ).replace("%a", name)
+                else:
+                    display_name = get_lang_string(
+                        lang, preferences["LANGUAGE_CODE"], f"install_%a"
+                    ).replace("%a", name)
+                total_playtime: int = app_info.get("total_playtime", 0)
+                icon: str | None = None
+                icon_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id_int}.jpg"
                 if isfile(icon_path):
                     icon = icon_path
-            last_launched: datetime | None = None
-            times_launched: int = 0
-            if id_name in cache["steam_navs"].keys() and isinstance(
-                cache["steam_navs"][id_name], dict
-            ):
-                last_launched, times_launched = get_launches(
-                    cache["steam_navs"][id_name]
+                last_launched: datetime | None
+                times_launched: int
+                last_launched, times_launched = get_launches(app_info)
+                items.append(
+                    SteamExtensionItem(
+                        preferences,
+                        lang,
+                        type="app",
+                        id=app_id_int,
+                        name=name,
+                        display_name=display_name,
+                        location=location,
+                        size_on_disk=size_on_disk,
+                        total_playtime=total_playtime,
+                        icon=icon,
+                        last_launched=last_launched,
+                        times_launched=times_launched,
+                    )
                 )
+        if "non_steam_apps" in cache.keys() and isinstance(cache["non_steam_apps"], dict):
+            for app_id, app_info in cache["non_steam_apps"].items():
+                app_id_int: int
+                try:
+                    app_id_int = int(app_id)
+                except Exception:
+                    log.error(f"Invalid app ID '{app_id}'", exc_info=True)
+                    continue
+                if app_id_int in app_blacklist:
+                    log.debug(f"Skipping blacklisted app ID {app_id_int}")
+                    continue
+                if not isinstance(app_info, dict):
+                    log.error(
+                        f"Invalid dictionary for non-Steam app ID {app_id_int}: {app_info}",
+                        exc_info=True,
+                    )
+                name: str = app_info["name"]
+                non_steam_display_name: str = get_lang_string(
+                    lang, preferences["LANGUAGE_CODE"], f"launch_%a"
+                ).replace("%a", name)
+                location: str | None = app_info.get("exe")
+                size_on_disk: int = app_info.get("size_on_disk", 0)
+                last_launched: datetime | None
+                times_launched: int
+                last_launched, times_launched = get_launches(app_info)
+                items.append(
+                    SteamExtensionItem(
+                        preferences,
+                        lang,
+                        type="app",
+                        id=app_id_int,
+                        non_steam=True,
+                        name=name,
+                        display_name=non_steam_display_name,
+                        location=location,
+                        size_on_disk=size_on_disk,
+                        last_launched=last_launched,
+                        times_launched=times_launched,
+                    )
+                )
+    if keyword in (preferences["KEYWORD"], preferences["KEYWORD_APPS"]):
+        if "steam_navs" not in cache.keys() or not isinstance(cache["steam_navs"], dict):
+            log.warning("cache.json does not contain valid 'steam_navs' key")
+            cache["steam_navs"] = {}
+        for name in STEAM_NAVIGATIONS:
+            nav_display_name: str = get_lang_string(
+                lang, preferences["LANGUAGE_CODE"], name
+            )
+            description: str | None = None
+            try:
+                description = get_lang_string(
+                    lang, preferences["LANGUAGE_CODE"], f"{name}%d", strict=True
+                )
+            except KeyError:
+                pass
+            ids: list[int | None] = [None]
+            if "%a" in name:
+                if "steam_apps" in cache.keys() and isinstance(
+                    cache["steam_apps"], dict
+                ):
+                    ids = [int(app_id) for app_id in cache["steam_apps"].keys()]
+                else:
+                    log.warning(
+                        "cache.json does not contain any valid Steam apps", exc_info=True)
+                    ids = []
+            elif keyword == preferences["KEYWORD_APPS"]:
+                continue
+            for id in ids:
+                if id in app_blacklist:
+                    log.debug(f"Skipping blacklisted app ID {id}")
+                    continue
+                id_name: str = name.replace("%a", str(id))
+                id_display_name: str = nav_display_name
+                id_description: str | None = description
+                icon: str | None = None
+                if "%a" in name:
+                    app_name: str = str(id)
+                    if "name" in cache["steam_apps"][str(id)].keys():
+                        app_name = str(cache["steam_apps"][str(id)]["name"])
+                    id_display_name = nav_display_name.replace("%a", app_name)
+                    if id_description is not None:
+                        id_description = id_description.replace("%a", app_name)
+                    icon_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{id}.jpg"
+                    if isfile(icon_path):
+                        icon = icon_path
+                last_launched: datetime | None = None
+                times_launched: int = 0
+                if id_name in cache["steam_navs"].keys() and isinstance(
+                    cache["steam_navs"][id_name], dict
+                ):
+                    last_launched, times_launched = get_launches(
+                        cache["steam_navs"][id_name]
+                    )
+                items.append(
+                    SteamExtensionItem(
+                        preferences,
+                        lang,
+                        type="nav",
+                        id=id,
+                        name=id_name,
+                        display_name=id_display_name,
+                        description=id_description,
+                        icon=icon,
+                        last_launched=last_launched,
+                        times_launched=times_launched,
+                    )
+                )
+    if keyword in (preferences["KEYWORD"], preferences["KEYWORD_ACTIONS"]):
+        for name in ("update_cache", "clear_cache", "rebuild_cache"):
             items.append(
                 SteamExtensionItem(
                     preferences,
                     lang,
-                    type="nav",
-                    id=id,
-                    name=id_name,
-                    display_name=id_display_name,
-                    description=id_description,
-                    icon=icon,
-                    last_launched=last_launched,
-                    times_launched=times_launched,
+                    type="action",
+                    name=name,
+                    display_name=get_lang_string(lang, preferences["LANGUAGE_CODE"], name),
+                    description=get_lang_string(
+                        lang, preferences["LANGUAGE_CODE"], f"{name}%d"
+                    ),
                 )
             )
-    for name in ("update_cache", "clear_cache", "rebuild_cache"):
-        items.append(
-            SteamExtensionItem(
-                preferences,
-                lang,
-                type="action",
-                name=name,
-                display_name=get_lang_string(lang, preferences["LANGUAGE_CODE"], name),
-                description=get_lang_string(
-                    lang, preferences["LANGUAGE_CODE"], f"{name}%d"
-                ),
-            )
-        )
     if search is None:
         search = ""
     else:

@@ -62,7 +62,9 @@ class SteamExtensionQueryListener(EventListener):
         from query import SteamExtensionItem, query_cache
 
         preferences: dict[str, Any] = extension.preferences
-        items: list[SteamExtensionItem] = query_cache(preferences, event.get_argument())
+        items: list[SteamExtensionItem] = query_cache(
+            event.get_keyword(), preferences, event.get_argument()
+        )
         log.debug("Converting query results to ExtensionResultItems")
         result_items: list[ExtensionResultItem] = []
         for item in items:

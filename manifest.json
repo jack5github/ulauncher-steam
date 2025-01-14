@@ -8,9 +8,23 @@
         {
             "id": "KEYWORD",
             "type": "keyword",
-            "name": "Steam",
+            "name": "Steam search",
             "description": "Search through Steam games, apps, friends and menus",
             "default_value": "s"
+        },
+        {
+            "id": "KEYWORD_APPS",
+            "type": "keyword",
+            "name": "Steam apps",
+            "description": "Search through Steam apps",
+            "default_value": "sa"
+        },
+        {
+            "id": "KEYWORD_ACTIONS",
+            "type": "keyword",
+            "name": "Steam extension actions",
+            "description": "Search through Steam extension actions",
+            "default_value": "ss"
         },
         {
             "id": "STEAM_FOLDER",
