@@ -153,9 +153,9 @@ This setting controls the display of navigation items that depend on app and fri
 
 *IDs of apps to hide from the list, separated by commas* (input)
 
-Default: Empty
+Default: `228980`
 
-This setting hides apps from the list if they match one of the specified IDs. This is useful for hiding apps that are marked as hidden in Steam, are not games, or are otherwise not of interest to the user.
+This setting hides apps from the list if they match one of the specified IDs. This is useful for hiding apps that are marked as hidden in Steam, are not games, or are otherwise not of interest to the user. **Steamworks Common Redistributables** (228980) is blacklisted by default as an example.
 
 ### `FRIEND_BLACKLIST`: Friend blacklist
 

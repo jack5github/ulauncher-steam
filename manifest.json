@@ -151,7 +151,7 @@
 			"type": "input",
 			"name": "App blacklist",
 			"description": "IDs of apps to hide from the list, separated by commas",
-			"default_value": ""
+			"default_value": "228980"
 		},
 		{
 			"id": "FRIEND_BLACKLIST",
