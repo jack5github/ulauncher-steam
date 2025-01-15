@@ -538,6 +538,9 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             log.error("Failed to get Steam friends list", exc_info=True)
         ensure_dict_key_is_dict(cache, "friends")
         for friend_id, friend_info in steam_friends_list.items():
+            if friend_id in friend_blacklist:
+                log.debug(f"Skipping blacklisted friend ID '{friend_id}'")
+                continue
             cache_friend: dict[str, Any] = ensure_dict_key_is_dict(
                 cache["friends"], str(friend_id)
             )[0]
@@ -556,6 +559,9 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             log.error("Failed to get Steam friends info", exc_info=True)
         friend_icons_to_download: list[tuple[int, str]] = []
         for friend_id, friend_info in steam_friends_info.items():
+            if friend_id in friend_blacklist:
+                log.debug(f"Skipping blacklisted friend ID '{friend_id}'")
+                continue
             cache_friend: dict[str, Any] = ensure_dict_key_is_dict(
                 cache["friends"], str(friend_id)
             )[0]
