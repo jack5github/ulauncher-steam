@@ -40,7 +40,6 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         else:
             cache_app["times_launched"] = 1
     elif action.startswith("FRIEND"):
-        # TODO: Fix friend action doing nothing when set to open chat (not profile), both /message/ and /joinchat/ do nothing
         friend_id: int = int(action[6:])
         cache_friend: dict[str, Any]
         if "friends" in cache.keys() and str(friend_id) in cache["friends"].keys():
@@ -52,7 +51,7 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
             return
         friend_action: str
         if preferences["FRIEND_DEFAULT_ACTION"] == "chat":
-            friend_action = f"steam steam://joinchat/{friend_id}"
+            friend_action = f"steam steam://friends/message/{friend_id}"
         elif preferences["FRIEND_DEFAULT_ACTION"] == "profile":
             friend_action = f"steam steam://url/SteamIDPage/{friend_id}"
         else:

@@ -664,6 +664,15 @@ def query_cache(
                     if isfile(icon_path):
                         icon = icon_path
                 elif "%f" in name:
+                    skip_repeated_action: bool = False
+                    for act, key in (
+                        ("friends/message/", "chat"), ("url/SteamIDPage/", "profile")
+                    ):
+                        skip_repeated_action = name.startswith(act) and preferences[
+                            "FRIEND_DEFAULT_ACTION"
+                        ] == key
+                    if skip_repeated_action:
+                        continue
                     friend_name: str = str(id)
                     if "name" in cache["friends"][str(id)].keys():
                         friend_name = str(cache["friends"][str(id)]["name"])
