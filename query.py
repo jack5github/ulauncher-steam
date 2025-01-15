@@ -325,7 +325,7 @@ def get_lang_string(
 
 def timestamp_to_datetime(info: dict[str, Any], key: str) -> datetime | None:
     """
-    Converts a timestamp in a dictionary to a datetime object.
+    Converts a UTC timestamp in a dictionary to a datetime object to a local datetime object.
 
     Args:
         info (dict[str, Any]): The dictionary theoretically containing the timestamp.
@@ -334,12 +334,15 @@ def timestamp_to_datetime(info: dict[str, Any], key: str) -> datetime | None:
     Returns:
         datetime | None: The datetime object, or None if the timestamp is not found.
     """
+    from datetime import timedelta
+    from time import gmtime, localtime, mktime
+
     date: datetime | None = None
     timestamp: int | None = info.get(key)
     if timestamp is not None:
         date = datetime.fromtimestamp(timestamp, timezone.utc)
-        # TODO: Implement basic timezone support?
-        # last_launched = last_launched.astimezone()
+        offset: timedelta = timedelta(seconds=mktime(localtime()) - mktime(gmtime()))
+        date += offset
     return date
 
 
