@@ -655,10 +655,14 @@ def query_cache(
                 id_display_name: str = nav_display_name
                 id_description: str | None = description
                 icon: str | None = None
+                if isfile(
+                    f"{EXTENSION_PATH}images{DIR_SEP}navs{DIR_SEP}{name.replace(DIR_SEP, '-')}.png"
+                ):
+                    icon = f"{EXTENSION_PATH}images{DIR_SEP}navs{DIR_SEP}{name.replace(DIR_SEP, '-')}.png"
                 if "%a" in name:
                     if preferences["SHOW_UNINSTALLED_APPS"] == "false" and (
-                        "location" not in cache["steam_apps"][str(id)].keys() and "size_on_disk"
-                        not in cache["steam_apps"][str(id)].keys()
+                        "location" not in cache["steam_apps"][str(id)].keys()
+                        and "size_on_disk" not in cache["steam_apps"][str(id)].keys()
                     ):
                         continue
                     app_name: str = str(id)
@@ -667,19 +671,22 @@ def query_cache(
                     id_display_name = nav_display_name.replace("%a", app_name)
                     if id_description is not None:
                         id_description = id_description.replace("%a", app_name)
-                    icon_path: str = (
-                        f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{id}.jpg"
-                    )
-                    if isfile(icon_path):
-                        icon = icon_path
+                    if icon is None:
+                        icon_path: str = (
+                            f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{id}.jpg"
+                        )
+                        if isfile(icon_path):
+                            icon = icon_path
                 elif "%f" in name:
                     skip_repeated_action: bool = False
                     for act, key in (
-                        ("friends/message/", "chat"), ("url/SteamIDPage/", "profile")
+                        ("friends/message/", "chat"),
+                        ("url/SteamIDPage/", "profile"),
                     ):
-                        skip_repeated_action = name.startswith(act) and preferences[
-                            "FRIEND_DEFAULT_ACTION"
-                        ] == key
+                        skip_repeated_action = (
+                            name.startswith(act)
+                            and preferences["FRIEND_DEFAULT_ACTION"] == key
+                        )
                     if skip_repeated_action:
                         continue
                     friend_name: str = str(id)
@@ -688,11 +695,12 @@ def query_cache(
                     id_display_name = nav_display_name.replace("%f", friend_name)
                     if id_description is not None:
                         id_description = id_description.replace("%f", friend_name)
-                    icon_path: str = (
-                        f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{id}.jpg"
-                    )
-                    if isfile(icon_path):
-                        icon = icon_path
+                    if icon is None:
+                        icon_path: str = (
+                            f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{id}.jpg"
+                        )
+                        if isfile(icon_path):
+                            icon = icon_path
                 last_launched: datetime | None = None
                 times_launched: int = 0
                 if id_name in cache["steam_navs"].keys() and isinstance(
