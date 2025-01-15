@@ -192,7 +192,7 @@ class SteamExtensionItem:
             for sort_key in sort_keys:
                 if sort_key == "type":
                     sort_list.append(
-                        0 if self.type is "app" else 1 if self.type is "nav" else 2
+                        0 if self.type == "app" else 1 if self.type == "nav" else 2
                     )
                 elif sort_key == "id":
                     sort_list.append(self.id if self.id is not None else float("inf"))
@@ -365,6 +365,17 @@ def query_cache(
     from os.path import isfile
 
     check_required_preferences(preferences)
+    if keyword not in (
+        preferences["KEYWORD"],
+        preferences["KEYWORD_APPS"],
+        preferences["KEYWORD_FRIENDS"],
+        preferences["KEYWORD_ACTIONS"],
+    ):
+        log.error(
+            f"Invalid keyword '{keyword}', start query with one of ('{preferences['KEYWORD']}', '{preferences['KEYWORD_APPS']}', '{preferences['KEYWORD_FRIENDS']}', '{preferences['KEYWORD_ACTIONS']}')"
+        )
+        keyword = ""
+        search = None
     if search is None:
         log.info("Querying Steam extension cache")
     else:

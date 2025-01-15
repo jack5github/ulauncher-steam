@@ -29,6 +29,20 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
             "icon_hash": "ICON_HASH"
         }
     },
+    # TODO: Add country, state and city values to cache when needed
+    "countries": {
+        "COUNTRY_CODE": {
+            "name": "NAME"
+            "states": {
+                "STATE_CODE": {
+                    "name": "NAME"
+                    "cities": {
+                        "CITY_CODE": "NAME"
+                    }
+                }
+            }
+        }
+    }
     "friends": {
         "STEAMID64": {
             "name": "NAME",
