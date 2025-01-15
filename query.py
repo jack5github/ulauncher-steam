@@ -713,15 +713,34 @@ def query_cache(
                 for word in search.split()
             )
         ]
-        items = sorted(
-            items,
-            key=lambda x: [
-                x.type in ("app", "friend"),
-                SequenceMatcher(None, x.get_name().lower(), search).ratio(),
-                SequenceMatcher(None, x.get_description().lower(), search).ratio(),
-            ],
-            reverse=True,
-        )
+        split_search: list[str] = search.split()
+        NAVIGATION_MULT: float = float("inf")
+        NAME_WORD_INDICES_MULT: float = 1.0
+        NAME_WORD_LOW_INDEX_MULT: float = 0.2
+
+        def get_placement(item: SteamExtensionItem) -> float:
+            placement: float = 0.0
+            if item.type not in ("app", "friend"):
+                placement += NAVIGATION_MULT
+            name: str = item.get_name().lower()
+            name_index_lowest: int = len(name)
+            for word in split_search:
+                name_index: int = name.find(search)
+                if name_index != -1:
+                    if name_index < name_index_lowest:
+                        name_index_lowest = name_index
+                    reversed_name: str = name[name_index::-1]
+                    space_index: int = reversed_name.find(" ")
+                    if space_index != -1:
+                        space_index = len(reversed_name)
+                    name_index -= space_index
+                else:
+                    name_index = len(name)
+                placement += name_index * NAME_WORD_INDICES_MULT / len(split_search)
+            placement += name_index_lowest * NAME_WORD_LOW_INDEX_MULT
+            return placement
+
+        items = sorted(items, key=lambda item: get_placement(item))
     max_items_str: str = preferences["MAX_ITEMS"]
     max_items: int = 10
     try:
