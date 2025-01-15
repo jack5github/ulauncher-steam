@@ -176,6 +176,8 @@ class SteamExtensionItem:
                     description += f"{self.size / 1000 ** 3:.2f} GB"
                 else:
                     description += f"{self.size / 1000 ** 4:.2f} TB"
+            add_divider()
+            description += str(self.id)
         elif self.type == "friend":
             if self.real_name is not None and self.preferences["SHOW_REAL"] in (
                 "all",
@@ -188,6 +190,8 @@ class SteamExtensionItem:
             ):
                 add_divider()
                 description += self.location
+            add_divider()
+            description += str(self.id)
         elif self.description is not None:
             description = self.description
         return description
