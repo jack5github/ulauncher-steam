@@ -82,8 +82,9 @@ class SteamExtensionItem:
         Returns:
             str: The string representation of the SteamExtensionItem.
         """
-        if not "RESULT_REPR" in self.preferences.keys() or not bool(
-            self.preferences["RESULT_REPR"]
+        if (
+            not "ITEM_REPR" in self.preferences.keys()
+            or self.preferences["ITEM_REPR"] != "true"
         ):
             str_rep: str = self.get_name()
             description: str = self.get_description()
@@ -604,10 +605,8 @@ def query_cache(
                 continue
             for id in ids:
                 if "%a" in name and id in app_blacklist:
-                    log.debug(f"Skipping blacklisted app ID {id}")
                     continue
                 if "%f" in name and id in friend_blacklist:
-                    log.debug(f"Skipping blacklisted friend ID {id}")
                     continue
                 id_name: str = name
                 skip_dependent_nav: bool = False

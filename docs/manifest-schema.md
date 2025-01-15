@@ -192,4 +192,10 @@ Options:
 - `true` - *Yes* ❌
 - `false` - *No* (default) ❌
 
-This setting is exclusively for debugging. It allows developers to extract from the extension how it grades each selected list item based on the user's search string. The metrics along with the title and description of the selected list item are stored in the file **scores.csv**. This helps developers tweak the multipliers for each metric that affect how items are placed on the list.
+This setting is mainly for debugging. It allows developers to extract from the extension how it grades each selected list item based on the user's search string. The metrics along with the title and description of the selected list item are stored in the file **scores.csv**. This helps developers tweak the multipliers for each metric that affect how items are placed on the list.
+
+## Debugging
+
+The following settings are not exposed in uLauncher and are only used for debugging.
+
+- `ITEM_REPR` - A boolean that is inspected when returning a list of items via the console when executing submodules directly. If `true`, a verbose representation of each item is returned, otherwise only the title and description seen in uLauncher are returned.
