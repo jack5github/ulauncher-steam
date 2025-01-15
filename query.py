@@ -485,7 +485,7 @@ def query_cache(
                     exc_info=True,
                 )
                 continue
-            name = friend_info["name"]
+            name = friend_info["name"] if "name" in friend_info.keys() else friend_id
             real_name: str | None = friend_info.get("realName")
             created: datetime | None = friend_info.get("created")
             location = None
