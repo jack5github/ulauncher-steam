@@ -345,6 +345,7 @@ def query_cache(
     app_blacklist: list[int] = get_blacklist("app", preferences)
     friend_blacklist: list[int] = get_blacklist("friend", preferences)
     items: list[SteamExtensionItem] = []
+    oldest_launched: datetime | None = None
 
     def get_last_launched(info: dict[str, Any]) -> datetime | None:
         """
@@ -356,7 +357,14 @@ def query_cache(
         Returns:
             tuple[datetime | None, int]: The last time the item was launched.
         """
-        return timestamp_to_datetime(info, "launched")
+        nonlocal oldest_launched
+
+        launched: datetime | None = timestamp_to_datetime(info, "launched")
+        if launched is not None and (
+            oldest_launched is None or launched < oldest_launched
+        ):
+            oldest_launched = launched
+        return launched
 
     icon: str | None
     icon_path: str
@@ -714,30 +722,56 @@ def query_cache(
             )
         ]
         split_search: list[str] = search.split()
-        NAVIGATION_MULT: float = float("inf")
-        NAME_WORD_INDICES_MULT: float = 1.0
-        NAME_WORD_LOW_INDEX_MULT: float = 0.2
+        now: datetime = datetime.now(timezone.utc)
+        # Placement multipliers, higher values will bring to top
+        NON_NAVIGATION_MULT: float = 1  # Item is not a navigation
+        NAME_WORD_INDICES_MULT: float = 0.3  # Words in name have search earlier in them
+        NAME_WORD_LOW_INDEX_MULT: float = 1  # Name starts with search
+        DESC_WORD_MATCHES_MULT: float = 1  # Words in description match
+        UNINSTALLED_MULT: float = 1.1  # Item is uninstalled
+        LAST_LAUNCHED_MULT: float = 1  # Item has been launched recently
 
         def get_placement(item: SteamExtensionItem) -> float:
+            """
+            Gets the placement of an item based on various attributes. The lower the placement, the higher the item will appear in the list.
+
+            Args:
+                item (SteamExtensionItem): The item to get the placement of.
+
+            Returns:
+                float: The placement of the item.
+            """
             placement: float = 0.0
             if item.type not in ("app", "friend"):
-                placement += NAVIGATION_MULT
+                placement += NON_NAVIGATION_MULT
             name: str = item.get_name().lower()
             name_index_lowest: int = len(name)
+            desc: str = item.get_description().lower()
             for word in split_search:
-                name_index: int = name.find(search)
+                name_index: int = name.find(word)
                 if name_index != -1:
                     if name_index < name_index_lowest:
                         name_index_lowest = name_index
-                    reversed_name: str = name[name_index::-1]
-                    space_index: int = reversed_name.find(" ")
-                    if space_index != -1:
-                        space_index = len(reversed_name)
-                    name_index -= space_index
+                    reversed_name: str = (
+                        name[name_index - 1 :: -1] if name_index > 0 else " "
+                    )
+                    name_index = reversed_name.find(" ")
                 else:
                     name_index = len(name)
                 placement += name_index * NAME_WORD_INDICES_MULT / len(split_search)
+                if word in desc:
+                    placement += DESC_WORD_MATCHES_MULT / len(split_search)
             placement += name_index_lowest * NAME_WORD_LOW_INDEX_MULT
+            if item.location is None and item.size == 0:
+                placement += UNINSTALLED_MULT
+            if oldest_launched is not None and item.launched is not None:
+                placement += (
+                    (now - item.launched).days
+                    / (now - oldest_launched).days
+                    * LAST_LAUNCHED_MULT
+                )
+            else:
+                placement += LAST_LAUNCHED_MULT
             return placement
 
         items = sorted(items, key=lambda item: get_placement(item))
