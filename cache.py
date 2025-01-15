@@ -275,6 +275,7 @@ def save_cache(cache: dict[str, Any], preferences: dict[str, Any]) -> None:
 
     log.debug("Saving cache.json")
     try:
+        cache["last_updated"]["cache"] = datetime_to_timestamp()
         with open(f"{EXTENSION_PATH}cache.json", "w", encoding="utf-8") as f:
             f.write(
                 json_dumps(
@@ -596,8 +597,6 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             log.info(f"Downloading {len(friend_icons_to_download)} Steam friend icons")
             for download in friend_icons_to_download:
                 download_steam_friend_icon(download[0], download[1])
-    cache["last_updated"]["cache"] = datetime_to_timestamp()
-    save_cache(cache, preferences)
     log.info("Steam extension cache built")
 
 

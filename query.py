@@ -85,11 +85,26 @@ class SteamExtensionItem:
         Returns:
             str: The string representation of the SteamExtensionItem.
         """
-        str_rep: str = self.get_name()
-        description: str = self.get_description()
-        if description != "":
-            str_rep += f" --- {description}"
-        return str_rep
+        if not "RESULT_REPR" in self.preferences.keys() or not bool(
+            self.preferences["RESULT_REPR"]
+        ):
+            str_rep: str = self.get_name()
+            description: str = self.get_description()
+            if description != "":
+                str_rep += f" --- {description}"
+            return str_rep
+        return str(
+            {
+                k: v
+                for k, v in {
+                    "ext_name": self.get_name(),
+                    "ext_description": self.get_description(),
+                    "ext_action": self.get_action(),
+                    **self.__dict__,
+                }.items()
+                if not k.startswith("_") and k not in ("preferences", "lang")
+            }
+        )
 
     def get_name(self) -> str:
         """
@@ -598,10 +613,10 @@ def query_cache(
             ):
                 continue
             for id in ids:
-                if "%a" in modifier and id in app_blacklist:
+                if "%a" in name and id in app_blacklist:
                     log.debug(f"Skipping blacklisted app ID {id}")
                     continue
-                if "%f" in modifier and id in friend_blacklist:
+                if "%f" in name and id in friend_blacklist:
                     log.debug(f"Skipping blacklisted friend ID {id}")
                     continue
                 for modifier in ("%a", "%f"):
@@ -734,9 +749,9 @@ if __name__ == "__main__":
             f"{index + 1}. {item}"
             for index, item in enumerate(
                 query_cache(
-                    preferences["KEYWORD"],
+                    sys.argv[1],
                     preferences,
-                    search=" ".join(sys.argv[1:]),
+                    search=" ".join(sys.argv[2:] if len(sys.argv) >= 3 else ""),
                 )
             )
         )
