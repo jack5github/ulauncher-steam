@@ -598,8 +598,11 @@ def query_cache(
             ):
                 continue
             for id in ids:
-                if id in app_blacklist:
+                if "%a" in modifier and id in app_blacklist:
                     log.debug(f"Skipping blacklisted app ID {id}")
+                    continue
+                if "%f" in modifier and id in friend_blacklist:
+                    log.debug(f"Skipping blacklisted friend ID {id}")
                     continue
                 for modifier in ("%a", "%f"):
                     id_name: str = name.replace(modifier, str(id))
