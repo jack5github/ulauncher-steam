@@ -1,6 +1,6 @@
 # uLauncher Steam extension
 
-This extension integrates Steam file searches and API calls into uLauncher, allowing you to search for and launch Steam apps, menus and more directly from uLauncher. Simply type any of the extension's keywords (Default: `s`, `sa`, `sf`, `se`) followed by whatever you are looking for, and it will naturally rise to the top of the list.
+This extension integrates Steam file searches and API calls into uLauncher, allowing you to search for and launch Steam apps, menus and more directly from uLauncher. Simply type any of the extension's keywords (Default: `s`, `sa`, `sf`, `sm`, `se`) followed by whatever you are looking for, and it will naturally rise to the top of the list.
 
 ## Installation
 

@@ -272,7 +272,6 @@ class SteamExtensionItem:
         elif self.type == "friend":
             action = str(self.id)
         elif self.type == "nav":
-            action = f"steam://{self.name}"
             for modifier in ("%a", "%f"):
                 action = action.replace(modifier, str(self.id))
         elif self.type == "action":
@@ -369,10 +368,11 @@ def query_cache(
         preferences["KEYWORD"],
         preferences["KEYWORD_APPS"],
         preferences["KEYWORD_FRIENDS"],
+        preferences["KEYWORD_NAVIGATIONS"],
         preferences["KEYWORD_ACTIONS"],
     ):
         log.error(
-            f"Invalid keyword '{keyword}', start query with one of ('{preferences['KEYWORD']}', '{preferences['KEYWORD_APPS']}', '{preferences['KEYWORD_FRIENDS']}', '{preferences['KEYWORD_ACTIONS']}')"
+            f"Invalid keyword '{keyword}', start query with one of ('{preferences['KEYWORD']}', '{preferences['KEYWORD_APPS']}', '{preferences['KEYWORD_FRIENDS']}', '{preferences['KEYWORD_NAVIGATIONS']}', '{preferences['KEYWORD_ACTIONS']}')"
         )
         keyword = ""
         search = None
@@ -574,6 +574,7 @@ def query_cache(
         preferences["KEYWORD"],
         preferences["KEYWORD_APPS"],
         preferences["KEYWORD_FRIENDS"],
+        preferences["KEYWORD_NAVIGATIONS"],
     ):
         if "steam_navs" not in cache.keys() or not isinstance(
             cache["steam_navs"], dict
@@ -596,6 +597,8 @@ def query_cache(
                 preferences["KEYWORD"],
                 preferences["KEYWORD_APPS"],
             ):
+                if preferences["SHOW_DEPENDENT_NAVIGATIONS"] == "false":
+                    continue
                 if "steam_apps" in cache.keys() and isinstance(
                     cache["steam_apps"], dict
                 ):
@@ -605,11 +608,13 @@ def query_cache(
                         "cache.json does not contain any valid Steam apps",
                         exc_info=True,
                     )
-                    ids = []
+                    continue
             elif "%f" in name and keyword in (
                 preferences["KEYWORD"],
                 preferences["KEYWORD_FRIENDS"],
             ):
+                if preferences["SHOW_DEPENDENT_NAVIGATIONS"] == "false":
+                    continue
                 if "friends" in cache.keys() and isinstance(cache["friends"], dict):
                     ids = [int(friend_id) for friend_id in cache["friends"].keys()]
                 else:
@@ -617,7 +622,7 @@ def query_cache(
                         "cache.json does not contain any valid Steam friends",
                         exc_info=True,
                     )
-                    ids = []
+                    continue
             elif keyword in (
                 preferences["KEYWORD_APPS"],
                 preferences["KEYWORD_FRIENDS"],
@@ -630,8 +635,16 @@ def query_cache(
                 if "%f" in name and id in friend_blacklist:
                     log.debug(f"Skipping blacklisted friend ID {id}")
                     continue
+                id_name: str = name
+                skip_dependent_nav: bool = False
                 for modifier in ("%a", "%f"):
-                    id_name: str = name.replace(modifier, str(id))
+                    if modifier in name:
+                        if keyword == preferences["KEYWORD_NAVIGATIONS"]:
+                            skip_dependent_nav = True
+                            continue
+                        id_name = name.replace(modifier, str(id))
+                if skip_dependent_nav:
+                    continue
                 id_display_name: str = nav_display_name
                 id_description: str | None = description
                 icon: str | None = None

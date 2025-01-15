@@ -68,9 +68,10 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         else:
             cache_friend["times_launched"] = 1
     elif action.startswith("NAV"):
-        nav_action: str = f"steam {action[3:]}"
-        log.info(f"Launching navigation '{nav_action}'")
-        SubprocessPopen(nav_action, shell=True)
+        nav_action: str = action[3:]
+        nav_execute: str = f"steam steam://{nav_action}"
+        log.info(f"Launching navigation '{nav_action}' via '{nav_execute}'")
+        SubprocessPopen(nav_execute, shell=True)
         if "steam_navs" not in cache.keys():
             cache["steam_navs"] = {}
         if nav_action not in cache["steam_navs"].keys():

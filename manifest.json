@@ -9,7 +9,7 @@
             "id": "KEYWORD",
             "type": "keyword",
             "name": "Steam search",
-            "description": "Search through Steam games, apps, friends and menus",
+            "description": "Search through everything Steam",
             "default_value": "s"
         },
         {
@@ -25,6 +25,13 @@
             "name": "Steam friends",
             "description": "Search through Steam friends",
             "default_value": "sf"
+        },
+        {
+            "id": "KEYWORD_NAVIGATIONS",
+            "type": "keyword",
+            "name": "Steam menus",
+            "description": "Search through Steam menus",
+            "default_value": "sm"
         },
         {
             "id": "KEYWORD_ACTIONS",
@@ -70,6 +77,17 @@
             "options": [
                 {"value": "chat", "text": "Open chat window"},
                 {"value": "profile", "text": "Open Steam profile"}
+            ]
+        },
+        {
+            "id": "SHOW_DEPENDENT_NAVIGATIONS",
+            "type": "select",
+            "name": "Show app and friend menus",
+            "description": "Whether to show extra navigation items for apps and friends",
+            "default_value": "true",
+            "options": [
+                {"value": "true", "text": "Yes"},
+                {"value": "false", "text": "No"}
             ]
         },
         {
