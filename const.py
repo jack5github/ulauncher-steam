@@ -89,34 +89,35 @@ DEFAULT_LANGUAGE: str = "en-GB"
 # https://developer.valvesoftware.com/wiki/Steam_browser_protocol
 # TODO: Add groups actions
 STEAM_NAVIGATIONS: list[str] = [
-    "AddNonSteamGame",
+    # "AddNonSteamGame",  Does nothing
     # "advertise/%a",  Duplicate of "store/%a"
-    "appnews/%a",
+    # "appnews/%a",  Duplicate of "updatenews/%a"
     "backup/%a",
-    "browsemedia",
+    # "browsemedia",  Does nothing
     "cdkeys/%a",
-    "checksysreqs/%a",
-    "controllerconfig/%a",
-    "defrag/%a",
+    # "checksysreqs/%a",  Does nothing
+    "controllerconfig/%a",  # TODO: Test while using Steam Input
+    # "defrag/%a",  Does nothing
     "exit",
-    "flushconfig",
-    "forceinputappid/%a",
-    "friends",
-    "friends/joinchat/%f",
+    # "flushconfig",  Does nothing
+    "forceinputappid/%a",  # TODO: Test while using Steam Input
+    # "friends",  Does nothing
+    # "friends/joinchat/%f",  Duplicate of "friends/message/%f"
     "friends/message/%f",
     "friends/players",
-    "friends/settings/hideoffline",
-    "friends/settings/showavatars",
-    "friends/settings/sortbyname",
+    # "friends/settings/hideoffline",  Does nothing
+    # "friends/settings/showavatars",  Does nothing
+    # "friends/settings/sortbyname",  Does nothing
     "friends/status/away",
-    "friends/status/busy",
+    # "friends/status/busy",  Does nothing
     "friends/status/invisible",
     "friends/status/offline",
     "friends/status/online",
-    "friends/status/play",
-    "friends/status/trade",
+    # "friends/status/play",  Does nothing
+    # "friends/status/trade",  Does nothing
     "gameproperties/%a",
-    "guestpasses",
+    # "guestpasses",  Is meant to display pending gifts, but currently is a duplicate of "url/CommunityInventory"
+    # TODO: Test music player navigations with a soundtrack installed on the system
     "musicplayer/decreasevolume",
     "musicplayer/increasevolume",
     "musicplayer/pause",
@@ -133,12 +134,11 @@ STEAM_NAVIGATIONS: list[str] = [
     "open/downloads",
     "open/friends",
     "open/games",
-    "open/games/details",
-    "open/games/grid",
-    "open/games/list",
+    # "open/games/details",  Duplicate of "open/games"
+    # "open/games/grid",  Duplicate of "open/games"
+    # "open/games/list",  Duplicate of "open/games"
     "open/largegameslist",
-    "open/main",
-    # TODO: Test the above
+    # "open/main",  Does nothing
     "open/minigameslist",
     # TODO: Test music player navigations with a soundtrack installed on the system
     "open/music",
@@ -160,7 +160,7 @@ STEAM_NAVIGATIONS: list[str] = [
     "store",
     "store/%a",
     "uninstall/%a",
-    "UpdateFirmware",  # TODO: Test this with a Steam controller
+    "UpdateFirmware",  # TODO: Test while using a Steam controller
     "updatenews/%a",
     # "url/CommentNotifications",  Encounters an error when processing the request
     "url/CommunityFriendsThatPlay/%a",
