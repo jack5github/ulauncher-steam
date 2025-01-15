@@ -94,7 +94,7 @@ s:url/CommunityFriendsThatPlay/%a%d,"Your friends that are playing, have played 
 s:url/CommunityHome,Community Activity,
 s:url/CommunityHome%d,Home for community and official content for all games and software on Steam,
 s:url/CommunityInventory,Item Inventory,
-s:url/CommunityItemInfo/%d,View the items you've collected for games with in-game items,
+s:url/CommunityInventory%d,View the items you've collected for games with in-game items,
 s:url/FamilySharing,Manage Family Library Sharing,
 s:url/FamilySharing%d,Allow selected accounts to use your game library on authorised computers,Allow selected accounts to use your game library on authorized computers
 s:url/GameHub/%a,%a Community Hub,
@@ -116,6 +116,7 @@ s:url/SteamIDFriendsPage%d,"View new games, achievements and posts of your frien
 s:url/SteamIDMyProfile,My Profile,
 s:url/SteamIDMyProfile%d,Open your own Steam profile,
 s:url/SteamIDPage/%f,%f's Profile,
+s:url/SteamIDPage/%f%d,View %f's Steam profile,
 s:url/SteamWorkshop,Steam Workshop,
 s:url/SteamWorkshop%d,"Create, discover, and download content for Steam games",
 s:url/SteamWorkshopPage/%a,%a Workshop,
