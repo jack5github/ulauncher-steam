@@ -168,7 +168,6 @@ def get_blacklist(
     return []
 
 
-# TODO: Fix bugs related to seconds and invalid units
 def str_to_timedelta(string: str) -> timedelta:
     """
     Converts a string to a timedelta object, using regex to parse time units. The string can contain the following units: y, mo, w, d, h, m, s, ms, us. If the string has no units, the timedelta will be 0.
@@ -184,7 +183,7 @@ def str_to_timedelta(string: str) -> timedelta:
     if string == "":
         return timedelta(0)
     time_strings: list[str] = re_findall(
-        r"-?[0-9]+(?:\.[0-9]+)?(?:y|mo|w|d|h|m|s|ms|us|[a-z]+)", string
+        r"-?[0-9]+(?:\.[0-9]+)?(?:y|mo|w|d|h|m|s|ms|us)(?![a-z])", string
     )
     years: float = 0
     months: float = 0
@@ -208,12 +207,12 @@ def str_to_timedelta(string: str) -> timedelta:
             hours += float(time_string[:-1])
         elif time_string.endswith("m"):
             minutes += float(time_string[:-1])
-        elif time_string.endswith("s"):
-            seconds += float(time_string[:-1])
         elif time_string.endswith("ms"):
             milliseconds += float(time_string[:-2])
         elif time_string.endswith("us"):
             microseconds += float(time_string[:-2])
+        elif time_string.endswith("s"):  # After "ms" and "us" to avoid errors
+            seconds += float(time_string[:-1])
         else:
             log.warning(
                 f"Invalid time unit '{time_string}' in '{string}', accepted units: y, mo, w, d, h, m, s, ms, us"
