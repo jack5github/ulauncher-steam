@@ -246,7 +246,6 @@ def get_lang_string(
     """
     from const import DEFAULT_LANGUAGE
 
-    log.debug(f"Getting '{key}' for language '{language}' from lang.csv")
     if key in lang.keys():
         if language in lang[key].keys():
             return str(lang[key][language])
