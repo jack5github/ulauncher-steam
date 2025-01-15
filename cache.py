@@ -510,6 +510,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         if from_steam_api_updated:
             cache["updated"]["steamApi"] = datetime_to_timestamp()
             save_cache(cache, preferences)
+        from_steam_api_updated = False
         log.info("Getting friends list from Steam API")
         steam_friends_list: dict[int, SteamFriendFromList] = {}
         try:
@@ -536,6 +537,10 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             cache_friend["since"] = datetime_to_timestamp(friend_info["since"])
         if len(steam_friends_list) >= 1:
             from_steam_api_updated = True
+        if from_steam_api_updated:
+            cache["last_updated"]["from_steam_api"] = datetime_to_timestamp()
+            save_cache(cache, preferences)
+        from_steam_api_updated = False
         log.info("Getting friends info from Steam API")
         steam_friends_info: dict[int, SteamFriendInfo] = {}
         try:
@@ -588,6 +593,11 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 )
                 for city_code, city_name in city_names.items():
                     cache["countries"][country_code][state_code][city_code] = city_name
+                    from_steam_api_updated = True
+        if from_steam_api_updated:
+            cache["last_updated"]["from_steam_api"] = datetime_to_timestamp()
+            save_cache(cache, preferences)
+        from_steam_api_updated = False
         friend_icons_to_download: list[tuple[int, str]] = []
         for friend_id, friend_info in steam_friends_info.items():
             if friend_id in friend_blacklist:
@@ -609,6 +619,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 cache_friend["state"] = friend_info["state_code"]
             if friend_info["city_code"] is not None:
                 cache_friend["city"] = friend_info["city_code"]
+            from_steam_api_updated = True
         if from_steam_api_updated:
             cache["updated"]["steamApi"] = datetime_to_timestamp()
             save_cache(cache, preferences)
