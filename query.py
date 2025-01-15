@@ -429,11 +429,15 @@ def query_cache(
                         exc_info=True,
                     )
                     continue
-                name: str = app_info["name"]
                 location: str | None = app_info.get("install_dir")
                 if location is not None:
                     location = f"{preferences['STEAM_FOLDER']}steamapps{DIR_SEP}common{DIR_SEP}{location}"
                 size_on_disk: int = app_info.get("size_on_disk", 0)
+                if preferences["SHOW_UNINSTALLED_APPS"] == "false" and (
+                    location is None and size_on_disk == 0
+                ):
+                    continue
+                name: str = app_info["name"]
                 display_name: str | None = None
                 if location is not None or size_on_disk > 0:
                     display_name = get_lang_string(
@@ -652,6 +656,11 @@ def query_cache(
                 id_description: str | None = description
                 icon: str | None = None
                 if "%a" in name:
+                    if preferences["SHOW_UNINSTALLED_APPS"] == "false" and (
+                        "location" not in cache["steam_apps"][str(id)].keys() and "size_on_disk"
+                        not in cache["steam_apps"][str(id)].keys()
+                    ):
+                        continue
                     app_name: str = str(id)
                     if "name" in cache["steam_apps"][str(id)].keys():
                         app_name = str(cache["steam_apps"][str(id)]["name"])
@@ -741,7 +750,7 @@ def query_cache(
         items = sorted(
             items,
             key=lambda x: [
-                x.type == "app",
+                x.type in ("app", "friend"),
                 SequenceMatcher(None, x.get_name().lower(), search).ratio(),
                 SequenceMatcher(None, x.get_description().lower(), search).ratio(),
             ],

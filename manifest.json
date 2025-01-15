@@ -69,6 +69,17 @@
             "default_value": ""
         },
         {
+            "id": "SHOW_UNINSTALLED_APPS",
+            "type": "select",
+            "name": "Show uninstalled apps",
+            "description": "Whether to show uninstalled apps in the list",
+            "default_value": "true",
+            "options": [
+                {"value": "true", "text": "Yes"},
+                {"value": "false", "text": "No"}
+            ]
+        },
+        {
             "id": "FRIEND_DEFAULT_ACTION",
             "type": "select",
             "name": "Default friend action",
