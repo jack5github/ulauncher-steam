@@ -168,6 +168,7 @@ def get_blacklist(
     return []
 
 
+# TODO: Fix bugs related to seconds and invalid units
 def str_to_timedelta(string: str) -> timedelta:
     """
     Converts a string to a timedelta object, using regex to parse time units. The string can contain the following units: y, mo, w, d, h, m, s, ms, us. If the string has no units, the timedelta will be 0.
