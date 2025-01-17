@@ -194,7 +194,7 @@ def get_non_steam_apps(
         dict[int, NonSteamApp]: A dictionary of NonSteamApp instances for all non-Steam apps, indexed by app ID.
     """
     from binascii import hexlify
-    import os
+    from os import name as os_name
     from os.path import getsize, isfile
     from subprocess import CalledProcessError, check_output as subprocess_check_output
 
@@ -241,7 +241,7 @@ def get_non_steam_apps(
             while cursor < len(buffer) and buffer[cursor] != 0:
                 cursor += 1
             exe: str | None = buffer[exe_start:cursor].decode(errors="ignore").strip()
-            if os.name != "nt":
+            if os_name != "nt":
                 try:
                     which_exe: str = subprocess_check_output(
                         f"which {exe}", shell=True

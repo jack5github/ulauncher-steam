@@ -1,12 +1,12 @@
 from json import loads as json_loads
 from logging import Logger
 from logging.config import fileConfig as logging_fileConfig
-import os
+from os import name as os_name
 from os.path import abspath
 from typing import Any
 
 DIR_SEP: str = "/"
-if os.name == "nt":
+if os_name == "nt":
     DIR_SEP = "\\"
 
 EXTENSION_PATH: str = f"{DIR_SEP.join(__file__.split(DIR_SEP)[:-1])}{DIR_SEP}"

@@ -22,9 +22,16 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         load_cache,
         save_cache,
     )
+    from const import DIR_SEP
+    from os import name as os_name
     from subprocess import Popen as SubprocessPopen
     from typing import Literal
 
+    command: str = "steam"
+    if os_name == "nt":
+        if not preferences["STEAM_FOLDER"].endswith(DIR_SEP):
+            preferences["STEAM_FOLDER"] = f"{preferences['STEAM_FOLDER']}{DIR_SEP}"
+        command = f'"{preferences["STEAM_FOLDER"]}steam.exe"'
     cache: dict[str, Any] = load_cache()
     force_cache: bool | Literal["skip"] = False
     if action.startswith("APP"):
@@ -37,7 +44,7 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         else:
             log.error(f"Cannot execute '{action}', app ID {app_id} not found in cache")
             return
-        app_action: str = f"steam {action[3:]}"
+        app_action: str = f"{command} {action[3:]}"
         log.info(f"Launching app ID {app_id} via '{app_action}'")
         SubprocessPopen(app_action, shell=True)
         cache_app["launched"] = datetime_to_timestamp()
@@ -53,9 +60,9 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
             return
         friend_action: str
         if preferences["FRIEND_ACTION"] == "chat":
-            friend_action = f"steam steam://friends/message/{friend_id}"
+            friend_action = f"{command} steam://friends/message/{friend_id}"
         elif preferences["FRIEND_ACTION"] == "profile":
-            friend_action = f"steam steam://url/SteamIDPage/{friend_id}"
+            friend_action = f"{command} steam://url/SteamIDPage/{friend_id}"
         else:
             log.error(f"Unknown default friend action '{preferences['FRIEND_ACTION']}'")
             return
@@ -65,9 +72,13 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
     elif action.startswith("s:") or action.startswith("w:"):
         execute: str
         if action.startswith("s:"):
-            execute = f"steam steam://{action[2:]}"
-        else:  # "w:"
+            execute = f"{command} steam://{action[2:]}"
+        elif os_name == "nt":  # "w:"
             execute = f"xdg-open https://{action[2:]}"
+        else:
+            # TODO: Add support for opening URLs in Windows
+            log.error("Opening URLs is not supported on this platform")
+            return
         log.info(f"Launching navigation '{action}' via '{execute}'")
         SubprocessPopen(execute, shell=True)
         ensure_dict_key_is_dict(cache, "navs")
