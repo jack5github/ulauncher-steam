@@ -175,7 +175,7 @@ class SteamExtensionItem:
                 add_divider()
                 description += self.location
         elif self.description is not None:
-            description: str = self.description
+            description = self.description
         return description
 
     def to_sort_list(self) -> list[Any]:
@@ -409,12 +409,20 @@ def query_cache(
         times_launched: int = info.get("times_launched", 0)
         return last_launched, times_launched
 
+    icon: str | None
+    icon_path: str
+    last_launched: datetime | None
+    times_launched: int
     if keyword in (preferences["KEYWORD"], preferences["KEYWORD_APPS"]):
+        app_id_int: int
+        name: str
+        location: str | None
+        size_on_disk: int
         if "steam_apps" in cache.keys() and isinstance(cache["steam_apps"], dict):
             if not preferences["STEAM_FOLDER"].endswith(DIR_SEP):
                 preferences["STEAM_FOLDER"] = f"{preferences['STEAM_FOLDER']}{DIR_SEP}"
             for app_id, app_info in cache["steam_apps"].items():
-                app_id_int: int = int(app_id)
+                app_id_int = int(app_id)
                 try:
                     app_id_int = int(app_id)
                 except Exception:
@@ -429,15 +437,15 @@ def query_cache(
                         exc_info=True,
                     )
                     continue
-                location: str | None = app_info.get("install_dir")
+                location = app_info.get("install_dir")
                 if location is not None:
                     location = f"{preferences['STEAM_FOLDER']}steamapps{DIR_SEP}common{DIR_SEP}{location}"
-                size_on_disk: int = app_info.get("size_on_disk", 0)
+                size_on_disk = app_info.get("size_on_disk", 0)
                 if preferences["SHOW_UNINSTALLED_APPS"] == "false" and (
                     location is None and size_on_disk == 0
                 ):
                     continue
-                name: str = app_info["name"]
+                name = app_info["name"]
                 display_name: str | None = None
                 if location is not None or size_on_disk > 0:
                     display_name = get_lang_string(
@@ -448,14 +456,12 @@ def query_cache(
                         lang, preferences["LANGUAGE_CODE"], f"install_%a"
                     ).replace("%a", name)
                 total_playtime: int = app_info.get("total_playtime", 0)
-                icon: str | None = None
-                icon_path: str = (
+                icon = None
+                icon_path = (
                     f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id_int}.jpg"
                 )
                 if isfile(icon_path):
                     icon = icon_path
-                last_launched: datetime | None
-                times_launched: int
                 last_launched, times_launched = get_launches(app_info)
                 items.append(
                     SteamExtensionItem(
@@ -477,7 +483,6 @@ def query_cache(
             cache["non_steam_apps"], dict
         ):
             for app_id, app_info in cache["non_steam_apps"].items():
-                app_id_int: int
                 try:
                     app_id_int = int(app_id)
                 except Exception:
@@ -491,14 +496,12 @@ def query_cache(
                         f"Invalid dictionary for non-Steam app ID {app_id_int}: {app_info}",
                         exc_info=True,
                     )
-                name: str = app_info["name"]
+                name = app_info["name"]
                 non_steam_display_name: str = get_lang_string(
                     lang, preferences["LANGUAGE_CODE"], f"launch_%a"
                 ).replace("%a", name)
-                location: str | None = app_info.get("exe")
-                size_on_disk: int = app_info.get("size_on_disk", 0)
-                last_launched: datetime | None
-                times_launched: int
+                location = app_info.get("exe")
+                size_on_disk = app_info.get("size_on_disk", 0)
                 last_launched, times_launched = get_launches(app_info)
                 items.append(
                     SteamExtensionItem(
@@ -536,18 +539,18 @@ def query_cache(
                     exc_info=True,
                 )
                 continue
-            name: str = friend_info["name"]
+            name = friend_info["name"]
             real_name: str | None = friend_info.get("real_name")
             time_created: datetime | None = friend_info.get("time_created")
-            location: str | None = None
+            location = None
             if "country" in friend_info.keys():
                 location = friend_info["country"]
                 if "state" in friend_info.keys():
                     location = f"{friend_info['state']}, {location}"
                     if "city" in friend_info.keys():
                         location = f"{friend_info['city']}, {location}"
-            icon: str | None = None
-            icon_path: str = (
+            icon = None
+            icon_path = (
                 f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{friend_id_int}.jpg"
             )
             if isfile(icon_path):
@@ -555,11 +558,7 @@ def query_cache(
             last_updated: datetime | None = timestamp_to_datetime(
                 friend_info, "last_updated"
             )
-            time_created: datetime | None = timestamp_to_datetime(
-                friend_info, "time_created"
-            )
-            last_launched: datetime | None
-            times_launched: int
+            time_created = timestamp_to_datetime(friend_info, "time_created")
             last_launched, times_launched = get_launches(friend_info)
             items.append(
                 SteamExtensionItem(
@@ -654,7 +653,7 @@ def query_cache(
                     continue
                 id_display_name: str = nav_display_name
                 id_description: str | None = description
-                icon: str | None = None
+                icon = None
                 if isfile(
                     f"{EXTENSION_PATH}images{DIR_SEP}navs{DIR_SEP}{name.replace(DIR_SEP, '-')}.png"
                 ):
@@ -672,7 +671,7 @@ def query_cache(
                     if id_description is not None:
                         id_description = id_description.replace("%a", app_name)
                     if icon is None:
-                        icon_path: str = (
+                        icon_path = (
                             f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{id}.jpg"
                         )
                         if isfile(icon_path):
@@ -696,13 +695,13 @@ def query_cache(
                     if id_description is not None:
                         id_description = id_description.replace("%f", friend_name)
                     if icon is None:
-                        icon_path: str = (
+                        icon_path = (
                             f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{id}.jpg"
                         )
                         if isfile(icon_path):
                             icon = icon_path
-                last_launched: datetime | None = None
-                times_launched: int = 0
+                last_launched = None
+                times_launched = 0
                 if id_name in cache["steam_navs"].keys() and isinstance(
                     cache["steam_navs"][id_name], dict
                 ):

@@ -195,5 +195,3 @@ STEAM_NAVIGATIONS: list[str] = [
     "validate/%a",
     "viewfriendsgame/%f",
 ]
-
-DEFAULT_LANGUAGE: str = "en-GB"

@@ -414,6 +414,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             shortcuts_file: str = (
                 f"{preferences['STEAM_FOLDER']}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf"
             )
+            cache_app: dict[str, Any]
             if not isdir(userdata_folder):
                 log.error(
                     f"Steam userdata ID '{preferences['STEAM_USERDATA_ID']}' is invalid as folder path '{userdata_folder}' is invalid"
@@ -434,7 +435,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                         if int(app_id) not in non_steam_apps.keys():
                             del cache["non_steam_apps"][app_id]
                 for app_id, app_info in non_steam_apps.items():
-                    cache_app: dict[str, Any] = ensure_dict_key_is_dict(
+                    cache_app = ensure_dict_key_is_dict(
                         cache["non_steam_apps"], str(app_id)
                     )[0]
                     cache_app["name"] = app_info["name"]
@@ -481,7 +482,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                                 f"Failed to check Steam app with ID '{app_id}', not a number"
                             )
                 for app_id, app_info in installed_steam_apps.items():
-                    cache_app: dict[str, Any] = ensure_dict_key_is_dict(
+                    cache_app = ensure_dict_key_is_dict(
                         cache["steam_apps"], str(app_id)
                     )[0]
                     cache_app["name"] = app_info["name"]
@@ -523,9 +524,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         ensure_dict_key_is_dict(cache, "steam_apps")
         app_icons_to_download: list[tuple[int, str]] = []
         for app_id, app_info in owned_steam_apps.items():
-            cache_app: dict[str, Any] = ensure_dict_key_is_dict(
-                cache["steam_apps"], str(app_id)
-            )[0]
+            cache_app = ensure_dict_key_is_dict(cache["steam_apps"], str(app_id))[0]
             cache_app["name"] = app_info["name"]
             cache_app["total_playtime"] = app_info["total_playtime"]
             if app_info["icon_hash"] is not None:
@@ -552,13 +551,12 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         except Exception:
             log.error("Failed to get Steam friends list", exc_info=True)
         ensure_dict_key_is_dict(cache, "friends")
+        cache_friend: dict[str, Any]
         for friend_id, friend_info in steam_friends_list.items():
             if friend_id in friend_blacklist:
                 log.debug(f"Skipping blacklisted friend ID '{friend_id}'")
                 continue
-            cache_friend: dict[str, Any] = ensure_dict_key_is_dict(
-                cache["friends"], str(friend_id)
-            )[0]
+            cache_friend = ensure_dict_key_is_dict(cache["friends"], str(friend_id))[0]
             cache_friend["friend_since"] = datetime_to_timestamp(
                 friend_info["friend_since"]
             )
@@ -577,9 +575,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             if friend_id in friend_blacklist:
                 log.debug(f"Skipping blacklisted friend ID '{friend_id}'")
                 continue
-            cache_friend: dict[str, Any] = ensure_dict_key_is_dict(
-                cache["friends"], str(friend_id)
-            )[0]
+            cache_friend = ensure_dict_key_is_dict(cache["friends"], str(friend_id))[0]
             cache_friend["name"] = friend_info["name"]
             if friend_info["icon_hash"] is not None:
                 cache_friend["icon_hash"] = friend_info["icon_hash"]

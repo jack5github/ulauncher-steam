@@ -2,16 +2,16 @@ from cache import build_cache
 from const import get_logger
 from logging import Logger
 from typing import Any
-from ulauncher.api.client.EventListener import EventListener
-from ulauncher.api.client.Extension import Extension
-from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction
-from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction
-from ulauncher.api.shared.event import (
+from ulauncher.api.client.EventListener import EventListener  # type: ignore
+from ulauncher.api.client.Extension import Extension  # type: ignore
+from ulauncher.api.shared.action.ExtensionCustomAction import ExtensionCustomAction  # type: ignore
+from ulauncher.api.shared.action.RenderResultListAction import RenderResultListAction  # type: ignore
+from ulauncher.api.shared.event import (  # type: ignore
     ItemEnterEvent,
     KeywordQueryEvent,
     PreferencesEvent,
 )
-from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem
+from ulauncher.api.shared.item.ExtensionResultItem import ExtensionResultItem  # type: ignore
 
 log: Logger = get_logger(__name__)
 
@@ -20,6 +20,7 @@ class SteamExtension(Extension):
     """
     The uLauncher Steam extension class.
     """
+
     def __init__(self) -> None:
         """
         Initialises a new SteamExtension instance.

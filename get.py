@@ -39,6 +39,7 @@ def _vdf_to_dict(path: str) -> dict[str, NestedStrDict]:
     for index, line in enumerate(vdf_lines):
         quote_count: int = line.count('"') - line.count('\\"')
         # If a line contains two quote marks, it is a new level
+        add_dict: NestedStrDict
         if quote_count == 2:
             vdf_levels.append(line.split('"')[1])
             if len(vdf_levels) == 1:
@@ -48,7 +49,7 @@ def _vdf_to_dict(path: str) -> dict[str, NestedStrDict]:
                     )
                 vdf_dict[vdf_levels[0]] = {}
             else:
-                add_dict: NestedStrDict = vdf_dict[vdf_levels[0]]
+                add_dict = vdf_dict[vdf_levels[0]]
                 if len(vdf_levels) >= 3:
                     for level in vdf_levels[1:-1]:
                         add_dict = add_dict[level]  # type: ignore
@@ -60,7 +61,7 @@ def _vdf_to_dict(path: str) -> dict[str, NestedStrDict]:
                 raise KeyError(
                     f"Unexpectedly found top-level key '{add_key}' with value on line {index + 1}"
                 )
-            add_dict: NestedStrDict = vdf_dict[vdf_levels[0]]
+            add_dict = vdf_dict[vdf_levels[0]]
             if len(vdf_levels) >= 2:
                 for level in vdf_levels[1:]:
                     add_dict = add_dict[level]  # type: ignore
