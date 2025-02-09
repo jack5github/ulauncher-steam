@@ -45,7 +45,7 @@
             "type": "input",
             "name": "Steam folder path",
             "description": "The path to the folder that contains the steamapps and userdata folders",
-            "default_value": "/home/<username>/.steam/debian-installation/"
+            "default_value": "/home/<username>/.steam/steam/"
         },
         {
             "id": "STEAM_USERDATA_ID",
@@ -75,8 +75,8 @@
             "description": "Whether to show uninstalled apps in the list",
             "default_value": "true",
             "options": [
-                {"value": "true", "text": "Yes"},
-                {"value": "false", "text": "No"}
+                { "value": "true", "text": "Yes" },
+                { "value": "false", "text": "No" }
             ]
         },
         {
@@ -86,8 +86,8 @@
             "description": "The default action to perform when a friend is selected",
             "default_value": "chat",
             "options": [
-                {"value": "chat", "text": "Open chat window"},
-                {"value": "profile", "text": "Open Steam profile"}
+                { "value": "chat", "text": "Open chat window" },
+                { "value": "profile", "text": "Open Steam profile" }
             ]
         },
         {
@@ -97,8 +97,8 @@
             "description": "Whether to show extra navigation items for apps and friends",
             "default_value": "true",
             "options": [
-                {"value": "true", "text": "Yes"},
-                {"value": "false", "text": "No"}
+                { "value": "true", "text": "Yes" },
+                { "value": "false", "text": "No" }
             ]
         },
         {
@@ -113,7 +113,7 @@
             "type": "input",
             "name": "Time between Steam API calls",
             "description": "The time to wait before querying the Steam API to update the cache",
-            "default_value": "1h"
+            "default_value": "1d"
         },
         {
             "id": "APP_BLACKLIST",
