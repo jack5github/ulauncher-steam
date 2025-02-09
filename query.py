@@ -280,11 +280,12 @@ class SteamExtensionItem:
         return action
 
 
+# TODO: Change language selector to dropdown in manifest
 def get_lang_string(
     lang: dict[str, dict[str, str]], language: str, key: str, strict: bool = False
 ) -> str:
     """
-    Gets a string from the language dictionary, which is loaded from lang.json.
+    Gets a string from the language dictionary, which is loaded from lang.csv. The language file is organised into rows for each key, with the first column being "key" and the other columns being ISO 639-1 language code-specific translations.
 
     Args:
         lang (dict[str, dict[str, str]]): The language dictionary.
@@ -301,26 +302,24 @@ def get_lang_string(
     """
     from const import DEFAULT_LANGUAGE
 
-    log.debug(f"Getting '{key}' for language '{language}' from lang.json")
-    if language in lang.keys():
-        if key in lang[language].keys():
-            return str(lang[language][key])
-    if DEFAULT_LANGUAGE not in lang.keys():
-        log.error(f"Default language '{DEFAULT_LANGUAGE}' is not in lang.json")
-        if strict:
-            raise KeyError(f"Default language '{DEFAULT_LANGUAGE}' is not in lang.json")
-        return key
-    if key not in lang[DEFAULT_LANGUAGE].keys():
-        log.warning(
-            f"'{key}' is not in lang.json for '{language}' or '{DEFAULT_LANGUAGE}'"
-        )
+    log.debug(f"Getting '{key}' for language '{language}' from lang.csv")
+    if key in lang.keys():
+        if language in lang[key].keys():
+            return str(lang[key][language])
+        if DEFAULT_LANGUAGE in lang[key].keys():
+            return str(lang[key][DEFAULT_LANGUAGE])
         if strict:
             raise KeyError(
-                f"'{key}' is not in lang.json for '{language}' or '{DEFAULT_LANGUAGE}'"
+                f"'{key}' is not in lang.csv for '{language}' or '{DEFAULT_LANGUAGE}'"
             )
+        log.warning(
+            f"'{key}' is not in lang.csv for '{language}' or '{DEFAULT_LANGUAGE}'"
+        )
         return key
-    log.warning(f"'{key}' is not in lang.json for '{language}'")
-    return str(lang[DEFAULT_LANGUAGE][key])
+    if strict:
+        raise KeyError(f"'{key}' is not in lang.csv for '{language}'")
+    log.warning(f"'{key}' is not in lang.csv for '{language}'")
+    return key
 
 
 def timestamp_to_datetime(info: dict[str, Any], key: str) -> datetime | None:
@@ -362,8 +361,8 @@ def query_cache(
     """
     from cache import get_blacklist, load_cache
     from const import check_required_preferences, STEAM_NAVIGATIONS
+    from csv import DictReader
     from difflib import SequenceMatcher
-    from json import loads as json_loads
     from os.path import isfile
 
     check_required_preferences(preferences)
@@ -386,10 +385,14 @@ def query_cache(
     cache: dict[str, Any] = load_cache()
     lang: dict[str, dict[str, str]] = {}
     try:
-        with open(f"{EXTENSION_PATH}lang.json", "r", encoding="utf-8") as f:
-            lang = json_loads(f.read())
+        with open(f"{EXTENSION_PATH}lang.csv", "r", encoding="utf-8") as f:
+            reader: DictReader = DictReader(f)
+            for row in reader:
+                lang[row["key"]] = {
+                    k: v for k, v in row.items() if k != "key" and v != ""
+                }
     except Exception:
-        log.error("Failed to read lang.json", exc_info=True)
+        log.error("Failed to read lang.csv", exc_info=True)
     log.debug("Getting blacklists from preferences")
     app_blacklist: list[int] = get_blacklist("app", preferences)
     friend_blacklist: list[int] = get_blacklist("friend", preferences)

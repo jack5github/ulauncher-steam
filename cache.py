@@ -381,6 +381,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         update_from_steam_api = compare_last_updated("from_steam_api")
     ensure_dict_key_is_dict(cache, "last_updated")
     if update_from_files or force:
+        # TODO: Allow specifying multiple Steam folders, the first containing userdata
         if not preferences["STEAM_FOLDER"].endswith(DIR_SEP):
             preferences["STEAM_FOLDER"] = f"{preferences['STEAM_FOLDER']}{DIR_SEP}"
         if not isdir(preferences["STEAM_FOLDER"]):
