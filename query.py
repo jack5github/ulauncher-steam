@@ -132,6 +132,8 @@ class SteamExtensionItem:
         Returns:
             str: The description string of the SteamExtensionItem to display in uLauncher.
         """
+        from pathlib import Path
+
         description: str = ""
 
         def add_divider() -> None:
@@ -149,7 +151,14 @@ class SteamExtensionItem:
                 description += datetime.strftime(self.last_launched, "%b %d, %Y")
             if self.location is not None:
                 add_divider()
-                description += f"{self.location.lstrip(DIR_SEP).split(DIR_SEP)[0]}"
+                location_str: str = (
+                    f"{DIR_SEP.join(self.location.split(f"{DIR_SEP}steamapps{DIR_SEP}")[0].split(DIR_SEP)[:-1])}"
+                )
+                if location_str.endswith(f"{DIR_SEP}.steam"):
+                    location_str = DIR_SEP.join(location_str.split(DIR_SEP)[:-1])
+                if Path(location_str) == Path("~").expanduser():
+                    location_str = "/"
+                description += location_str
                 location_added = True
             if self.size_on_disk > 0:
                 if location_added:
