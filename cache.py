@@ -29,17 +29,11 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
             "icon_hash": "ICON_HASH"
         }
     },
-    # TODO: Add country, state and city values to cache when needed
     "countries": {
         "COUNTRY_CODE": {
-            "name": "NAME"
-            "states": {
-                "STATE_CODE": {
-                    "name": "NAME"
-                    "cities": {
-                        "CITY_CODE": "NAME"
-                    }
-                }
+            "STATE_CODE": {
+                "name": "NAME"
+                "CITY_CODE": "NAME"
             }
         }
     }
@@ -73,6 +67,7 @@ The cache dictionary is saved to a JSON file named "cache.json" in the extension
 }
 """
 
+import code
 from const import DIR_SEP, EXTENSION_PATH, get_logger
 from datetime import datetime, timedelta
 from logging import Logger
@@ -355,6 +350,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         get_installed_steam_apps,
         get_non_steam_apps,
         get_owned_steam_apps,
+        get_state_or_city_codes,
         get_steam_friends_info,
         get_steam_friends_list,
         InstalledSteamApp,
@@ -597,6 +593,50 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             )
         except Exception:
             log.error("Failed to get Steam friends info", exc_info=True)
+        ensure_dict_key_is_dict(cache, "countries")
+        city_names_to_download: dict[str, list[str]] = {}
+        for steam_friend_info in steam_friends_info.values():
+            if (
+                steam_friend_info["country_code"] is None
+                or steam_friend_info["state_code"] is None
+            ):
+                continue
+            if (
+                steam_friend_info["country_code"] not in cache["countries"].keys()
+                and steam_friend_info["country_code"]
+                not in city_names_to_download.keys()
+            ):
+                city_names_to_download[steam_friend_info["country_code"]] = []
+            ensure_dict_key_is_dict(
+                cache["countries"], steam_friend_info["country_code"]
+            )
+            if steam_friend_info["city_code"] is None:
+                continue
+            if (
+                steam_friend_info["state_code"]
+                not in cache["countries"][steam_friend_info["country_code"]].keys()
+                and steam_friend_info["state_code"]
+                not in city_names_to_download[steam_friend_info["country_code"]]
+            ):
+                if (
+                    steam_friend_info["country_code"]
+                    not in city_names_to_download.keys()
+                ):
+                    city_names_to_download[steam_friend_info["country_code"]] = []
+                city_names_to_download[steam_friend_info["country_code"]].append(
+                    steam_friend_info["state_code"]
+                )
+        for country_code in city_names_to_download.keys():
+            state_names: dict[str, str] = get_state_or_city_codes(country_code)
+            for state_code, state_name in state_names.items():
+                ensure_dict_key_is_dict(cache["countries"][country_code], state_code)
+                cache["countries"][country_code][state_code]["name"] = state_name
+            for state_code in city_names_to_download[country_code]:
+                city_names: dict[str, str] = get_state_or_city_codes(
+                    country_code, state_code
+                )
+                for city_code, city_name in city_names.items():
+                    cache["countries"][country_code][state_code][city_code] = city_name
         friend_icons_to_download: list[tuple[int, str]] = []
         for friend_id, friend_info in steam_friends_info.items():
             if friend_id in friend_blacklist:
@@ -617,12 +657,12 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 cache_friend["time_created"] = datetime_to_timestamp(
                     friend_info["time_created"]
                 )
-            if friend_info["country"] is not None:
-                cache_friend["country"] = friend_info["country"]
-            if friend_info["state"] is not None:
-                cache_friend["state"] = friend_info["state"]
-            if friend_info["city"] is not None:
-                cache_friend["city"] = friend_info["city"]
+            if friend_info["country_code"] is not None:
+                cache_friend["country"] = friend_info["country_code"]
+            if friend_info["state_code"] is not None:
+                cache_friend["state"] = friend_info["state_code"]
+            if friend_info["city_code"] is not None:
+                cache_friend["city"] = friend_info["city_code"]
         if from_steam_api_updated:
             cache["last_updated"]["from_steam_api"] = datetime_to_timestamp()
             save_cache(cache, preferences)

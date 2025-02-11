@@ -433,9 +433,9 @@ class SteamFriendInfo(TypedDict):
     last_updated: datetime | None
     real_name: str | None
     time_created: datetime | None
-    country: str | None
-    state: str | None
-    city: str | None
+    country_code: str | None
+    state_code: str | None
+    city_code: str | None
 
 
 def get_steam_friends_info(
@@ -489,7 +489,6 @@ def get_steam_friends_info(
                 if "realname" in steam_friend_info.keys():
                     real_name = steam_friend_info["realname"]
                 time_created = datetime.fromtimestamp(steam_friend_info["timecreated"])
-                # TODO: Convert to strings using https://steamcommunity.com/actions/QueryLocations/{country}/{state}
                 if "loccountrycode" in steam_friend_info.keys():
                     country = steam_friend_info["loccountrycode"]
                 if "locstatecode" in steam_friend_info.keys():
@@ -502,11 +501,46 @@ def get_steam_friends_info(
                 last_updated=last_updated,
                 real_name=real_name,
                 time_created=time_created,
-                country=country,
-                state=state,
-                city=city,
+                country_code=country,
+                state_code=state,
+                city_code=city,
             )
     return steam_friend_infos
+
+
+def get_state_or_city_codes(
+    country_code: str, state_code: str | None = None
+) -> dict[str, str]:
+    """
+    Returns the states or cities belonging to the codes given in the arguments as a dictionary, with IDs for keys and names for values.
+
+    Args:
+        country_code (str): The country code.
+        state_code (str | None, optional): The state code if getting city names. Defaults to None.
+
+    Returns:
+        dict[str, str]: The associated codes and names for states or cities.
+    """
+    steam_countries_url: str = (
+        f"https://steamcommunity.com/actions/QueryLocations/{country_code}{f'/{state_code}' if state_code is not None else ''}"
+    )
+    steam_countries_response: list[dict[str, Any]] = []
+    state_or_city_codes: dict[str, str] = {}
+    try:
+        steam_countries_response = _get_response_from_steam_api(  # type: ignore
+            steam_countries_url  # This URL returns a list of dictionaries
+        )
+        for item in steam_countries_response:
+            if state_code is None:
+                state_or_city_codes[item["statecode"]] = item["statename"]
+                continue
+            state_or_city_codes[str(item["cityid"])] = item["cityname"]
+    except Exception:
+        log.error(
+            f"Failed to retrieve country information from Steam API for country '{country_code}'{f', state \'{state_code}\'' if state_code is not None else ''}",
+            exc_info=True,
+        )
+    return state_or_city_codes
 
 
 if __name__ == "__main__":

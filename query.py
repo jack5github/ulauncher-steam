@@ -553,9 +553,20 @@ def query_cache(
             if "country" in friend_info.keys():
                 location = friend_info["country"]
                 if "state" in friend_info.keys():
-                    location = f"{friend_info['state']}, {location}"
-                    if "city" in friend_info.keys():
-                        location = f"{friend_info['city']}, {location}"
+                    if (
+                        friend_info["country"] in cache["countries"].keys()
+                        and friend_info["state"] in cache["countries"][friend_info["country"]].keys()
+                    ):
+                        location = f"{cache['countries'][friend_info['country']][friend_info['state']]['name']}, {location}"
+                    else:
+                        location = f"{friend_info['state']}, {location}"
+                    if (
+                        "city" in friend_info.keys()
+                        and friend_info["country"] in cache["countries"].keys()
+                        and friend_info["state"] in cache["countries"][friend_info["country"]].keys()
+                        and friend_info["city"] in cache["countries"][friend_info["country"]][friend_info["state"]].keys()
+                    ):
+                        location = f"{cache['countries'][friend_info['country']][friend_info['state']][friend_info['city']]}, {location}"
             icon = None
             icon_path = (
                 f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{friend_id_int}.jpg"
