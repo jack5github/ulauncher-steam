@@ -280,7 +280,6 @@ class SteamExtensionItem:
         return action
 
 
-# TODO: Change language selector to dropdown in manifest
 def get_lang_string(
     lang: dict[str, dict[str, str]], language: str, key: str, strict: bool = False
 ) -> str:

@@ -131,10 +131,14 @@
         },
         {
             "id": "LANGUAGE_CODE",
-            "type": "input",
-            "name": "Language code",
-            "description": "Your preferred ISO 639-1 language code, fallback is 'en-GB'",
-            "default_value": "en-GB"
+            "type": "select",
+            "name": "Language",
+            "description": "Language to use for extension-defined strings",
+            "default_value": "en-GB",
+            "options": [
+                { "value": "en-GB", "text": "English (United Kingdom)" },
+                { "value": "en-US", "text": "English (United States)" }
+            ]
         },
         {
             "id": "SORT_KEYS",

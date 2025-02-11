@@ -11,6 +11,8 @@ This extension integrates Steam file searches and API calls into uLauncher, allo
 
 If you would like to improve this extension, feel free to fork it, make your changes and submit a pull request.
 
+To add support for a new language, add language strings to the **lang.csv** file in a column with the appropriate ISO 639-1 language code, and add that code as an option of the `LANGUAGE_CODE` property in **manifest.json**.
+
 ### Debugging
 
 - **Linux**: Code changes can be tested directly in uLauncher by first shutting it down, then executing the command `ulauncher --dev -v`. Search the console for `com.github.jack5github.obsidian-steam-integration |` to find the extension's output. (Note that having a **logging.conf** file present will make this more difficult.)
