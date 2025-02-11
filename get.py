@@ -5,7 +5,7 @@ This module contains functions for retrieving data from Steam for the purposes o
 - Non-Steam apps
 """
 
-from const import get_logger
+from const import DIR_SEP, get_logger
 from datetime import datetime
 from logging import Logger
 from typing import Any, TypeAlias, TypedDict, Union
@@ -84,7 +84,7 @@ class InstalledSteamApp(TypedDict):
 
     Args:
         name (str): The name of the Steam app.
-        install_dir (str): The name of the folder containing the Steam app.
+        install_dir (str): The path to the folder containing the Steam app.
         size_on_disk (int): The size of the Steam app on disk in bytes.
         last_updated (datetime | None): The time the app was last updated, or None if not updated.
         last_launched (datetime | None): The time the app was last launched, or None if not launched.
@@ -113,6 +113,8 @@ def get_installed_steam_apps(
     from os import listdir
     from os.path import join as path_join
 
+    if not steamapps_folder.endswith(DIR_SEP):
+        steamapps_folder += DIR_SEP
     installed_steam_apps: dict[int, InstalledSteamApp] = {}
     appmanifest_files: tuple[str, ...] = tuple(
         file
@@ -129,7 +131,7 @@ def get_installed_steam_apps(
                 path_join(steamapps_folder, appmanifest_file)
             )
             name: str = app_vdf["AppState"]["name"].strip()  # type: ignore
-            install_dir: str = app_vdf["AppState"]["installdir"]  # type: ignore
+            install_dir: str = f"{steamapps_folder}{app_vdf['AppState']['installdir']}"
             last_updated_str: str = app_vdf["AppState"]["LastUpdated"]  # type: ignore
             last_updated: datetime | None = (
                 datetime.fromtimestamp(int(last_updated_str))
@@ -508,8 +510,8 @@ def get_steam_friends_info(
 
 
 if __name__ == "__main__":
-    from cache import get_blacklist
-    from const import DIR_SEP, get_preferences_from_env
+    from cache import get_blacklist, get_steam_folders
+    from const import get_preferences_from_env
 
     preferences: dict[str, Any] = get_preferences_from_env()
     app_blacklist: list[int] = get_blacklist("app", preferences)
@@ -548,24 +550,26 @@ if __name__ == "__main__":
             )
         )
     elif option == "ins":
-        print(
-            "\n".join(
-                f"{k} {v}"
-                for k, v in get_installed_steam_apps(
-                    f"{preferences['STEAM_FOLDER']}steamapps", app_blacklist
-                ).items()
+        for steam_folder in get_steam_folders(preferences):
+            print(
+                "\n".join(
+                    f"{k} {v}"
+                    for k, v in get_installed_steam_apps(
+                        f"{steam_folder}steamapps", app_blacklist
+                    ).items()
+                )
             )
-        )
     elif option == "non":
-        print(
-            "\n".join(
-                f"{k} {v}"
-                for k, v in get_non_steam_apps(
-                    f"{preferences['STEAM_FOLDER']}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf",
-                    app_blacklist,
-                ).items()
+        for steam_folder in get_steam_folders(preferences):
+            print(
+                "\n".join(
+                    f"{k} {v}"
+                    for k, v in get_non_steam_apps(
+                        f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf",
+                        app_blacklist,
+                    ).items()
+                )
             )
-        )
     elif option == "own":
         print(
             "\n".join(

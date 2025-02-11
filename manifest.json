@@ -41,17 +41,17 @@
             "default_value": "se"
         },
         {
-            "id": "STEAM_FOLDER",
+            "id": "STEAM_FOLDERS",
             "type": "input",
-            "name": "Steam folder path",
-            "description": "The path to the folder that contains the steamapps and userdata folders",
+            "name": "Steam folder paths",
+            "description": "Paths to folders containing steamapps folders separated by commas, first in list should have a userdata folder",
             "default_value": "/home/<username>/.steam/steam/"
         },
         {
             "id": "STEAM_USERDATA_ID",
             "type": "input",
             "name": "Steam userdata folder name",
-            "description": "The name of the userdata subfolder (a number) belonging to the user",
+            "description": "Name of the userdata subfolder (a number) in the first Steam folder specified above that belongs to the user",
             "default_value": ""
         },
         {
@@ -83,7 +83,7 @@
             "id": "FRIEND_DEFAULT_ACTION",
             "type": "select",
             "name": "Default friend action",
-            "description": "The default action to perform when a friend is selected",
+            "description": "Default action to perform when a friend is selected",
             "default_value": "chat",
             "options": [
                 { "value": "chat", "text": "Open chat window" },
@@ -105,14 +105,14 @@
             "id": "UPDATE_FROM_FILES_DELAY",
             "type": "input",
             "name": "Time between file reads",
-            "description": "The time to wait before reading files on disk to update the cache",
+            "description": "Time to wait before reading files on disk to update the cache",
             "default_value": "1m"
         },
         {
             "id": "UPDATE_FROM_STEAM_API_DELAY",
             "type": "input",
             "name": "Time between Steam API calls",
-            "description": "The time to wait before querying the Steam API to update the cache",
+            "description": "Time to wait before querying the Steam API to update the cache",
             "default_value": "1d"
         },
         {
@@ -147,7 +147,7 @@
             "id": "MAX_ITEMS",
             "type": "input",
             "name": "Maximum items",
-            "description": "The maximum number of items to show in the list",
+            "description": "Maximum number of items to show when displaying query results",
             "default_value": "10"
         }
     ]

@@ -259,6 +259,33 @@ def ensure_dict_key_is_dict(dictionary: dict, key: Any) -> tuple[dict, bool]:
     return dictionary[key], False
 
 
+def get_steam_folders(preferences: dict[str, Any]) -> list[str]:
+    """
+    Returns a list of Steam folders from the preferences dictionary, removing any that do not contain a "steamapps" folder. The first of these folders is assumed to include a "userdata" folder.
+
+    Args:
+        preferences (dict[str, Any]): The preferences dictionary.
+
+    Returns:
+        list[str]: The list of Steam folders.
+    """
+    folders_str: str = preferences["STEAM_FOLDERS"].strip()
+    folders: list[str] = folders_str.split(",")
+    for i in reversed(range(len(folders))):
+        if not folders[i].endswith(DIR_SEP):
+            folders[i] += DIR_SEP
+        if not isdir(folders[i]):
+            log.warning(f"Steam folder '{folders[i]}' is not a folder")
+            folders.pop(i)
+            continue
+        if not isdir(f"{folders[i]}{DIR_SEP}steamapps{DIR_SEP}"):
+            log.warning(
+                f"Steam folder '{folders[i]}' does not contain a 'steamapps' folder"
+            )
+            folders.pop(i)
+    return folders
+
+
 def datetime_to_timestamp(dt: datetime | None = None) -> float | int:
     """
     Converts a datetime object to a timestamp, rounding to an integer if possible.
@@ -381,81 +408,80 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         update_from_steam_api = compare_last_updated("from_steam_api")
     ensure_dict_key_is_dict(cache, "last_updated")
     if update_from_files or force:
-        # TODO: Allow specifying multiple Steam folders, the first containing userdata
-        if not preferences["STEAM_FOLDER"].endswith(DIR_SEP):
-            preferences["STEAM_FOLDER"] = f"{preferences['STEAM_FOLDER']}{DIR_SEP}"
-        if not isdir(preferences["STEAM_FOLDER"]):
-            log.error(f"Steam folder path '{preferences['STEAM_FOLDER']}' is invalid")
-        else:
-            from_files_updated: bool = False
+        steam_folders: list[str] = get_steam_folders(preferences)
+        from_files_updated: bool = False
 
-            def compare_last_launched(
-                app: InstalledSteamApp | NonSteamApp | OwnedSteamApp, cache_app: dict
-            ) -> bool:
-                if app["last_launched"] is None:
-                    return True
-                if "last_launched" in cache_app.keys():
-                    try:
-                        cache_last_launched: datetime = datetime.fromtimestamp(
-                            cache_app["last_launched"]
-                        )
-                        if app["last_launched"] < cache_last_launched:
-                            return False
-                    except Exception:
-                        log.warning(
-                            f"Failed to parse app {app['app_id']} 'last_launched' timestamp '{cache_app['last_launched']}'",
-                            exc_info=True,
-                        )
+        def compare_last_launched(
+            app: InstalledSteamApp | NonSteamApp | OwnedSteamApp, cache_app: dict
+        ) -> bool:
+            if app["last_launched"] is None:
                 return True
-
-            log.info("Getting non-Steam apps from shortcuts.vdf")
-            userdata_folder: str = (
-                f"{preferences['STEAM_FOLDER']}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}"
-            )
-            shortcuts_file: str = (
-                f"{preferences['STEAM_FOLDER']}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf"
-            )
-            cache_app: dict[str, Any]
-            if not isdir(userdata_folder):
-                log.error(
-                    f"Steam userdata ID '{preferences['STEAM_USERDATA_ID']}' is invalid as folder path '{userdata_folder}' is invalid"
-                )
-            elif not isfile(shortcuts_file):
-                log.error(
-                    f"Steam shortcuts file '{shortcuts_file}' unexpectedly not found"
-                )
-            else:
-                non_steam_apps: dict[int, NonSteamApp] = {}
+            if "last_launched" in cache_app.keys():
                 try:
-                    non_steam_apps = get_non_steam_apps(shortcuts_file, app_blacklist)
+                    cache_last_launched: datetime = datetime.fromtimestamp(
+                        cache_app["last_launched"]
+                    )
+                    if app["last_launched"] < cache_last_launched:
+                        return False
                 except Exception:
-                    log.error("Failed to get non-Steam apps", exc_info=True)
-                if not ensure_dict_key_is_dict(cache, "non_steam_apps")[1]:
-                    log.debug("Removing non-existant non-Steam apps")
-                    for app_id in cache["non_steam_apps"].keys():
-                        if int(app_id) not in non_steam_apps.keys():
-                            del cache["non_steam_apps"][app_id]
-                for app_id, app_info in non_steam_apps.items():
-                    cache_app = ensure_dict_key_is_dict(
-                        cache["non_steam_apps"], str(app_id)
-                    )[0]
-                    cache_app["name"] = app_info["name"]
-                    if app_info["exe"] is not None:
-                        cache_app["exe"] = app_info["exe"]
-                    elif "exe" in cache_app.keys():
-                        del cache_app["exe"]
-                    if app_info["size_on_disk"] is not None:
-                        cache_app["size_on_disk"] = app_info["size_on_disk"]
-                    elif "size_on_disk" in cache_app.keys():
-                        del cache_app["size_on_disk"]
-                    if app_info["last_launched"] is not None:
-                        if compare_last_launched(app_info, cache_app):
-                            cache_app["last_launched"] = datetime_to_timestamp(
-                                app_info["last_launched"]
-                            )
-                from_files_updated = True
+                    log.warning(
+                        f"Failed to parse app {app['app_id']} 'last_launched' timestamp '{cache_app['last_launched']}'",
+                        exc_info=True,
+                    )
+            return True
+
+        for steam_folder_index, steam_folder in enumerate(steam_folders):
+            if steam_folder_index == 0:
+                log.info("Getting non-Steam apps from shortcuts.vdf")
+                userdata_folder: str = (
+                    f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}"
+                )
+                shortcuts_file: str = (
+                    f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf"
+                )
+                cache_app: dict[str, Any]
+                if not isdir(userdata_folder):
+                    log.error(
+                        f"Steam userdata ID '{preferences['STEAM_USERDATA_ID']}' is invalid as folder path '{userdata_folder}' is invalid"
+                    )
+                elif not isfile(shortcuts_file):
+                    log.error(
+                        f"Steam shortcuts file '{shortcuts_file}' unexpectedly not found"
+                    )
+                else:
+                    non_steam_apps: dict[int, NonSteamApp] = {}
+                    try:
+                        non_steam_apps = get_non_steam_apps(
+                            shortcuts_file, app_blacklist
+                        )
+                    except Exception:
+                        log.error("Failed to get non-Steam apps", exc_info=True)
+                    if not ensure_dict_key_is_dict(cache, "non_steam_apps")[1]:
+                        log.debug("Removing non-existant non-Steam apps")
+                        for app_id in cache["non_steam_apps"].keys():
+                            if int(app_id) not in non_steam_apps.keys():
+                                del cache["non_steam_apps"][app_id]
+                    for app_id, app_info in non_steam_apps.items():
+                        cache_app = ensure_dict_key_is_dict(
+                            cache["non_steam_apps"], str(app_id)
+                        )[0]
+                        cache_app["name"] = app_info["name"]
+                        if app_info["exe"] is not None:
+                            cache_app["exe"] = app_info["exe"]
+                        elif "exe" in cache_app.keys():
+                            del cache_app["exe"]
+                        if app_info["size_on_disk"] is not None:
+                            cache_app["size_on_disk"] = app_info["size_on_disk"]
+                        elif "size_on_disk" in cache_app.keys():
+                            del cache_app["size_on_disk"]
+                        if app_info["last_launched"] is not None:
+                            if compare_last_launched(app_info, cache_app):
+                                cache_app["last_launched"] = datetime_to_timestamp(
+                                    app_info["last_launched"]
+                                )
+                    from_files_updated = True
             log.info("Getting installed Steam apps from appmanifest_#.acf files")
-            steamapps_folder: str = f"{preferences['STEAM_FOLDER']}steamapps{DIR_SEP}"
+            steamapps_folder: str = f"{steam_folder}steamapps{DIR_SEP}"
             if not isdir(steamapps_folder):
                 log.error(
                     f"Steam steamapps folder path '{steamapps_folder}' unexpectedly is invalid"

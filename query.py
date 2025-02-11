@@ -422,8 +422,6 @@ def query_cache(
         location: str | None
         size_on_disk: int
         if "steam_apps" in cache.keys() and isinstance(cache["steam_apps"], dict):
-            if not preferences["STEAM_FOLDER"].endswith(DIR_SEP):
-                preferences["STEAM_FOLDER"] = f"{preferences['STEAM_FOLDER']}{DIR_SEP}"
             for app_id, app_info in cache["steam_apps"].items():
                 app_id_int = int(app_id)
                 try:
@@ -441,8 +439,6 @@ def query_cache(
                     )
                     continue
                 location = app_info.get("install_dir")
-                if location is not None:
-                    location = f"{preferences['STEAM_FOLDER']}steamapps{DIR_SEP}common{DIR_SEP}{location}"
                 size_on_disk = app_info.get("size_on_disk", 0)
                 if preferences["SHOW_UNINSTALLED_APPS"] == "false" and (
                     location is None and size_on_disk == 0
