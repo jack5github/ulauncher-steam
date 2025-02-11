@@ -197,7 +197,7 @@ def get_non_steam_apps(
     from binascii import hexlify
     import os
     from os.path import getsize, isfile
-    from subprocess import check_output as subprocess_check_output
+    from subprocess import CalledProcessError, check_output as subprocess_check_output
 
     non_steam_apps: dict[int, NonSteamApp] = {}
     buffer: bytearray
@@ -241,16 +241,16 @@ def get_non_steam_apps(
             exe_start: int = cursor
             while cursor < len(buffer) and buffer[cursor] != 0:
                 cursor += 1
-            exe: str | None = (
-                buffer[exe_start:cursor].decode(errors="ignore").strip('"')
-            )
+            exe: str | None = buffer[exe_start:cursor].decode(errors="ignore").strip()
             if os.name != "nt":
-                exe = (
-                    subprocess_check_output(f"type {exe}", shell=True)
-                    .decode()
-                    .split(" is ")[1]
-                    .strip()
-                )
+                try:
+                    which_exe: str = (
+                        subprocess_check_output(f'which {exe}', shell=True).decode()
+                    )
+                    if which_exe != "":
+                        exe = which_exe
+                except CalledProcessError:
+                    log.warning(f"Failed to evaluate system location of '{exe}'")
             size_on_disk: int | None = None
             if isfile(exe):
                 size_on_disk = getsize(exe)
