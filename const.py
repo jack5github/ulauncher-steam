@@ -117,7 +117,6 @@ STEAM_NAVIGATIONS: list[str] = [
     # "friends/status/trade",  Does nothing
     "gameproperties/%a",
     # "guestpasses",  Is meant to display pending gifts, but currently is a duplicate of "url/CommunityInventory"
-    # TODO: Test music player navigations with a soundtrack installed on the system
     "musicplayer/decreasevolume",
     "musicplayer/increasevolume",
     "musicplayer/pause",
@@ -140,9 +139,8 @@ STEAM_NAVIGATIONS: list[str] = [
     "open/largegameslist",
     # "open/main",  Does nothing
     "open/minigameslist",
-    # TODO: Test music player navigations with a soundtrack installed on the system
-    "open/music",
-    "open/musicplayer",
+    # "open/music",  Does nothing
+    # "open/musicplayer",  Does nothing
     # "open/mymedia",  Does nothing
     # "open/news",  Does nothing
     # "open/registerproduct",  Does nothing
