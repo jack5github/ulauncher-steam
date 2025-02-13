@@ -181,6 +181,7 @@ class NonSteamApp(TypedDict):
     last_launched: datetime | None
 
 
+# TODO: Get non-Steam app icons from userdata/<user>/config/grid/<appid>_icon.*
 def get_non_steam_apps(
     shortcuts_path: str, app_blacklist: list[int]
 ) -> dict[int, NonSteamApp]:
@@ -424,10 +425,9 @@ def get_steam_friends_list(
 
 class SteamFriendInfo(TypedDict):
     """
-    A dictionary representation of a Steam friend from the Steam API when retrieving their info.
+    A dictionary representation of a Steam friend from the Steam API when retrieving their info. Nicknames are not included as part of this, as nicknames are not stored in a file nor exposed by the Steam API.
     """
 
-    # TODO: Add nickname support
     name: str | None
     icon_hash: str | None
     last_updated: datetime | None
