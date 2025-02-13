@@ -178,9 +178,9 @@ class SteamExtensionItem:
                 else:
                     description += f"{self.size_on_disk / 1000 ** 4:.2f} TB"
         elif self.type == "friend":
-            if self.real_name is not None:
+            if self.real_name is not None and self.preferences["SHOW_REAL_INFO"] in ("all", "only_names"):
                 description += self.real_name
-            if self.location is not None:
+            if self.location is not None and self.preferences["SHOW_REAL_INFO"] in ("all", "only_locations"):
                 add_divider()
                 description += self.location
         elif self.description is not None:

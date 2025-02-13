@@ -91,6 +91,19 @@
 			]
 		},
 		{
+			"id": "SHOW_REAL_INFO",
+			"type": "select",
+			"name": "Show friends' real info",
+			"description": "Whether to show real names and locations for friends",
+			"default_value": "all",
+			"options": [
+				{ "value": "all", "text": "Yes" },
+				{ "value": "only_names", "text": "Only real names" },
+				{ "value": "only_locations", "text": "Only locations" },
+				{ "value": "none", "text": "No" }
+			]
+		},
+		{
 			"id": "SHOW_DEPENDENT_NAVIGATIONS",
 			"type": "select",
 			"name": "Show app and friend menus",
