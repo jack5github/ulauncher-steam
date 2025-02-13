@@ -1,158 +1,158 @@
 {
-    "required_api_version": "2",
-    "name": "Steam",
-    "description": "uLauncher Steam integration",
-    "developer_name": "Jack5",
-    "icon": "images/icon.png",
-    "preferences": [
-        {
-            "id": "KEYWORD",
-            "type": "keyword",
-            "name": "Steam search",
-            "description": "Search through everything Steam",
-            "default_value": "s"
-        },
-        {
-            "id": "KEYWORD_APPS",
-            "type": "keyword",
-            "name": "Steam apps",
-            "description": "Search through Steam apps",
-            "default_value": "sa"
-        },
-        {
-            "id": "KEYWORD_FRIENDS",
-            "type": "keyword",
-            "name": "Steam friends",
-            "description": "Search through Steam friends",
-            "default_value": "sf"
-        },
-        {
-            "id": "KEYWORD_NAVIGATIONS",
-            "type": "keyword",
-            "name": "Steam menus",
-            "description": "Search through Steam menus",
-            "default_value": "sm"
-        },
-        {
-            "id": "KEYWORD_ACTIONS",
-            "type": "keyword",
-            "name": "Steam extension actions",
-            "description": "Search through Steam extension actions",
-            "default_value": "se"
-        },
-        {
-            "id": "STEAM_FOLDERS",
-            "type": "input",
-            "name": "Steam folder paths",
-            "description": "Paths to folders containing steamapps folders separated by commas, first in list should have a userdata folder",
-            "default_value": "/home/<username>/.steam/steam/"
-        },
-        {
-            "id": "STEAM_USERDATA_ID",
-            "type": "input",
-            "name": "Steam userdata folder name",
-            "description": "Name of the userdata subfolder (a number) in the first Steam folder specified above that belongs to the user",
-            "default_value": ""
-        },
-        {
-            "id": "STEAM_API_KEY",
-            "type": "input",
-            "name": "Steam Web API key",
-            "description": "API key to use when fetching data (found at steamcommunity.com/dev/apikey)",
-            "default_value": ""
-        },
-        {
-            "id": "STEAMID64",
-            "type": "input",
-            "name": "Steam ID",
-            "description": "64-bit Steam ID to use when fetching data (found at store.steampowered.com/account)",
-            "default_value": ""
-        },
-        {
-            "id": "SHOW_UNINSTALLED_APPS",
-            "type": "select",
-            "name": "Show uninstalled apps",
-            "description": "Whether to show uninstalled apps in the list",
-            "default_value": "true",
-            "options": [
-                { "value": "true", "text": "Yes" },
-                { "value": "false", "text": "No" }
-            ]
-        },
-        {
-            "id": "FRIEND_DEFAULT_ACTION",
-            "type": "select",
-            "name": "Default friend action",
-            "description": "Default action to perform when a friend is selected",
-            "default_value": "chat",
-            "options": [
-                { "value": "chat", "text": "Open chat window" },
-                { "value": "profile", "text": "Open Steam profile" }
-            ]
-        },
-        {
-            "id": "SHOW_DEPENDENT_NAVIGATIONS",
-            "type": "select",
-            "name": "Show app and friend menus",
-            "description": "Whether to show extra navigation items for apps and friends",
-            "default_value": "true",
-            "options": [
-                { "value": "true", "text": "Yes" },
-                { "value": "false", "text": "No" }
-            ]
-        },
-        {
-            "id": "UPDATE_FROM_FILES_DELAY",
-            "type": "input",
-            "name": "Time between file reads",
-            "description": "Time to wait before reading files on disk to update the cache",
-            "default_value": "1m"
-        },
-        {
-            "id": "UPDATE_FROM_STEAM_API_DELAY",
-            "type": "input",
-            "name": "Time between Steam API calls",
-            "description": "Time to wait before querying the Steam API to update the cache",
-            "default_value": "1d"
-        },
-        {
-            "id": "APP_BLACKLIST",
-            "type": "input",
-            "name": "App blacklist",
-            "description": "IDs of apps to hide from the list, separated by commas",
-            "default_value": ""
-        },
-        {
-            "id": "FRIEND_BLACKLIST",
-            "type": "input",
-            "name": "Friend blacklist",
-            "description": "64-bit Steam IDs of friends (found at steamdb.info/calculator) to hide from the list, separated by commas",
-            "default_value": ""
-        },
-        {
-            "id": "LANGUAGE_CODE",
-            "type": "select",
-            "name": "Language",
-            "description": "Language to use for extension-defined strings",
-            "default_value": "en-GB",
-            "options": [
-                { "value": "en-GB", "text": "English (United Kingdom)" },
-                { "value": "en-US", "text": "English (United States)" }
-            ]
-        },
-        {
-            "id": "SORT_KEYS",
-            "type": "input",
-            "name": "Sort priorities",
-            "description": "How to sort list items when not searching, keys separated by commas in priority order",
-            "default_value": "last_launched,total_playtime,name"
-        },
-        {
-            "id": "MAX_ITEMS",
-            "type": "input",
-            "name": "Maximum items",
-            "description": "Maximum number of items to show when displaying query results",
-            "default_value": "10"
-        }
-    ]
+	"required_api_version": "2",
+	"name": "Steam",
+	"description": "uLauncher Steam integration",
+	"developer_name": "Jack5",
+	"icon": "images/icon.png",
+	"preferences": [
+		{
+			"id": "KEYWORD",
+			"type": "keyword",
+			"name": "Steam search",
+			"description": "Search through everything Steam",
+			"default_value": "s"
+		},
+		{
+			"id": "KEYWORD_APPS",
+			"type": "keyword",
+			"name": "Steam apps",
+			"description": "Search through Steam apps",
+			"default_value": "sa"
+		},
+		{
+			"id": "KEYWORD_FRIENDS",
+			"type": "keyword",
+			"name": "Steam friends",
+			"description": "Search through Steam friends",
+			"default_value": "sf"
+		},
+		{
+			"id": "KEYWORD_NAVIGATIONS",
+			"type": "keyword",
+			"name": "Steam menus",
+			"description": "Search through Steam menus",
+			"default_value": "sm"
+		},
+		{
+			"id": "KEYWORD_ACTIONS",
+			"type": "keyword",
+			"name": "Steam extension actions",
+			"description": "Search through Steam extension actions",
+			"default_value": "se"
+		},
+		{
+			"id": "STEAM_FOLDERS",
+			"type": "input",
+			"name": "Steam folder paths",
+			"description": "Paths to folders containing steamapps folders separated by commas, first in list should have a userdata folder",
+			"default_value": "/home/<username>/.steam/steam/"
+		},
+		{
+			"id": "STEAM_USERDATA_ID",
+			"type": "input",
+			"name": "Steam userdata folder name",
+			"description": "Name of the userdata subfolder (a number) in the first Steam folder specified above that belongs to the user",
+			"default_value": ""
+		},
+		{
+			"id": "STEAM_API_KEY",
+			"type": "input",
+			"name": "Steam Web API key",
+			"description": "API key to use when fetching data (found at steamcommunity.com/dev/apikey)",
+			"default_value": ""
+		},
+		{
+			"id": "STEAMID64",
+			"type": "input",
+			"name": "Steam ID",
+			"description": "64-bit Steam ID to use when fetching data (found at store.steampowered.com/account)",
+			"default_value": ""
+		},
+		{
+			"id": "SHOW_UNINSTALLED_APPS",
+			"type": "select",
+			"name": "Show uninstalled apps",
+			"description": "Whether to show uninstalled apps in the list",
+			"default_value": "true",
+			"options": [
+				{ "value": "true", "text": "Yes" },
+				{ "value": "false", "text": "No" }
+			]
+		},
+		{
+			"id": "FRIEND_DEFAULT_ACTION",
+			"type": "select",
+			"name": "Default friend action",
+			"description": "Default action to perform when a friend is selected",
+			"default_value": "chat",
+			"options": [
+				{ "value": "chat", "text": "Open chat window" },
+				{ "value": "profile", "text": "Open Steam profile" }
+			]
+		},
+		{
+			"id": "SHOW_DEPENDENT_NAVIGATIONS",
+			"type": "select",
+			"name": "Show app and friend menus",
+			"description": "Whether to show extra navigation items for apps and friends",
+			"default_value": "true",
+			"options": [
+				{ "value": "true", "text": "Yes" },
+				{ "value": "false", "text": "No" }
+			]
+		},
+		{
+			"id": "UPDATE_FROM_FILES_DELAY",
+			"type": "input",
+			"name": "Time between file reads",
+			"description": "Time to wait before reading files on disk to update the cache",
+			"default_value": "1m"
+		},
+		{
+			"id": "UPDATE_FROM_STEAM_API_DELAY",
+			"type": "input",
+			"name": "Time between Steam API calls",
+			"description": "Time to wait before querying the Steam API to update the cache",
+			"default_value": "1d"
+		},
+		{
+			"id": "APP_BLACKLIST",
+			"type": "input",
+			"name": "App blacklist",
+			"description": "IDs of apps to hide from the list, separated by commas",
+			"default_value": ""
+		},
+		{
+			"id": "FRIEND_BLACKLIST",
+			"type": "input",
+			"name": "Friend blacklist",
+			"description": "64-bit Steam IDs of friends (found at steamdb.info/calculator) to hide from the list, separated by commas",
+			"default_value": ""
+		},
+		{
+			"id": "LANGUAGE_CODE",
+			"type": "select",
+			"name": "Language",
+			"description": "Language to use for extension-defined strings",
+			"default_value": "en-GB",
+			"options": [
+				{ "value": "en-GB", "text": "English (United Kingdom)" },
+				{ "value": "en-US", "text": "English (United States)" }
+			]
+		},
+		{
+			"id": "SORT_KEYS",
+			"type": "input",
+			"name": "Sort priorities",
+			"description": "How to sort list items when not searching, keys separated by commas in priority order",
+			"default_value": "last_launched,total_playtime,name"
+		},
+		{
+			"id": "MAX_ITEMS",
+			"type": "input",
+			"name": "Maximum items",
+			"description": "Maximum number of items to show when displaying query results",
+			"default_value": "10"
+		}
+	]
 }
