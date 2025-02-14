@@ -70,5 +70,5 @@ A dictionary of the additional navigation items supplied by the extension when t
 
 A dictionary of the last times the cache was updated as it relates to individual functions of the extension.
 
-- `files` (integer) - The timestamp of the last time the cache was updated from files on disk. ❌
-- `steamApi` (integer) - The timestamp of the last time the cache was updated from the Steam API. ❌
+- `files` (integer) - The timestamp of the last time the cache was updated from files on disk.
+- `steamApi` (integer) - The timestamp of the last time the cache was updated from the Steam API.

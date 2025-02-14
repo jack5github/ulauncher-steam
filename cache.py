@@ -215,22 +215,21 @@ def get_steam_folders(preferences: dict[str, Any]) -> list[str]:
     return folders
 
 
-def datetime_to_timestamp(dt: datetime | None = None) -> float | int:
+def datetime_to_timestamp(dt: datetime | None = None) -> int:
     """
-    Converts a datetime object to a timestamp, rounding to an integer if possible.
+    Converts a datetime object to an integer timestamp.
 
     Args:
         dt (datetime | None, optional): The datetime object to convert. If this is None, the current datetime is used. Defaults to None.
 
     Returns:
-        float | int: The timestamp of the datetime object.
+        int: The timestamp of the datetime object.
     """
+    from math import floor
+
     if dt is None:
         dt = datetime.now()
-    timestamp: float | int = dt.timestamp()
-    if dt.hour == 0 and dt.minute == 0 and dt.second == 0 and dt.microsecond == 0:
-        timestamp = int(timestamp)
-    return timestamp
+    return floor(dt.timestamp())
 
 
 def save_cache(cache: dict[str, Any], preferences: dict[str, Any]) -> None:
@@ -270,6 +269,7 @@ def clear_cache() -> None:
     remove(f"{EXTENSION_PATH}cache.json")
 
 
+# TODO: Convert this function to be asynchronous so that searches are not blocked
 def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
     """
     Builds the Steam extension cache, saving it to cache.json. This includes non-Steam apps, installed Steam apps and owned Steam apps.
@@ -492,7 +492,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 }
             from_steam_api_updated = True
         if from_steam_api_updated:
-            cache["last_updated"]["from_steam_api"] = datetime_to_timestamp()
+            cache["updated"]["steamApi"] = datetime_to_timestamp()
             save_cache(cache, preferences)
         log.info("Getting friends list from Steam API")
         steam_friends_list: dict[int, SteamFriendFromList] = {}
