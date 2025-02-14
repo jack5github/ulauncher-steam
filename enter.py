@@ -73,9 +73,9 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         SubprocessPopen(nav_execute, shell=True)
         if "steam_navs" not in cache.keys():
             cache["steam_navs"] = {}
-        if nav_action not in cache["steam_navs"].keys():
-            cache["steam_navs"][nav_action] = {}
-        cache_nav: dict[str, Any] = cache["steam_navs"][nav_action]
+        if f"s:{nav_action}" not in cache["steam_navs"].keys():
+            cache["steam_navs"][f"s:{nav_action}"] = {}
+        cache_nav: dict[str, Any] = cache["steam_navs"][f"s:{nav_action}"]
         cache_nav["last_launched"] = datetime.now().timestamp()
         if "times_launched" in cache_nav.keys():
             cache_nav["times_launched"] += 1

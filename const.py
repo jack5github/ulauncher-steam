@@ -88,6 +88,7 @@ DEFAULT_LANGUAGE: str = "en-GB"
 # Navigation
 # https://developer.valvesoftware.com/wiki/Steam_browser_protocol
 # TODO: Add groups actions
+# TODO: Add https:// navigations (will require adding s: in front of all Steam navigations)
 STEAM_NAVIGATIONS: list[str] = [
     # "AddNonSteamGame",  Does nothing
     # "advertise/%a",  Duplicate of "store/%a"

@@ -607,12 +607,12 @@ def query_cache(
             cache["steam_navs"] = {}
         for name in STEAM_NAVIGATIONS:
             nav_display_name: str = get_lang_string(
-                lang, preferences["LANGUAGE_CODE"], name
+                lang, preferences["LANGUAGE_CODE"], f"s:{name}"
             )
             description: str | None = None
             try:
                 description = get_lang_string(
-                    lang, preferences["LANGUAGE_CODE"], f"{name}%d", strict=True
+                    lang, preferences["LANGUAGE_CODE"], f"s:{name}%d", strict=True
                 )
             except KeyError:
                 pass
@@ -672,10 +672,9 @@ def query_cache(
                 id_display_name: str = nav_display_name
                 id_description: str | None = description
                 icon = None
-                if isfile(
-                    f"{EXTENSION_PATH}images{DIR_SEP}navs{DIR_SEP}{name.replace(DIR_SEP, '-')}.png"
-                ):
-                    icon = f"{EXTENSION_PATH}images{DIR_SEP}navs{DIR_SEP}{name.replace(DIR_SEP, '-')}.png"
+                icon_path = f"{EXTENSION_PATH}images{DIR_SEP}navs{DIR_SEP}s-{name.replace("/", '-')}.png"
+                if isfile(icon_path):
+                    icon = icon_path
                 if "%a" in name:
                     if preferences["SHOW_UNINSTALLED_APPS"] == "false" and (
                         "location" not in cache["steam_apps"][str(id)].keys()
@@ -720,11 +719,11 @@ def query_cache(
                             icon = icon_path
                 last_launched = None
                 times_launched = 0
-                if id_name in cache["steam_navs"].keys() and isinstance(
-                    cache["steam_navs"][id_name], dict
+                if f"s:{id_name}" in cache["steam_navs"].keys() and isinstance(
+                    cache["steam_navs"][f"s:{id_name}"], dict
                 ):
                     last_launched, times_launched = get_launches(
-                        cache["steam_navs"][id_name]
+                        cache["steam_navs"][f"s:{id_name}"]
                     )
                 items.append(
                     SteamExtensionItem(

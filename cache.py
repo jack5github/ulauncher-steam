@@ -1,73 +1,7 @@
 """
-This module contains functions for building and saving the Steam extension cache.
-
-The cache dictionary is saved to a JSON file named "cache.json" in the extension directory. It has the following structure:
-{
-    "last_updated": {
-        "from_files": TIMESTAMP,
-        "from_steam_api": TIMESTAMP,
-        "cache": TIMESTAMP,
-    },
-    "non_steam_apps": {
-        "APP_ID": {
-            "name": "APP_NAME",
-            "exe": "INSTALL_LOCATION",
-            "size_on_disk": 0
-            "last_launched": TIMESTAMP,
-            "times_launched": 0,
-        }
-    },
-    "steam_apps": {
-        "APP_ID": {
-            "name": "APP_NAME",
-            "install_dir": "INSTALL_DIR_NAME",
-            "size_on_disk": 0,
-            "last_updated": TIMESTAMP,
-            "last_launched": TIMESTAMP,
-            "times_launched": 0,
-            "total_playtime": 0,
-            "icon_hash": "ICON_HASH"
-        }
-    },
-    "countries": {
-        "COUNTRY_CODE": {
-            "STATE_CODE": {
-                "name": "NAME"
-                "CITY_CODE": "NAME"
-            }
-        }
-    }
-    "friends": {
-        "STEAMID64": {
-            "name": "NAME",
-            "friend_since": TIMESTAMP,
-            "icon_hash": "ICON_HASH",
-            "last_updated": TIMESTAMP,
-            "real_name": "REAL_NAME",
-            "time_created": TIMESTAMP,
-            "country": "COUNTRY",
-            "state": "STATE",
-            "city": "CITY",
-            "last_launched": TIMESTAMP,
-            "times_launched": 0
-        }
-    }
-    "steam_navs": {
-        "NAVIGATION": {
-            "last_launched": TIMESTAMP,
-            "times_launched": 0
-        }
-    },
-    "actions": {
-        "ACTION": {
-            "last_launched": TIMESTAMP,
-            "times_launched": 0
-        }
-    }
-}
+This module contains functions for building and saving the Steam extension cache. The cache dictionary is saved to a JSON file named "cache.json" in the extension directory.
 """
 
-import code
 from const import DIR_SEP, EXTENSION_PATH, get_logger
 from datetime import datetime, timedelta
 from logging import Logger
