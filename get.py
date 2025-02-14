@@ -134,9 +134,7 @@ def get_installed_steam_apps(
             dir: str = f"{steamapps_folder}{app_vdf['AppState']['installdir']}"
             updated_str: str = app_vdf["AppState"]["LastUpdated"]  # type: ignore
             updated: datetime | None = (
-                datetime.fromtimestamp(int(updated_str))
-                if updated_str != "0"
-                else None
+                datetime.fromtimestamp(int(updated_str)) if updated_str != "0" else None
             )
             launched_str: str = app_vdf["AppState"]["LastPlayed"]  # type: ignore
             launched: datetime | None = (
@@ -245,9 +243,9 @@ def get_non_steam_apps(
             exe: str | None = buffer[exe_start:cursor].decode(errors="ignore").strip()
             if os.name != "nt":
                 try:
-                    which_exe: str = (
-                        subprocess_check_output(f'which {exe}', shell=True).decode()
-                    )
+                    which_exe: str = subprocess_check_output(
+                        f"which {exe}", shell=True
+                    ).decode()
                     if which_exe != "":
                         exe = which_exe
                 except CalledProcessError:
@@ -262,13 +260,9 @@ def get_non_steam_apps(
             shortcuts_dict[shortcut_id]["size_on_disk"] = size
             cursor += 1
         if cursor_match("\x02LastPlayTime\x00"):
-            launched_int: int = int.from_bytes(
-                buffer[cursor : cursor + 4], "little"
-            )
+            launched_int: int = int.from_bytes(buffer[cursor : cursor + 4], "little")
             shortcuts_dict[shortcut_id]["launched"] = (
-                datetime.fromtimestamp(launched_int)
-                if launched_int != 0
-                else None
+                datetime.fromtimestamp(launched_int) if launched_int != 0 else None
             )
             cursor += 4
         if not cursor_moved:
@@ -356,7 +350,9 @@ def get_owned_steam_apps(api_key: str, steamid64: int) -> dict[int, OwnedSteamAp
     """
     log.info(f"Getting owned Steam apps from Steam API for user {steamid64}")
     owned_steam_apps: dict[int, OwnedSteamApp] = {}
-    owned_apps_url: str = f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={api_key}&steamid={steamid64}&include_appinfo=1&include_played_free_games=1&format=json"
+    owned_apps_url: str = (
+        f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={api_key}&steamid={steamid64}&include_appinfo=1&include_played_free_games=1&format=json"
+    )
     owned_apps_response: list[dict[str, Any]] = []
     try:
         owned_apps_response = _get_response_from_steam_api(owned_apps_url)["response"][
@@ -402,7 +398,9 @@ def get_steam_friends_list(
     """
     log.info(f"Getting Steam friends from Steam API for user {steamid64}")
     steam_friends: dict[int, SteamFriendFromList] = {}
-    steam_friends_url: str = f"https://api.steampowered.com/ISteamUser/GetFriendList/v1/?key={api_key}&steamid={steamid64}&relationship=friend"
+    steam_friends_url: str = (
+        f"https://api.steampowered.com/ISteamUser/GetFriendList/v1/?key={api_key}&steamid={steamid64}&relationship=friend"
+    )
     steam_friends_response: list[dict[str, Any]] = []
     try:
         steam_friends_response = _get_response_from_steam_api(steam_friends_url)[
@@ -450,7 +448,9 @@ def get_steam_friends_info(
     for i in range(0, len(steamid64s), 100):
         batch_steamid64s = steamid64s[i : min(i + 100, len(steamid64s))]
         log.debug(f"Getting Steam friends info for batch {batch_steamid64s}")
-        steam_friend_info_url: str = f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={api_key}&steamids={','.join(map(str, batch_steamid64s))}"
+        steam_friend_info_url: str = (
+            f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={api_key}&steamids={','.join(map(str, batch_steamid64s))}"
+        )
         steam_friend_info_response: list[dict[str, Any]] = []
         try:
             steam_friend_info_response = _get_response_from_steam_api(
@@ -462,9 +462,10 @@ def get_steam_friends_info(
             steamid64: int = int(steam_friend_info["steamid"])
             name: str | None = steam_friend_info["personaname"]
             icon_hash: str | None = None
+            # TODO: Add default icon to images for extension to use by default
             if (
                 steam_friend_info["avatarhash"]
-                != "fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb"
+                != "fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb"  # Default icon
             ):
                 icon_hash = steam_friend_info["avatarhash"]
             updated: datetime | None = None
@@ -475,9 +476,7 @@ def get_steam_friends_info(
             city: int | None = None
             if steam_friend_info["communityvisibilitystate"] == 3:
                 if "lastlogoff" in steam_friend_info.keys():
-                    updated = datetime.fromtimestamp(
-                        steam_friend_info["lastlogoff"]
-                    )
+                    updated = datetime.fromtimestamp(steam_friend_info["lastlogoff"])
                 if "realname" in steam_friend_info.keys():
                     real_name = steam_friend_info["realname"]
                 created = datetime.fromtimestamp(steam_friend_info["timecreated"])
@@ -513,7 +512,9 @@ def get_state_or_city_codes(
     Returns:
         dict[str, str]: The associated codes and names for states or cities.
     """
-    steam_countries_url: str = f"https://steamcommunity.com/actions/QueryLocations/{country_code}{f'/{state_code}' if state_code is not None else ''}"
+    steam_countries_url: str = (
+        f"https://steamcommunity.com/actions/QueryLocations/{country_code}{f'/{state_code}' if state_code is not None else ''}"
+    )
     steam_countries_response: list[dict[str, Any]] = []
     state_or_city_codes: dict[str, str] = {}
     try:

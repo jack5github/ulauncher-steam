@@ -28,7 +28,9 @@ def download_steam_app_icon(app_id: int, icon_hash: str) -> None:
     elif isfile(f"{app_images_path}{app_id}.jpg"):
         log.debug(f"Skipping download of Steam icon for app ID {app_id}")
         return
-    icon_url: str = f"http://media.steampowered.com/steamcommunity/public/images/apps/{app_id}/{icon_hash}.jpg"
+    icon_url: str = (
+        f"http://media.steampowered.com/steamcommunity/public/images/apps/{app_id}/{icon_hash}.jpg"
+    )
     try:
         urlretrieve(icon_url, f"{app_images_path}{app_id}.jpg")
     except HTTPError:
@@ -321,9 +323,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
 
         def compare_last_updated(key: str) -> bool:
             if key not in cache["updated"].keys():
-                log.warning(
-                    f"'updated' in cache.json does not contain '{key}' key"
-                )
+                log.warning(f"'updated' in cache.json does not contain '{key}' key")
                 return True
             updated_last: datetime = datetime.min
             try:
@@ -373,8 +373,12 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         for steam_folder_index, steam_folder in enumerate(steam_folders):
             if steam_folder_index == 0:
                 log.info("Getting non-Steam apps from shortcuts.vdf")
-                userdata_folder: str = f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA']}{DIR_SEP}"
-                shortcuts_file: str = f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf"
+                userdata_folder: str = (
+                    f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA']}{DIR_SEP}"
+                )
+                shortcuts_file: str = (
+                    f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf"
+                )
                 cache_app: dict[str, Any]
                 if not isdir(userdata_folder):
                     log.error(
@@ -393,9 +397,14 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                     except Exception:
                         log.error("Failed to get non-Steam apps", exc_info=True)
                     if ensure_dict_key_is_dict(cache, "nonSteam")[1]:
-                        log.debug("Removing non-existent and blacklisted non-Steam apps")
+                        log.debug(
+                            "Removing non-existent and blacklisted non-Steam apps"
+                        )
                         for app_id in cache["nonSteam"].keys():
-                            if int(app_id) not in non_steam_apps.keys() or int(app_id) in app_blacklist:
+                            if (
+                                int(app_id) not in non_steam_apps.keys()
+                                or int(app_id) in app_blacklist
+                            ):
                                 del cache["nonSteam"][app_id]
                                 from_files_updated = True
                     for app_id, app_info in non_steam_apps.items():
@@ -512,7 +521,10 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         if ensure_dict_key_is_dict(cache, "friends")[1]:
             log.debug("Removing non-existent and blacklisted friends")
             for friend_id in cache["friends"].keys():
-                if int(friend_id) not in steam_friends_list.keys() or int(friend_id) in friend_blacklist:
+                if (
+                    int(friend_id) not in steam_friends_list.keys()
+                    or int(friend_id) in friend_blacklist
+                ):
                     del cache["friends"][friend_id]
                     from_steam_api_updated = True
         cache_friend: dict[str, Any]
@@ -521,9 +533,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 log.debug(f"Skipping blacklisted friend ID '{friend_id}'")
                 continue
             cache_friend = ensure_dict_key_is_dict(cache["friends"], str(friend_id))[0]
-            cache_friend["since"] = datetime_to_timestamp(
-                friend_info["since"]
-            )
+            cache_friend["since"] = datetime_to_timestamp(friend_info["since"])
         if len(steam_friends_list) >= 1:
             from_steam_api_updated = True
         log.info("Getting friends info from Steam API")
@@ -588,15 +598,11 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             if friend_info["icon_hash"] is not None:
                 friend_icons_to_download.append((friend_id, friend_info["icon_hash"]))
             if friend_info["updated"] is not None:
-                cache_friend["updated"] = datetime_to_timestamp(
-                    friend_info["updated"]
-                )
+                cache_friend["updated"] = datetime_to_timestamp(friend_info["updated"])
             if friend_info["real_name"] is not None:
                 cache_friend["realName"] = friend_info["real_name"]
             if friend_info["created"] is not None:
-                cache_friend["created"] = datetime_to_timestamp(
-                    friend_info["created"]
-                )
+                cache_friend["created"] = datetime_to_timestamp(friend_info["created"])
             if friend_info["country_code"] is not None:
                 cache_friend["country"] = friend_info["country_code"]
             if friend_info["state_code"] is not None:
