@@ -315,22 +315,22 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
     log.debug("Getting delays from preferences")
     update_from_files: bool = True
     update_from_steam_api: bool = True
-    if "updated" not in cache.keys():
-        log.warning("'updated' not found in cache.json")
-    elif not isinstance(cache["updated"], dict):
-        log.warning("'updated' in cache.json is not a dictionary")
+    if "extension" not in cache.keys():
+        log.warning("'extension' not found in cache.json")
+    elif not isinstance(cache["extension"], dict):
+        log.warning("'extension' in cache.json is not a dictionary")
     elif not force:
 
         def compare_last_updated(key: str) -> bool:
-            if key not in cache["updated"].keys():
-                log.warning(f"'updated' in cache.json does not contain '{key}' key")
+            if key not in cache["extension"].keys():
+                log.warning(f"'extension' in cache.json does not contain '{key}' key")
                 return True
             updated_last: datetime = datetime.min
             try:
-                updated_last = datetime.fromtimestamp(cache["updated"][key])
+                updated_last = datetime.fromtimestamp(cache["extension"][key])
             except Exception:
                 log.warning(
-                    f"Failed to parse 'updated' key '{key}' timestamp '{cache['updated'][key]}'",
+                    f"Failed to parse 'extension' key '{key}' timestamp '{cache['extension'][key]}'",
                     exc_info=True,
                 )
             wait_time: timedelta = str_to_timedelta(
@@ -346,7 +346,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
 
         update_from_files = compare_last_updated("files")
         update_from_steam_api = compare_last_updated("steamApi")
-    ensure_dict_key_is_dict(cache, "updated")
+    ensure_dict_key_is_dict(cache, "extension")
     if update_from_files or force:
         steam_folders: list[str] = get_steam_folders(preferences)
         from_files_updated: bool = False
@@ -480,7 +480,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                         }
                     from_files_updated = True
             if from_files_updated:
-                cache["updated"]["files"] = datetime_to_timestamp()
+                cache["extension"]["files"] = datetime_to_timestamp()
                 save_cache(cache, preferences)
     if update_from_steam_api or force:
         log.info("Getting owned Steam apps from Steam API")
@@ -508,7 +508,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 }
             from_steam_api_updated = True
         if from_steam_api_updated:
-            cache["updated"]["steamApi"] = datetime_to_timestamp()
+            cache["extension"]["steamApi"] = datetime_to_timestamp()
             save_cache(cache, preferences)
         from_steam_api_updated = False
         log.info("Getting friends list from Steam API")
@@ -621,7 +621,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 cache_friend["city"] = friend_info["city_code"]
             from_steam_api_updated = True
         if from_steam_api_updated:
-            cache["updated"]["steamApi"] = datetime_to_timestamp()
+            cache["extension"]["steamApi"] = datetime_to_timestamp()
             save_cache(cache, preferences)
         if len(app_icons_to_download) >= 1:
             log.info(f"Downloading {len(app_icons_to_download)} Steam app icons")
