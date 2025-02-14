@@ -175,9 +175,9 @@ class SteamExtensionItem:
                 else:
                     description += f"{self.size_on_disk / 1000 ** 4:.2f} TB"
         elif self.type == "friend":
-            if self.real_name is not None and self.preferences["SHOW_REAL"] in ("all", "only_names"):
+            if self.real_name is not None and self.preferences["SHOW_REAL"] in ("all", "onlyNames"):
                 description += self.real_name
-            if self.location is not None and self.preferences["SHOW_REAL"] in ("all", "only_locations"):
+            if self.location is not None and self.preferences["SHOW_REAL"] in ("all", "onlyLocations"):
                 add_divider()
                 description += self.location
         elif self.description is not None:
@@ -546,7 +546,7 @@ def query_cache(
                 preferences["KEYWORD"],
                 preferences["KEYWORD_APPS"],
             ):
-                if preferences["SHOW_DEPENDENT"] == "false":
+                if preferences["SHOW_DEPENDENT"] not in ("all", "onlyApps"):
                     continue
                 if "apps" in cache.keys() and isinstance(
                     cache["apps"], dict
@@ -562,7 +562,7 @@ def query_cache(
                 preferences["KEYWORD"],
                 preferences["KEYWORD_FRIENDS"],
             ):
-                if preferences["SHOW_DEPENDENT"] == "false":
+                if preferences["SHOW_DEPENDENT"] not in ("all", "onlyFriends"):
                     continue
                 if "friends" in cache.keys() and isinstance(cache["friends"], dict):
                     ids = [int(friend_id) for friend_id in cache["friends"].keys()]
