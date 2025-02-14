@@ -21,13 +21,10 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
     if action.startswith("APP"):
         app_id: int = int(action.split("/")[-1])
         cache_app: dict[str, Any]
-        if "steam_apps" in cache.keys() and str(app_id) in cache["steam_apps"].keys():
-            cache_app = cache["steam_apps"][str(app_id)]
-        elif (
-            "non_steam_apps" in cache.keys()
-            and str(app_id) in cache["non_steam_apps"].keys()
-        ):
-            cache_app = cache["non_steam_apps"][str(app_id)]
+        if "apps" in cache.keys() and str(app_id) in cache["apps"].keys():
+            cache_app = cache["apps"][str(app_id)]
+        elif "nonSteam" in cache.keys() and str(app_id) in cache["nonSteam"].keys():
+            cache_app = cache["nonSteam"][str(app_id)]
         else:
             log.error(f"Cannot execute '{action}', app ID {app_id} not found in cache")
             return
@@ -63,11 +60,11 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         nav_execute: str = f"steam steam://{nav_action}"
         log.info(f"Launching navigation '{nav_action}' via '{nav_execute}'")
         SubprocessPopen(nav_execute, shell=True)
-        if "steam_navs" not in cache.keys():
-            cache["steam_navs"] = {}
-        if f"s:{nav_action}" not in cache["steam_navs"].keys():
-            cache["steam_navs"][f"s:{nav_action}"] = {}
-        cache_nav: dict[str, Any] = cache["steam_navs"][f"s:{nav_action}"]
+        if "navs" not in cache.keys():
+            cache["navs"] = {}
+        if f"s:{nav_action}" not in cache["navs"].keys():
+            cache["navs"][f"s:{nav_action}"] = {}
+        cache_nav: dict[str, Any] = cache["navs"][f"s:{nav_action}"]
         cache_nav["last_launched"] = datetime.now().timestamp()
     elif action == "update_cache":
         log.info("Updating cache")

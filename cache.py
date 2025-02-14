@@ -386,14 +386,14 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                         )
                     except Exception:
                         log.error("Failed to get non-Steam apps", exc_info=True)
-                    if not ensure_dict_key_is_dict(cache, "non_steam_apps")[1]:
+                    if not ensure_dict_key_is_dict(cache, "nonSteam")[1]:
                         log.debug("Removing non-existant non-Steam apps")
-                        for app_id in cache["non_steam_apps"].keys():
+                        for app_id in cache["nonSteam"].keys():
                             if int(app_id) not in non_steam_apps.keys():
-                                del cache["non_steam_apps"][app_id]
+                                del cache["nonSteam"][app_id]
                     for app_id, app_info in non_steam_apps.items():
                         cache_app = ensure_dict_key_is_dict(
-                            cache["non_steam_apps"], str(app_id)
+                            cache["nonSteam"], str(app_id)
                         )[0]
                         cache_app["name"] = app_info["name"]
                         if app_info["exe"] is not None:
@@ -424,24 +424,22 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                     )
                 except Exception:
                     log.error("Failed to get installed Steam apps", exc_info=True)
-                if not ensure_dict_key_is_dict(cache, "steam_apps")[1]:
+                if not ensure_dict_key_is_dict(cache, "apps")[1]:
                     log.debug("Removing 'size_on_disk' key from uninstalled Steam apps")
-                    for app_id in cache["steam_apps"].keys():
+                    for app_id in cache["apps"].keys():
                         try:
                             if (
                                 int(app_id) not in installed_steam_apps.keys()
-                                and isinstance(cache["steam_apps"][app_id], dict)
-                                and "size_on_disk" in cache["steam_apps"][app_id].keys()
+                                and isinstance(cache["apps"][app_id], dict)
+                                and "size_on_disk" in cache["apps"][app_id].keys()
                             ):
-                                del cache["steam_apps"][app_id]["size_on_disk"]
+                                del cache["apps"][app_id]["size_on_disk"]
                         except Exception:
                             log.warning(
                                 f"Failed to check Steam app with ID '{app_id}', not a number"
                             )
                 for app_id, app_info in installed_steam_apps.items():
-                    cache_app = ensure_dict_key_is_dict(
-                        cache["steam_apps"], str(app_id)
-                    )[0]
+                    cache_app = ensure_dict_key_is_dict(cache["apps"], str(app_id))[0]
                     cache_app["name"] = app_info["name"]
                     cache_app["install_dir"] = app_info["install_dir"]
                     cache_app["size_on_disk"] = app_info["size_on_disk"]
@@ -458,10 +456,10 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                     if "CACHE_SORT" in preferences.keys() and bool(
                         preferences["CACHE_SORT"]
                     ):
-                        cache["steam_apps"] = {
+                        cache["apps"] = {
                             k: v
                             for k, v in sorted(
-                                cache["steam_apps"].items(), key=lambda i: int(i[0])
+                                cache["apps"].items(), key=lambda i: int(i[0])
                             )
                         }
                     from_files_updated = True
@@ -478,10 +476,10 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             )
         except Exception:
             log.error("Failed to get owned Steam apps", exc_info=True)
-        ensure_dict_key_is_dict(cache, "steam_apps")
+        ensure_dict_key_is_dict(cache, "apps")
         app_icons_to_download: list[tuple[int, str]] = []
         for app_id, app_info in owned_steam_apps.items():
-            cache_app = ensure_dict_key_is_dict(cache["steam_apps"], str(app_id))[0]
+            cache_app = ensure_dict_key_is_dict(cache["apps"], str(app_id))[0]
             cache_app["name"] = app_info["name"]
             cache_app["total_playtime"] = app_info["total_playtime"]
             if app_info["icon_hash"] is not None:
@@ -489,11 +487,9 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 app_icons_to_download.append((app_id, cache_app["icon_hash"]))
         if len(owned_steam_apps) >= 1:
             if "CACHE_SORT" in preferences.keys() and bool(preferences["CACHE_SORT"]):
-                cache["steam_apps"] = {
+                cache["apps"] = {
                     k: v
-                    for k, v in sorted(
-                        cache["steam_apps"].items(), key=lambda i: int(i[0])
-                    )
+                    for k, v in sorted(cache["apps"].items(), key=lambda i: int(i[0]))
                 }
             from_steam_api_updated = True
         if from_steam_api_updated:

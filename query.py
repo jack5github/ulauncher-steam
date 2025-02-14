@@ -422,8 +422,8 @@ def query_cache(
         name: str
         location: str | None
         size_on_disk: int
-        if "steam_apps" in cache.keys() and isinstance(cache["steam_apps"], dict):
-            for app_id, app_info in cache["steam_apps"].items():
+        if "apps" in cache.keys() and isinstance(cache["apps"], dict):
+            for app_id, app_info in cache["apps"].items():
                 app_id_int = int(app_id)
                 try:
                     app_id_int = int(app_id)
@@ -478,10 +478,10 @@ def query_cache(
                         last_launched=last_launched,
                     )
                 )
-        if "non_steam_apps" in cache.keys() and isinstance(
-            cache["non_steam_apps"], dict
+        if "nonSteam" in cache.keys() and isinstance(
+            cache["nonSteam"], dict
         ):
-            for app_id, app_info in cache["non_steam_apps"].items():
+            for app_id, app_info in cache["nonSteam"].items():
                 try:
                     app_id_int = int(app_id)
                 except Exception:
@@ -590,11 +590,11 @@ def query_cache(
         preferences["KEYWORD_FRIENDS"],
         preferences["KEYWORD_NAVIGATIONS"],
     ):
-        if "steam_navs" not in cache.keys() or not isinstance(
-            cache["steam_navs"], dict
+        if "navs" not in cache.keys() or not isinstance(
+            cache["navs"], dict
         ):
-            log.warning("cache.json does not contain valid 'steam_navs' key")
-            cache["steam_navs"] = {}
+            log.warning(msg="cache.json does not contain valid 'navs' key")
+            cache["navs"] = {}
         for name in STEAM_NAVIGATIONS:
             nav_display_name: str = get_lang_string(
                 lang, preferences["LANGUAGE_CODE"], f"s:{name}"
@@ -613,10 +613,10 @@ def query_cache(
             ):
                 if preferences["SHOW_DEPENDENT_NAVIGATIONS"] == "false":
                     continue
-                if "steam_apps" in cache.keys() and isinstance(
-                    cache["steam_apps"], dict
+                if "apps" in cache.keys() and isinstance(
+                    cache["apps"], dict
                 ):
-                    ids = [int(app_id) for app_id in cache["steam_apps"].keys()]
+                    ids = [int(app_id) for app_id in cache["apps"].keys()]
                 else:
                     log.warning(
                         "cache.json does not contain any valid Steam apps",
@@ -667,13 +667,13 @@ def query_cache(
                     icon = icon_path
                 if "%a" in name:
                     if preferences["SHOW_UNINSTALLED_APPS"] == "false" and (
-                        "location" not in cache["steam_apps"][str(id)].keys()
-                        and "size_on_disk" not in cache["steam_apps"][str(id)].keys()
+                        "location" not in cache["apps"][str(id)].keys()
+                        and "size_on_disk" not in cache["apps"][str(id)].keys()
                     ):
                         continue
                     app_name: str = str(id)
-                    if "name" in cache["steam_apps"][str(id)].keys():
-                        app_name = str(cache["steam_apps"][str(id)]["name"])
+                    if "name" in cache["apps"][str(id)].keys():
+                        app_name = str(cache["apps"][str(id)]["name"])
                     id_display_name = nav_display_name.replace("%a", app_name)
                     if id_description is not None:
                         id_description = id_description.replace("%a", app_name)
@@ -708,11 +708,11 @@ def query_cache(
                         if isfile(icon_path):
                             icon = icon_path
                 last_launched = None
-                if f"s:{id_name}" in cache["steam_navs"].keys() and isinstance(
-                    cache["steam_navs"][f"s:{id_name}"], dict
+                if f"s:{id_name}" in cache["navs"].keys() and isinstance(
+                    cache["navs"][f"s:{id_name}"], dict
                 ):
                     last_launched = get_last_launched(
-                        cache["steam_navs"][f"s:{id_name}"]
+                        cache["navs"][f"s:{id_name}"]
                     )
                 items.append(
                     SteamExtensionItem(
