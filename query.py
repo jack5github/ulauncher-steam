@@ -37,7 +37,7 @@ class SteamExtensionItem:
             preferences (dict[str, Any]): The preferences dictionary.
             lang (dict[str, dict[str, str]]): The language dictionary.
             type (Literal["app", "friend", "nav", "action"]): The type of the item.
-            id (int | None, optional): The ID of the item, whether app ID or steamid64. Defaults to None.
+            id (int | None, optional): The ID of the item, whether app ID or steamID64. Defaults to None.
             non_steam (bool, optional): Whether this is a non-Steam application. Defaults to False.
             name (str | None, optional): The name of the item, which may be an action ID in the case of navigations and actions. Defaults to None.
             display_name (str | None, optional): The display name of the item, not to be confused with get_name(). Defaults to None.
@@ -212,7 +212,7 @@ class SteamExtensionItem:
 
     def get_action(self) -> str:
         """
-        Returns the script action of the SteamExtensionItem. If the type is "app", the "steam://rungameid/{id}" action is returned. If the type is "friend", the item's steamid64 is returned. If the type is "nav", the action is returned as is. Otherwise, the item's name is returned. All actions that are not of the "nav" or "action" types are preceded by their type in uppercase.
+        Returns the script action of the SteamExtensionItem. If the type is "app", the "steam://rungameid/{id}" action is returned. If the type is "friend", the item's steamID64 is returned. If the type is "nav", the action is returned as is. Otherwise, the item's name is returned. All actions that are not of the "nav" or "action" types are preceded by their type in uppercase.
 
         Returns:
             str: The script action of the SteamExtensionItem.

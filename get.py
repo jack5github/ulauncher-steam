@@ -343,7 +343,7 @@ def get_owned_steam_apps(api_key: str, steamid64: int) -> dict[int, OwnedSteamAp
 
     Args:
         api_key (str): The Steam API key.
-        steamid64 (str): The steamid64 of the user.
+        steamid64 (str): The steamID64 of the user.
 
     Returns:
         dict[int, OwnedSteamApp]: The dictionary of owned Steam apps.
@@ -391,7 +391,7 @@ def get_steam_friends_list(
 
     Args:
         api_key (str): The Steam API key.
-        steamid64 (int): The steamid64 of the user.
+        steamid64 (int): The steamID64 of the user.
 
     Returns:
         dict[int, SteamFriendFromList]: The dictionary of Steam friends in the user's friend list.
@@ -438,7 +438,7 @@ def get_steam_friends_info(
 
     Args:
         api_key (str): The Steam API key.
-        steamid64s (list[int]): The list of steamid64s of the friends.
+        steamid64s (list[int]): The list of steamID64s of the friends.
 
     Returns:
         dict[int, SteamFriendInfo]: The dictionary of Steam friends info.
@@ -555,7 +555,7 @@ if __name__ == "__main__":
     if option == "fri":
         steamid64s: list[int] = [
             int(steamid64)
-            for steamid64 in input("Enter steamid64s separated by commas: ").split(",")
+            for steamid64 in input("Enter steamID64s separated by commas: ").split(",")
         ]
         print(
             "\n".join(

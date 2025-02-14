@@ -42,10 +42,10 @@ def download_steam_app_icon(app_id: int, icon_hash: str) -> None:
 
 def download_steam_friend_icon(steamid64: int, icon_hash: str) -> None:
     """
-    Downloads the Steam icon for the given Steam ID and hash and saves it to the images/friends folder.
+    Downloads the Steam icon for the given steamID64 and hash and saves it to the images/friends folder.
 
     Args:
-        steamid64 (int): The Steam ID of the Steam friend.
+        steamid64 (int): The steamID64 of the Steam friend.
         icon_hash (str): The hash of the icon of the Steam friend.
     """
     friend_images_path: str = f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}"
@@ -59,7 +59,7 @@ def download_steam_friend_icon(steamid64: int, icon_hash: str) -> None:
         urlretrieve(icon_url, f"{friend_images_path}{steamid64}.jpg")
     except HTTPError:
         log.warning(
-            f"Failed to download Steam icon for steamid64 {steamid64} at '{icon_url}'",
+            f"Failed to download Steam icon for steamID64 {steamid64} at '{icon_url}'",
             exc_info=True,
         )
 

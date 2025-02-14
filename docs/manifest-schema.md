@@ -72,13 +72,13 @@ Default: Empty
 
 This setting is required in order to fetch data from the Steam Web API.
 
-### `STEAMID64`: Steam ID
+### `STEAM_USERNAME`: Steam username ❌
 
-*64-bit Steam ID to use when fetching data (found at store.steampowered.com/account)* (input)
+*Username to use when fetching data (found at store.steampowered.com/account)* (input) ❌
 
 Default: Empty
 
-This setting is required in order to fetch data from the Steam Web API, specifically the user's friend list and information about each friend.
+This setting is required in order to fetch data from the Steam Web API, specifically information about the current user, their owned apps, their friends and groups list and information about each friend and group. Both usernames and 64-bit Steam IDs (numbers only) are accepted. If a username is provided, the extension will use the `ISteamUser/ResolveVanityURL/v1` Steam API call to convert it to a 64-bit Steam ID, and save both of these to the cache. If only a 64-bit Steam ID is provided, this API call is skipped, but certain navigation items will not be available due to requiring a username. ❌
 
 ### `LANGUAGE`: Language
 

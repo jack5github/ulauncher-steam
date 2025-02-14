@@ -29,7 +29,7 @@ A dictionary of all non-Steam applications associated with the current installed
 
 A dictionary of all the user's Steam friends.
 
-- ID (string) - The steamid64 integer ID of the friend. This ID is used when retrieving icons from `/images/friends/<id>.jpg`.
+- ID (string) - The steamID64 integer ID of the friend. This ID is used when retrieving icons from `/images/friends/<id>.jpg`.
 - `name` (string) - The display name of the friend.
 - `realName` (string) - The real name of the friend.
 - `country` (string) - The country code of the friend.
@@ -67,9 +67,11 @@ A dictionary of the additional navigation items supplied by the extension when t
 - ID (string) - The URL of the navigation item, or a string identifier for a special navigation item. If the URL begins with "steam://" or "https://", the protocol is shortened to "s:" and "w:" respectively. This identifier is used when retrieving icons from `/images/navs/<id>.jpg`, though the app or friend IDs are replaced with `%a` or `%f` respectively, and all reserved characters according to Windows file naming conventions are replaced with `-` for the icon path.
 - `launched` (integer) - A timestamp of the last time the application was launched through uLauncher.
 
-## `updated`
+## `extension` ❌
 
-A dictionary of the last times the cache was updated as it relates to individual functions of the extension.
+A dictionary of property values that directly relate to individual functions of the extension.
 
+- `username` (string) - The username of the current user as entered into the extension preferences. ❌
+- `id` (integer) - The 64-bit Steam ID of the current user derived from the username. ❌
 - `files` (integer) - The timestamp of the last time the cache was updated from files on disk.
 - `steamApi` (integer) - The timestamp of the last time the cache was updated from the Steam API.
