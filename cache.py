@@ -592,10 +592,10 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                     friend_info["updated"]
                 )
             if friend_info["real_name"] is not None:
-                cache_friend["real_name"] = friend_info["real_name"]
-            if friend_info["time_created"] is not None:
-                cache_friend["time_created"] = datetime_to_timestamp(
-                    friend_info["time_created"]
+                cache_friend["realName"] = friend_info["real_name"]
+            if friend_info["created"] is not None:
+                cache_friend["created"] = datetime_to_timestamp(
+                    friend_info["created"]
                 )
             if friend_info["country_code"] is not None:
                 cache_friend["country"] = friend_info["country_code"]

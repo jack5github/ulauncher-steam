@@ -426,7 +426,7 @@ class SteamFriendInfo(TypedDict):
     icon_hash: str | None
     updated: datetime | None
     real_name: str | None
-    time_created: datetime | None
+    created: datetime | None
     country_code: str | None
     state_code: str | None
     city_code: int | None
@@ -469,7 +469,7 @@ def get_steam_friends_info(
                 icon_hash = steam_friend_info["avatarhash"]
             updated: datetime | None = None
             real_name: str | None = None
-            time_created: datetime | None = None
+            created: datetime | None = None
             country: str | None = None
             state: str | None = None
             city: int | None = None
@@ -480,7 +480,7 @@ def get_steam_friends_info(
                     )
                 if "realname" in steam_friend_info.keys():
                     real_name = steam_friend_info["realname"]
-                time_created = datetime.fromtimestamp(steam_friend_info["timecreated"])
+                created = datetime.fromtimestamp(steam_friend_info["timecreated"])
                 if "loccountrycode" in steam_friend_info.keys():
                     country = steam_friend_info["loccountrycode"]
                 if "locstatecode" in steam_friend_info.keys():
@@ -492,7 +492,7 @@ def get_steam_friends_info(
                 icon_hash=icon_hash,
                 updated=updated,
                 real_name=real_name,
-                time_created=time_created,
+                created=created,
                 country_code=country,
                 state_code=state,
                 city_code=city,
