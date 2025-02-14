@@ -629,9 +629,13 @@ def query_cache(
                 id_display_name: str = nav_display_name
                 id_description: str | None = description
                 icon = None
-                icon_path = f"{EXTENSION_PATH}images{DIR_SEP}navs{DIR_SEP}{sanitise_filename(f's:{name}.png')}"
+                icon_path = f"{EXTENSION_PATH}images{DIR_SEP}navs{DIR_SEP}{sanitise_filename(f'{name}.png')}"
                 if isfile(icon_path):
                     icon = icon_path
+                else:
+                    log.debug(
+                        f"Failed to find icon for navigation '{name}' at '{icon_path}'"
+                    )
                 if "%a" in name:
                     if preferences["SHOW_UNINSTALLED"] == "false" and (
                         "location" not in cache["apps"][str(id)].keys()
