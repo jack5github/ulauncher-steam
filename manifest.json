@@ -29,9 +29,9 @@
 		{
 			"id": "KEYWORD_NAVIGATIONS",
 			"type": "keyword",
-			"name": "Steam menus",
-			"description": "Search through Steam menus",
-			"default_value": "sm"
+			"name": "Steam navigations",
+			"description": "Search through Steam navigation items",
+			"default_value": "sn"
 		},
 		{
 			"id": "KEYWORD_ACTIONS",
