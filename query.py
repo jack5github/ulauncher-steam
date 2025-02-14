@@ -486,9 +486,9 @@ def query_cache(
                         "city" in friend_info.keys()
                         and friend_info["country"] in cache["countries"].keys()
                         and friend_info["state"] in cache["countries"][friend_info["country"]].keys()
-                        and friend_info["city"] in cache["countries"][friend_info["country"]][friend_info["state"]].keys()
+                        and str(friend_info["city"]) in cache["countries"][friend_info["country"]][friend_info["state"]].keys()
                     ):
-                        location = f"{cache['countries'][friend_info['country']][friend_info['state']][friend_info['city']]}, {location}"
+                        location = f"{cache['countries'][friend_info['country']][friend_info['state']][str(friend_info['city'])]}, {location}"
             icon = None
             icon_path = f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{friend_id_int}.jpg"
             if isfile(icon_path):

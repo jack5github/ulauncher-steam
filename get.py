@@ -429,7 +429,7 @@ class SteamFriendInfo(TypedDict):
     time_created: datetime | None
     country_code: str | None
     state_code: str | None
-    city_code: str | None
+    city_code: int | None
 
 
 def get_steam_friends_info(
@@ -472,7 +472,7 @@ def get_steam_friends_info(
             time_created: datetime | None = None
             country: str | None = None
             state: str | None = None
-            city: str | None = None
+            city: int | None = None
             if steam_friend_info["communityvisibilitystate"] == 3:
                 if "lastlogoff" in steam_friend_info.keys():
                     updated = datetime.fromtimestamp(
@@ -486,7 +486,7 @@ def get_steam_friends_info(
                 if "locstatecode" in steam_friend_info.keys():
                     state = steam_friend_info["locstatecode"]
                 if "loccityid" in steam_friend_info.keys():
-                    city = str(steam_friend_info["loccityid"])
+                    city = steam_friend_info["loccityid"]
             steam_friend_infos[steamid64] = SteamFriendInfo(
                 name=name,
                 icon_hash=icon_hash,

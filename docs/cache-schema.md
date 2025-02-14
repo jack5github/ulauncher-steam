@@ -34,7 +34,7 @@ A dictionary of all the user's Steam friends.
 - `realName` (string) - The real name of the friend. ❌
 - `country` (string) - The country code of the friend.
 - `state` (string) - The state code of the friend.
-- `city` (integer) - The city code of the friend. ❌
+- `city` (integer) - The city code of the friend as an integer. Note that this differs from how city codes are stored in the `countries` dictionary.
 - `since` (integer) - A timestamp of when the friend was added to the user's friend list.
 - `updated` (integer) - A timestamp of when the friend's profile was last updated.
 - `launched` (integer) - A timestamp of the last time the application was launched through uLauncher.
@@ -48,7 +48,7 @@ A dictionary of country, state and city codes in use by the user's Steam friends
     - ID (string) - The state code.
     - `name` (string) - The name of the state.
     - **Cities** (dictionaries)
-        - ID (string) - The city code.
+        - ID (string) - The city code as a string. Note that this differs from how city codes are stored in the `friends` dictionary, due to JSON property name limitations.
         - Value (string) - The name of the city.
 
 ## `groups` (Keyword: `sf`) ❌
