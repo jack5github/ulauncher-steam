@@ -245,7 +245,6 @@ def save_cache(cache: dict[str, Any], preferences: dict[str, Any]) -> None:
 
     log.debug("Saving cache.json")
     try:
-        cache["last_updated"]["cache"] = datetime_to_timestamp()
         with open(f"{EXTENSION_PATH}cache.json", "w", encoding="utf-8") as f:
             f.write(
                 json_dumps(
@@ -303,28 +302,28 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
     log.debug("Getting delays from preferences")
     update_from_files: bool = True
     update_from_steam_api: bool = True
-    if "last_updated" not in cache.keys():
-        log.warning("'last_updated' not found in cache.json")
-    elif not isinstance(cache["last_updated"], dict):
-        log.warning("'last_updated' in cache.json is not a dictionary")
+    if "updated" not in cache.keys():
+        log.warning("'updated' not found in cache.json")
+    elif not isinstance(cache["updated"], dict):
+        log.warning("'updated' in cache.json is not a dictionary")
     elif not force:
 
         def compare_last_updated(key: str) -> bool:
-            if key not in cache["last_updated"].keys():
+            if key not in cache["updated"].keys():
                 log.warning(
-                    f"'last_updated' in cache.json does not contain '{key}' key"
+                    f"'updated' in cache.json does not contain '{key}' key"
                 )
                 return True
             updated_last: datetime = datetime.min
             try:
-                updated_last = datetime.fromtimestamp(cache["last_updated"][key])
+                updated_last = datetime.fromtimestamp(cache["updated"][key])
             except Exception:
                 log.warning(
-                    f"Failed to parse 'last_updated' key '{key}' timestamp '{cache['last_updated'][key]}'",
+                    f"Failed to parse 'updated' key '{key}' timestamp '{cache['updated'][key]}'",
                     exc_info=True,
                 )
             wait_time: timedelta = str_to_timedelta(
-                preferences[f"UPDATE_{key.upper().replace('-', '_')}_DELAY"]
+                preferences[f"UPDATE_FROM_{key.replace("Api", "_Api").upper()}_DELAY"]
             )
             if updated_last + wait_time < datetime.now():
                 log.debug(
@@ -334,9 +333,9 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             log.debug(f"{key.replace('_', ' ').capitalize()} cache is up to date")
             return False
 
-        update_from_files = compare_last_updated("from_files")
-        update_from_steam_api = compare_last_updated("from_steam_api")
-    ensure_dict_key_is_dict(cache, "last_updated")
+        update_from_files = compare_last_updated("files")
+        update_from_steam_api = compare_last_updated("steamApi")
+    ensure_dict_key_is_dict(cache, "updated")
     if update_from_files or force:
         steam_folders: list[str] = get_steam_folders(preferences)
         from_files_updated: bool = False
@@ -464,7 +463,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                         }
                     from_files_updated = True
             if from_files_updated:
-                cache["last_updated"]["from_files"] = datetime_to_timestamp()
+                cache["updated"]["files"] = datetime_to_timestamp()
                 save_cache(cache, preferences)
     if update_from_steam_api or force:
         log.info("Getting owned Steam apps from Steam API")
@@ -594,7 +593,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             if friend_info["city_code"] is not None:
                 cache_friend["city"] = friend_info["city_code"]
         if from_steam_api_updated:
-            cache["last_updated"]["from_steam_api"] = datetime_to_timestamp()
+            cache["updated"]["steamApi"] = datetime_to_timestamp()
             save_cache(cache, preferences)
         if len(app_icons_to_download) >= 1:
             log.info(f"Downloading {len(app_icons_to_download)} Steam app icons")

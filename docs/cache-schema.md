@@ -4,7 +4,7 @@ This document outlines the structure of the cache file **cache.json** saved and 
 
 > TODO: This schema has not been fully implemented. A cross (❌) beside a property indicates that the cache does not adhere to its specification, whether due to the property name being incorrect or the value not matching the specification.
 
-All of the below dictionaries (except `countries`) contain data directly related to list items displayed by the extension. For all of these dictionaries, the generic keyword `s` can be used to search through them. Additionally, if their IDs are added to the appropriate blacklist, their data will be removed from the cache. ❌
+All of the below dictionaries (except `countries` and `updated`) contain data directly related to list items displayed by the extension. For all of these dictionaries, the generic keyword `s` can be used to search through them. Additionally, if their IDs are added to the appropriate blacklist, their data will be removed from the cache. ❌
 
 ## `apps` (Keyword: `sa`)
 
@@ -65,3 +65,10 @@ A dictionary of the additional navigation items supplied by the extension when t
 
 - ID (string) - The URL of the navigation item, or a string identifier for a special navigation item. If the URL begins with "steam://" or "https://", the protocol is shortened to "s:" and "w:" respectively. This identifier is used when retrieving icons from `/images/navs/<id>.jpg`, though the app or friend IDs are replaced with `%a` or `%f` respectively, and all special characters except `%` are replaced with `-` for the icon path. ❌
 - `launched` (integer) - A timestamp of the last time the application was launched through uLauncher. ❌
+
+## `updated`
+
+A dictionary of the last times the cache was updated as it relates to individual functions of the extension.
+
+- `files` (integer) - The timestamp of the last time the cache was updated from files on disk. ❌
+- `steamApi` (integer) - The timestamp of the last time the cache was updated from the Steam API. ❌
