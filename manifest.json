@@ -37,21 +37,21 @@
 			"id": "KEYWORD_ACTIONS",
 			"type": "keyword",
 			"name": "Steam extension actions",
-			"description": "Search through Steam extension actions",
+			"description": "Take control of the Steam extension",
 			"default_value": "se"
 		},
 		{
 			"id": "STEAM_FOLDERS",
 			"type": "input",
 			"name": "Steam folder paths",
-			"description": "Paths to folders containing steamapps folders separated by commas, first in list should have a userdata folder",
+			"description": "Paths to folders containing 'steamapps' folders, separated by commas, first should have 'userdata' folder",
 			"default_value": "/home/<username>/.steam/steam/"
 		},
 		{
 			"id": "STEAM_USERDATA_ID",
 			"type": "input",
 			"name": "Steam userdata folder name",
-			"description": "Name of the userdata subfolder (a number) in the first Steam folder specified above that belongs to the user",
+			"description": "Steam userdata folder name (a number) of current user in primary Steam folder",
 			"default_value": ""
 		},
 		{
@@ -67,6 +67,24 @@
 			"name": "Steam ID",
 			"description": "64-bit Steam ID to use when fetching data (found at store.steampowered.com/account)",
 			"default_value": ""
+		},
+		{
+			"id": "LANGUAGE_CODE",
+			"type": "select",
+			"name": "Language",
+			"description": "Language to display list items in, affects static titles and descriptions",
+			"default_value": "en-US",
+			"options": [
+				{ "value": "en-GB", "text": "English (United Kingdom)" },
+				{ "value": "en-US", "text": "English (United States)" }
+			]
+		},
+		{
+			"id": "MAX_ITEMS",
+			"type": "input",
+			"name": "Maximum list items",
+			"description": "Maximum number of list items to show for results",
+			"default_value": "5"
 		},
 		{
 			"id": "SHOW_UNINSTALLED_APPS",
@@ -94,7 +112,7 @@
 			"id": "SHOW_REAL_INFO",
 			"type": "select",
 			"name": "Show friends' real info",
-			"description": "Whether to show real names and locations for friends",
+			"description": "Whether to show friends' real names and locations in the list",
 			"default_value": "all",
 			"options": [
 				{ "value": "all", "text": "Yes" },
@@ -126,7 +144,7 @@
 			"type": "input",
 			"name": "Time between Steam API calls",
 			"description": "Time to wait before querying the Steam API to update the cache",
-			"default_value": "1d"
+			"default_value": "1h"
 		},
 		{
 			"id": "APP_BLACKLIST",
@@ -139,33 +157,8 @@
 			"id": "FRIEND_BLACKLIST",
 			"type": "input",
 			"name": "Friend blacklist",
-			"description": "64-bit Steam IDs of friends (found at steamdb.info/calculator) to hide from the list, separated by commas",
+			"description": "64-bit Steam IDs of friends to hide from the list, separated by commas",
 			"default_value": ""
-		},
-		{
-			"id": "LANGUAGE_CODE",
-			"type": "select",
-			"name": "Language",
-			"description": "Language to use for extension-defined strings",
-			"default_value": "en-GB",
-			"options": [
-				{ "value": "en-GB", "text": "English (United Kingdom)" },
-				{ "value": "en-US", "text": "English (United States)" }
-			]
-		},
-		{
-			"id": "SORT_KEYS",
-			"type": "input",
-			"name": "Sort priorities",
-			"description": "How to sort list items when not searching, keys separated by commas in priority order",
-			"default_value": "last_launched,total_playtime,name"
-		},
-		{
-			"id": "MAX_ITEMS",
-			"type": "input",
-			"name": "Maximum items",
-			"description": "Maximum number of items to show when displaying query results",
-			"default_value": "10"
 		}
 	]
 }

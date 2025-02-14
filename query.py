@@ -184,84 +184,19 @@ class SteamExtensionItem:
             description = self.description
         return description
 
-    def to_sort_list(self) -> list[Any]:
+    def to_sort_list(self) -> tuple[float, int, str]:
         """
-        Creates a list of the SteamExtensionItem's attributes that can be used for sorting. Attributes are selected using the SORT_KEYS preference.
+        Creates a list of the SteamExtensionItem's attributes that can be used for sorting when a search string is not specified.
 
         Returns:
-            list[Any]: The list of the SteamExtensionItem's attributes.
+            tuple[float, int, str]: The parameterised list of the SteamExtensionItem's attributes.
         """
-        sort_keys_str: str = self.preferences["SORT_KEYS"]
-        sort_keys: list[str] = [key.strip() for key in sort_keys_str.split(",")]
-        sort_list: list[Any] = []
-        while len(sort_list) == 0:
-            for sort_key in sort_keys:
-                if sort_key == "type":
-                    sort_list.append(
-                        0 if self.type == "app" else 1 if self.type == "nav" else 2
-                    )
-                elif sort_key == "id":
-                    sort_list.append(self.id if self.id is not None else float("inf"))
-                elif sort_key == "non_steam":
-                    sort_list.append(0 if self.non_steam else 1)
-                elif sort_key == "name":
-                    sort_list.append(
-                        self.name.lower() if self.name is not None else "ÿÿ"
-                    )
-                elif sort_key == "display_name":
-                    sort_list.append(
-                        self.display_name.lower()
-                        if self.display_name is not None
-                        else "ÿÿ"
-                    )
-                elif sort_key == "real_name":
-                    sort_list.append(
-                        self.real_name.lower() if self.real_name is not None else "ÿÿ"
-                    )
-                elif sort_key == "description":
-                    sort_list.append(
-                        self.description.lower()
-                        if self.description is not None
-                        else "ÿÿ"
-                    )
-                elif sort_key == "time_created":
-                    sort_list.append(
-                        -datetime.timestamp(self.time_created)
-                        if self.time_created is not None
-                        else 0
-                    )
-                elif sort_key == "location":
-                    sort_list.append(
-                        self.location.lower() if self.location is not None else "ÿÿ"
-                    )
-                elif sort_key == "size_on_disk":
-                    sort_list.append(-self.size_on_disk)
-                elif sort_key == "total_playtime":
-                    sort_list.append(-self.total_playtime)
-                elif sort_key == "icon":
-                    sort_list.append(
-                        self.icon.lower() if self.icon is not None else "ÿÿ"
-                    )
-                elif sort_key == "last_updated":
-                    sort_list.append(
-                        -datetime.timestamp(self.last_updated)
-                        if self.last_updated is not None
-                        else 0
-                    )
-                elif sort_key == "last_launched":
-                    sort_list.append(
-                        -datetime.timestamp(self.last_launched)
-                        if self.last_launched is not None
-                        else 0
-                    )
-                else:
-                    log.warning(f"Sort key '{sort_key}' not recognised")
-            if len(sort_list) == 0:
-                log.warning(
-                    f"No valid sort key found in '{sort_keys_str}', defaulting to 'last_launched,total_playtime,name'"
-                )
-                sort_keys = ["last_launched", "total_playtime", "name"]
-        return sort_list
+        return (-datetime.timestamp(self.last_launched)
+            if self.last_launched is not None
+            else 0,
+            -self.total_playtime,
+            self.name.lower() if self.name is not None else "ÿÿ"
+        )
 
     def get_action(self) -> str:
         """
