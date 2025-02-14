@@ -651,7 +651,7 @@ def query_cache(
                     )
                 )
     if keyword in (preferences["KEYWORD"], preferences["KEYWORD_EXTENSION"]):
-        for name in ("update_cache", "clear_cache", "rebuild_cache"):
+        for name in ("update_cache", "clear_cache", "clear_images", "rebuild_cache"):
             items.append(
                 SteamExtensionItem(
                     preferences,

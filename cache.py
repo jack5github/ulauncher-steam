@@ -269,6 +269,17 @@ def clear_cache() -> None:
     remove(f"{EXTENSION_PATH}cache.json")
 
 
+def clear_images() -> None:
+    """
+    Clears the app and friend images downloaded by the Steam extension.
+    """
+    from shutil import rmtree
+
+    log.debug("Deleting downloaded images")
+    rmtree(f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}", ignore_errors=True)
+    rmtree(f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}", ignore_errors=True)
+
+
 # TODO: Convert this function to be asynchronous so that searches are not blocked
 def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
     """

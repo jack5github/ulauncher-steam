@@ -13,7 +13,7 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         action (str): The action to execute.
         preferences (dict[str, Any]): The preferences dictionary.
     """
-    from cache import build_cache, clear_cache, load_cache, save_cache
+    from cache import build_cache, clear_cache, clear_images, load_cache, save_cache
     from datetime import datetime
     from subprocess import Popen as SubprocessPopen
 
@@ -72,9 +72,14 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         log.info("Clearing cache")
         clear_cache()
         return
+    elif action == "clear_images":
+        log.info("Clearing images")
+        clear_images()
+        return
     elif action == "rebuild_cache":
         log.info("Rebuilding cache")
         clear_cache()
+        clear_images()
         build_cache(preferences)
         return
     elif action == "no_results":
