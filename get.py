@@ -257,7 +257,7 @@ def get_non_steam_apps(
                 log.warning(f"Non-Steam app executable '{exe}' does not exist")
                 exe = None
             shortcuts_dict[shortcut_id]["exe"] = exe
-            shortcuts_dict[shortcut_id]["size_on_disk"] = size
+            shortcuts_dict[shortcut_id]["size"] = size
             cursor += 1
         if cursor_match("\x02LastPlayTime\x00"):
             launched_int: int = int.from_bytes(buffer[cursor : cursor + 4], "little")

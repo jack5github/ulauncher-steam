@@ -538,7 +538,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         if len(steam_friends_list) >= 1:
             from_steam_api_updated = True
         if from_steam_api_updated:
-            cache["last_updated"]["from_steam_api"] = datetime_to_timestamp()
+            cache["extension"]["steamApi"] = datetime_to_timestamp()
             save_cache(cache, preferences)
         from_steam_api_updated = False
         log.info("Getting friends info from Steam API")
@@ -595,7 +595,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                     cache["countries"][country_code][state_code][city_code] = city_name
                     from_steam_api_updated = True
         if from_steam_api_updated:
-            cache["last_updated"]["from_steam_api"] = datetime_to_timestamp()
+            cache["extension"]["steamApi"] = datetime_to_timestamp()
             save_cache(cache, preferences)
         from_steam_api_updated = False
         friend_icons_to_download: list[tuple[int, str]] = []
