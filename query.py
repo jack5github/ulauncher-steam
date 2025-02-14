@@ -117,7 +117,7 @@ class SteamExtensionItem:
                 self.name
                 if self.name is not None
                 else get_lang_string(
-                    self.lang, self.preferences["LANGUAGE_CODE"], "name_missing"
+                    self.lang, self.preferences["LANGUAGE"], "name_missing"
                 )
             )
         )
@@ -175,9 +175,9 @@ class SteamExtensionItem:
                 else:
                     description += f"{self.size_on_disk / 1000 ** 4:.2f} TB"
         elif self.type == "friend":
-            if self.real_name is not None and self.preferences["SHOW_REAL_INFO"] in ("all", "only_names"):
+            if self.real_name is not None and self.preferences["SHOW_REAL"] in ("all", "only_names"):
                 description += self.real_name
-            if self.location is not None and self.preferences["SHOW_REAL_INFO"] in ("all", "only_locations"):
+            if self.location is not None and self.preferences["SHOW_REAL"] in ("all", "only_locations"):
                 add_divider()
                 description += self.location
         elif self.description is not None:
@@ -309,10 +309,10 @@ def query_cache(
         preferences["KEYWORD_APPS"],
         preferences["KEYWORD_FRIENDS"],
         preferences["KEYWORD_NAVIGATIONS"],
-        preferences["KEYWORD_ACTIONS"],
+        preferences["KEYWORD_EXTENSION"],
     ):
         log.error(
-            f"Invalid keyword '{keyword}', start query with one of ('{preferences['KEYWORD']}', '{preferences['KEYWORD_APPS']}', '{preferences['KEYWORD_FRIENDS']}', '{preferences['KEYWORD_NAVIGATIONS']}', '{preferences['KEYWORD_ACTIONS']}')"
+            f"Invalid keyword '{keyword}', start query with one of ('{preferences['KEYWORD']}', '{preferences['KEYWORD_APPS']}', '{preferences['KEYWORD_FRIENDS']}', '{preferences['KEYWORD_NAVIGATIONS']}', '{preferences['KEYWORD_EXTENSION']}')"
         )
         keyword = ""
         search = None
@@ -376,7 +376,7 @@ def query_cache(
                     continue
                 location = app_info.get("install_dir")
                 size_on_disk = app_info.get("size_on_disk", 0)
-                if preferences["SHOW_UNINSTALLED_APPS"] == "false" and (
+                if preferences["SHOW_UNINSTALLED"] == "false" and (
                     location is None and size_on_disk == 0
                 ):
                     continue
@@ -384,11 +384,11 @@ def query_cache(
                 display_name: str | None = None
                 if location is not None or size_on_disk > 0:
                     display_name = get_lang_string(
-                        lang, preferences["LANGUAGE_CODE"], f"launch_%a"
+                        lang, preferences["LANGUAGE"], f"launch_%a"
                     ).replace("%a", name)
                 else:
                     display_name = get_lang_string(
-                        lang, preferences["LANGUAGE_CODE"], f"install_%a"
+                        lang, preferences["LANGUAGE"], f"install_%a"
                     ).replace("%a", name)
                 total_playtime: int = app_info.get("total_playtime", 0)
                 icon = None
@@ -432,7 +432,7 @@ def query_cache(
                     )
                 name = app_info["name"]
                 non_steam_display_name: str = get_lang_string(
-                    lang, preferences["LANGUAGE_CODE"], f"launch_%a"
+                    lang, preferences["LANGUAGE"], f"launch_%a"
                 ).replace("%a", name)
                 location = app_info.get("exe")
                 size_on_disk = app_info.get("size_on_disk", 0)
@@ -532,12 +532,12 @@ def query_cache(
             cache["navs"] = {}
         for name in STEAM_NAVIGATIONS:
             nav_display_name: str = get_lang_string(
-                lang, preferences["LANGUAGE_CODE"], f"s:{name}"
+                lang, preferences["LANGUAGE"], f"s:{name}"
             )
             description: str | None = None
             try:
                 description = get_lang_string(
-                    lang, preferences["LANGUAGE_CODE"], f"s:{name}%d", strict=True
+                    lang, preferences["LANGUAGE"], f"s:{name}%d", strict=True
                 )
             except KeyError:
                 pass
@@ -546,7 +546,7 @@ def query_cache(
                 preferences["KEYWORD"],
                 preferences["KEYWORD_APPS"],
             ):
-                if preferences["SHOW_DEPENDENT_NAVIGATIONS"] == "false":
+                if preferences["SHOW_DEPENDENT"] == "false":
                     continue
                 if "apps" in cache.keys() and isinstance(
                     cache["apps"], dict
@@ -562,7 +562,7 @@ def query_cache(
                 preferences["KEYWORD"],
                 preferences["KEYWORD_FRIENDS"],
             ):
-                if preferences["SHOW_DEPENDENT_NAVIGATIONS"] == "false":
+                if preferences["SHOW_DEPENDENT"] == "false":
                     continue
                 if "friends" in cache.keys() and isinstance(cache["friends"], dict):
                     ids = [int(friend_id) for friend_id in cache["friends"].keys()]
@@ -601,7 +601,7 @@ def query_cache(
                 if isfile(icon_path):
                     icon = icon_path
                 if "%a" in name:
-                    if preferences["SHOW_UNINSTALLED_APPS"] == "false" and (
+                    if preferences["SHOW_UNINSTALLED"] == "false" and (
                         "location" not in cache["apps"][str(id)].keys()
                         and "size_on_disk" not in cache["apps"][str(id)].keys()
                     ):
@@ -626,7 +626,7 @@ def query_cache(
                     ):
                         skip_repeated_action = (
                             name.startswith(act)
-                            and preferences["FRIEND_DEFAULT_ACTION"] == key
+                            and preferences["FRIEND_ACTION"] == key
                         )
                     if skip_repeated_action:
                         continue
@@ -662,7 +662,7 @@ def query_cache(
                         last_launched=last_launched,
                     )
                 )
-    if keyword in (preferences["KEYWORD"], preferences["KEYWORD_ACTIONS"]):
+    if keyword in (preferences["KEYWORD"], preferences["KEYWORD_EXTENSION"]):
         for name in ("update_cache", "clear_cache", "rebuild_cache"):
             items.append(
                 SteamExtensionItem(
@@ -671,10 +671,10 @@ def query_cache(
                     type="action",
                     name=name,
                     display_name=get_lang_string(
-                        lang, preferences["LANGUAGE_CODE"], name
+                        lang, preferences["LANGUAGE"], name
                     ),
                     description=get_lang_string(
-                        lang, preferences["LANGUAGE_CODE"], f"{name}%d"
+                        lang, preferences["LANGUAGE"], f"{name}%d"
                     ),
                 )
             )
@@ -721,10 +721,10 @@ def query_cache(
                 type="action",
                 name="no_results",
                 display_name=get_lang_string(
-                    lang, preferences["LANGUAGE_CODE"], "no_results"
+                    lang, preferences["LANGUAGE"], "no_results"
                 ),
                 description=get_lang_string(
-                    lang, preferences["LANGUAGE_CODE"], f"no_results%d"
+                    lang, preferences["LANGUAGE"], f"no_results%d"
                 ),
             )
         )

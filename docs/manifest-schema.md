@@ -38,7 +38,7 @@ Default: `sn`
 
 This keyword filters the list to only show non-dependent navigation items.
 
-### `KEYWORD_EXTENSION`: Steam extension actions ❌
+### `KEYWORD_EXTENSION`: Steam extension actions
 
 *Take control of the Steam extension* (keyword)
 
@@ -56,7 +56,7 @@ Default: `/home/<username>/.steam/steam/`
 
 This setting is required in order to search for **appmanifest_*.acf** files, which document the Steam apps installed by the user. The primary Steam folder is assumed to include a 'userdata' folder, which is necessary in order to read the **shortcuts.vdf** file, which documents the non-Steam apps installed by the user.
 
-### `STEAM_USERDATA`: Steam userdata folder name ❌
+### `STEAM_USERDATA`: Steam userdata folder name
 
 *Steam userdata folder name (a number) of current user in primary Steam folder* (input)
 
@@ -80,7 +80,7 @@ Default: Empty
 
 This setting is required in order to fetch data from the Steam Web API, specifically the user's friend list and information about each friend.
 
-### `LANGUAGE`: Language ❌
+### `LANGUAGE`: Language
 
 *Language to display list items in, affects static titles and descriptions* (select)
 
@@ -101,7 +101,7 @@ Default: `5`
 
 This setting limits the number of list items to show for results to prevent the list from being too large, as smaller monitors may not be able to display all of the items, and the list does not wrap around vertically.
 
-### `SHOW_UNINSTALLED`: Show uninstalled apps ❌
+### `SHOW_UNINSTALLED`: Show uninstalled apps
 
 *Whether to show uninstalled apps in the list* (select)
 
@@ -112,7 +112,7 @@ Options:
 
 This setting enables or disables the display of uninstalled apps in the list. If they are displayed, selecting them will show the installation dialog.
 
-### `FRIEND_ACTION`: Default friend action ❌
+### `FRIEND_ACTION`: Default friend action
 
 *Default action to perform when a friend is selected* (select)
 
@@ -123,7 +123,7 @@ Options:
 
 This setting controls the default action to perform when a friend is selected in the list. It also controls whether the chat or profile dependent navigation items are visible, as it is not necessary for both to be visible at the same time.
 
-### `SHOW_REAL`: Show friends' real info ❌
+### `SHOW_REAL`: Show friends' real info
 
 *Whether to show friends' real names and locations in the list* (select)
 
@@ -136,7 +136,7 @@ Options:
 
 This setting controls the display of friends' real names and locations in the list. It is preferrable for users to be able to hide this information, as it contains sensitive information that ought not to be screenshotted.
 
-### `SHOW_DEPENDENT`: Show app and friend navigations ❌
+### `SHOW_DEPENDENT`: Show app and friend navigations
 
 *Whether to show extra navigation items for apps and friends* (select)
 
@@ -167,7 +167,7 @@ This setting hides friends from the list if they match one of the specified IDs.
 
 ## Caching
 
-### `UPDATE_FILES`: Time between file reads ❌
+### `UPDATE_FILES`: Time between file reads
 
 *Time to wait before reading files on disk to update the cache* (input)
 
@@ -175,7 +175,7 @@ Default: `1m`
 
 This setting controls when the extension is allowed to read files on disk to update the cache. The time files were last read is stored in the cache under `updated > files`. Low values may be computationally expensive on older hardware.
 
-### `UPDATE_STEAM_API`: Time between Steam API calls ❌
+### `UPDATE_STEAM_API`: Time between Steam API calls
 
 *Time to wait before querying the Steam API to update the cache* (input)
 

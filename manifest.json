@@ -34,7 +34,7 @@
 			"default_value": "sn"
 		},
 		{
-			"id": "KEYWORD_ACTIONS",
+			"id": "KEYWORD_EXTENSION",
 			"type": "keyword",
 			"name": "Steam extension actions",
 			"description": "Take control of the Steam extension",
@@ -48,7 +48,7 @@
 			"default_value": "/home/<username>/.steam/steam/"
 		},
 		{
-			"id": "STEAM_USERDATA_ID",
+			"id": "STEAM_USERDATA",
 			"type": "input",
 			"name": "Steam userdata folder name",
 			"description": "Steam userdata folder name (a number) of current user in primary Steam folder",
@@ -69,7 +69,7 @@
 			"default_value": ""
 		},
 		{
-			"id": "LANGUAGE_CODE",
+			"id": "LANGUAGE",
 			"type": "select",
 			"name": "Language",
 			"description": "Language to display list items in, affects static titles and descriptions",
@@ -87,7 +87,7 @@
 			"default_value": "5"
 		},
 		{
-			"id": "SHOW_UNINSTALLED_APPS",
+			"id": "SHOW_UNINSTALLED",
 			"type": "select",
 			"name": "Show uninstalled apps",
 			"description": "Whether to show uninstalled apps in the list",
@@ -98,7 +98,7 @@
 			]
 		},
 		{
-			"id": "FRIEND_DEFAULT_ACTION",
+			"id": "FRIEND_ACTION",
 			"type": "select",
 			"name": "Default friend action",
 			"description": "Default action to perform when a friend is selected",
@@ -109,7 +109,7 @@
 			]
 		},
 		{
-			"id": "SHOW_REAL_INFO",
+			"id": "SHOW_REAL",
 			"type": "select",
 			"name": "Show friends' real info",
 			"description": "Whether to show friends' real names and locations in the list",
@@ -122,7 +122,7 @@
 			]
 		},
 		{
-			"id": "SHOW_DEPENDENT_NAVIGATIONS",
+			"id": "SHOW_DEPENDENT",
 			"type": "select",
 			"name": "Show app and friend menus",
 			"description": "Whether to show extra navigation items for apps and friends",
@@ -133,14 +133,14 @@
 			]
 		},
 		{
-			"id": "UPDATE_FROM_FILES_DELAY",
+			"id": "UPDATE_FILES",
 			"type": "input",
 			"name": "Time between file reads",
 			"description": "Time to wait before reading files on disk to update the cache",
 			"default_value": "1m"
 		},
 		{
-			"id": "UPDATE_FROM_STEAM_API_DELAY",
+			"id": "UPDATE_STEAM_API",
 			"type": "input",
 			"name": "Time between Steam API calls",
 			"description": "Time to wait before querying the Steam API to update the cache",

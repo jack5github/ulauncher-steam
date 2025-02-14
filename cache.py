@@ -323,7 +323,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                     exc_info=True,
                 )
             wait_time: timedelta = str_to_timedelta(
-                preferences[f"UPDATE_FROM_{key.replace("Api", "_Api").upper()}_DELAY"]
+                preferences[f"UPDATE_{key.replace("Api", "_Api").upper()}"]
             )
             if updated_last + wait_time < datetime.now():
                 log.debug(
@@ -363,15 +363,15 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             if steam_folder_index == 0:
                 log.info("Getting non-Steam apps from shortcuts.vdf")
                 userdata_folder: str = (
-                    f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}"
+                    f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA']}{DIR_SEP}"
                 )
                 shortcuts_file: str = (
-                    f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf"
+                    f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf"
                 )
                 cache_app: dict[str, Any]
                 if not isdir(userdata_folder):
                     log.error(
-                        f"Steam userdata ID '{preferences['STEAM_USERDATA_ID']}' is invalid as folder path '{userdata_folder}' is invalid"
+                        f"Steam userdata ID '{preferences['STEAM_USERDATA']}' is invalid as folder path '{userdata_folder}' is invalid"
                     )
                 elif not isfile(shortcuts_file):
                     log.error(

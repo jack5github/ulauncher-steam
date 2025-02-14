@@ -43,14 +43,12 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
             )
             return
         friend_action: str
-        if preferences["FRIEND_DEFAULT_ACTION"] == "chat":
+        if preferences["FRIEND_ACTION"] == "chat":
             friend_action = f"steam steam://friends/message/{friend_id}"
-        elif preferences["FRIEND_DEFAULT_ACTION"] == "profile":
+        elif preferences["FRIEND_ACTION"] == "profile":
             friend_action = f"steam steam://url/SteamIDPage/{friend_id}"
         else:
-            log.error(
-                f"Unknown default friend action '{preferences['FRIEND_DEFAULT_ACTION']}'"
-            )
+            log.error(f"Unknown default friend action '{preferences['FRIEND_ACTION']}'")
             return
         log.info(f"Launching friend ID {friend_id} via '{friend_action}'")
         SubprocessPopen(friend_action, shell=True)

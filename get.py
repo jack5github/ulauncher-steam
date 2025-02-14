@@ -599,7 +599,7 @@ if __name__ == "__main__":
                 "\n".join(
                     f"{k} {v}"
                     for k, v in get_non_steam_apps(
-                        f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA_ID']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf",
+                        f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf",
                         app_blacklist,
                     ).items()
                 )
