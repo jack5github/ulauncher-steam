@@ -24,11 +24,11 @@ class SteamExtensionItem:
         description: str | None = None,
         time_created: datetime | None = None,
         location: str | None = None,
-        size_on_disk: int = 0,
-        total_playtime: int = 0,
+        size: int = 0,
+        playtime: int = 0,
         icon: str | None = None,
-        last_updated: datetime | None = None,
-        last_launched: datetime | None = None,
+        updated: datetime | None = None,
+        launched: datetime | None = None,
     ) -> None:
         """
         Initialises a new SteamExtensionItem instance.
@@ -45,11 +45,11 @@ class SteamExtensionItem:
             description (str | None, optional): The description of the item, not to be confused with get_description(). Defaults to None.
             time_created (datetime | None, optional): The time the item was created on the Steam servers. Defaults to None.
             location (str | None, optional): The location of the item on disk. Defaults to None.
-            size_on_disk (int, optional): The size of the item on disk in bytes. Defaults to 0.
-            total_playtime (int, optional): The total playtime of the item in minutes. Defaults to 0.
+            size (int, optional): The size of the item on disk in bytes. Defaults to 0.
+            playtime (int, optional): The total playtime of the item in minutes. Defaults to 0.
             icon (str | None, optional): The path to the icon of the item, must include the extension path. If None, the default icon will be used. Defaults to None.
-            last_updated (datetime | None, optional): The last time the item was updated. Defaults to None.
-            last_launched (datetime | None, optional): The last time the item was launched. Defaults to None.
+            updated (datetime | None, optional): The last time the item was updated. Defaults to None.
+            launched (datetime | None, optional): The last time the item was launched. Defaults to None.
         """
         self.preferences: dict[str, Any] = preferences
         self.lang: dict[str, dict[str, str]] = lang
@@ -62,8 +62,8 @@ class SteamExtensionItem:
         self.description: str | None = description
         self.time_created: datetime | None = time_created
         self.location: str | None = location
-        self.size_on_disk: int = size_on_disk
-        self.total_playtime: int = total_playtime
+        self.size: int = size
+        self.playtime: int = playtime
         self.icon: str = DEFAULT_ICON
         if icon is not None:
             if icon.startswith(EXTENSION_PATH):
@@ -72,8 +72,8 @@ class SteamExtensionItem:
                 log.error(
                     f"Icon path '{icon}' does not start with '{EXTENSION_PATH}', ignoring"
                 )
-        self.last_updated: datetime | None = last_updated
-        self.last_launched: datetime | None = last_launched
+        self.updated: datetime | None = updated
+        self.launched: datetime | None = launched
 
     def __str__(self) -> str:
         """
@@ -141,39 +141,37 @@ class SteamExtensionItem:
 
         if self.type == "app":
             location_added: bool = False
-            if self.total_playtime > 0:
-                description += f"{self.total_playtime / 60:.1f} hrs"
-            if self.last_launched is not None:
+            if self.playtime > 0:
+                description += f"{self.playtime / 60:.1f} hrs"
+            if self.launched is not None:
                 add_divider()
-                description += datetime.strftime(self.last_launched, "%b %d, %Y")
+                description += datetime.strftime(self.launched, "%b %d, %Y")
             if self.location is not None:
                 add_divider()
-                location_str: str = (
-                    f"{DIR_SEP.join(self.location.split(f"{DIR_SEP}steamapps{DIR_SEP}")[0].split(DIR_SEP)[:-1])}"
-                )
+                location_str: str = DIR_SEP.join(self.location.split(f"{DIR_SEP}steamapps{DIR_SEP}")[0].split(DIR_SEP)[:-1])
                 if location_str.endswith(f"{DIR_SEP}.steam"):
                     location_str = DIR_SEP.join(location_str.split(DIR_SEP)[:-1])
                 if Path(location_str) == Path("~").expanduser():
                     location_str = "/"
                 description += location_str
                 location_added = True
-            if self.size_on_disk > 0:
+            if self.size > 0:
                 if location_added:
                     if not description.endswith(":"):
                         description += ":"
                     description += " "
                 else:
                     add_divider()
-                if self.size_on_disk < 1000:
-                    description += f"{self.size_on_disk} B"
-                elif self.size_on_disk < 1000**2:
-                    description += f"{self.size_on_disk / 1000:.2f} KB"
-                elif self.size_on_disk < 1000**3:
-                    description += f"{self.size_on_disk / 1000 ** 2:.2f} MB"
-                elif self.size_on_disk < 1000**4:
-                    description += f"{self.size_on_disk / 1000 ** 3:.2f} GB"
+                if self.size < 1000:
+                    description += f"{self.size} B"
+                elif self.size < 1000**2:
+                    description += f"{self.size / 1000:.2f} KB"
+                elif self.size < 1000**3:
+                    description += f"{self.size / 1000 ** 2:.2f} MB"
+                elif self.size < 1000**4:
+                    description += f"{self.size / 1000 ** 3:.2f} GB"
                 else:
-                    description += f"{self.size_on_disk / 1000 ** 4:.2f} TB"
+                    description += f"{self.size / 1000 ** 4:.2f} TB"
         elif self.type == "friend":
             if self.real_name is not None and self.preferences["SHOW_REAL"] in ("all", "onlyNames"):
                 description += self.real_name
@@ -191,10 +189,11 @@ class SteamExtensionItem:
         Returns:
             tuple[float, int, str]: The parameterised list of the SteamExtensionItem's attributes.
         """
-        return (-datetime.timestamp(self.last_launched)
-            if self.last_launched is not None
+        return (
+            -datetime.timestamp(self.launched)
+            if self.launched is not None
             else 0,
-            -self.total_playtime,
+            -self.playtime,
             self.name.lower() if self.name is not None else "ÿÿ"
         )
 
@@ -346,17 +345,16 @@ def query_cache(
         Returns:
             tuple[datetime | None, int]: The last time the item was launched.
         """
-        last_launched: datetime | None = timestamp_to_datetime(info, "last_launched")
-        return last_launched
+        return timestamp_to_datetime(info, "launched")
 
     icon: str | None
     icon_path: str
-    last_launched: datetime | None
+    launched: datetime | None
     if keyword in (preferences["KEYWORD"], preferences["KEYWORD_APPS"]):
         app_id_int: int
         name: str
         location: str | None
-        size_on_disk: int
+        size: int
         if "apps" in cache.keys() and isinstance(cache["apps"], dict):
             for app_id, app_info in cache["apps"].items():
                 app_id_int = int(app_id)
@@ -374,15 +372,15 @@ def query_cache(
                         exc_info=True,
                     )
                     continue
-                location = app_info.get("install_dir")
-                size_on_disk = app_info.get("size_on_disk", 0)
+                location = app_info.get("dir")
+                size = app_info.get("size", 0)
                 if preferences["SHOW_UNINSTALLED"] == "false" and (
-                    location is None and size_on_disk == 0
+                    location is None and size == 0
                 ):
                     continue
                 name = app_info["name"]
                 display_name: str | None = None
-                if location is not None or size_on_disk > 0:
+                if location is not None or size > 0:
                     display_name = get_lang_string(
                         lang, preferences["LANGUAGE"], f"launch_%a"
                     ).replace("%a", name)
@@ -390,14 +388,12 @@ def query_cache(
                     display_name = get_lang_string(
                         lang, preferences["LANGUAGE"], f"install_%a"
                     ).replace("%a", name)
-                total_playtime: int = app_info.get("total_playtime", 0)
+                playtime: int = app_info.get("playtime", 0)
                 icon = None
-                icon_path = (
-                    f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id_int}.jpg"
-                )
+                icon_path = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id_int}.jpg"
                 if isfile(icon_path):
                     icon = icon_path
-                last_launched = get_last_launched(app_info)
+                launched = get_last_launched(app_info)
                 items.append(
                     SteamExtensionItem(
                         preferences,
@@ -407,10 +403,10 @@ def query_cache(
                         name=name,
                         display_name=display_name,
                         location=location,
-                        size_on_disk=size_on_disk,
-                        total_playtime=total_playtime,
+                        size=size,
+                        playtime=playtime,
                         icon=icon,
-                        last_launched=last_launched,
+                        launched=launched,
                     )
                 )
         if "nonSteam" in cache.keys() and isinstance(
@@ -435,8 +431,8 @@ def query_cache(
                     lang, preferences["LANGUAGE"], f"launch_%a"
                 ).replace("%a", name)
                 location = app_info.get("exe")
-                size_on_disk = app_info.get("size_on_disk", 0)
-                last_launched = get_last_launched(app_info)
+                size = app_info.get("size", 0)
+                launched = get_last_launched(app_info)
                 items.append(
                     SteamExtensionItem(
                         preferences,
@@ -447,8 +443,8 @@ def query_cache(
                         name=name,
                         display_name=non_steam_display_name,
                         location=location,
-                        size_on_disk=size_on_disk,
-                        last_launched=last_launched,
+                        size=size,
+                        launched=launched,
                     )
                 )
     if (
@@ -494,16 +490,14 @@ def query_cache(
                     ):
                         location = f"{cache['countries'][friend_info['country']][friend_info['state']][friend_info['city']]}, {location}"
             icon = None
-            icon_path = (
-                f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{friend_id_int}.jpg"
-            )
+            icon_path = f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{friend_id_int}.jpg"
             if isfile(icon_path):
                 icon = icon_path
-            last_updated: datetime | None = timestamp_to_datetime(
-                friend_info, "last_updated"
+            updated: datetime | None = timestamp_to_datetime(
+                friend_info, "updated"
             )
             time_created = timestamp_to_datetime(friend_info, "time_created")
-            last_launched = get_last_launched(friend_info)
+            launched = get_last_launched(friend_info)
             items.append(
                 SteamExtensionItem(
                     preferences,
@@ -515,8 +509,8 @@ def query_cache(
                     time_created=time_created,
                     location=location,
                     icon=icon,
-                    last_updated=last_updated,
-                    last_launched=last_launched,
+                    updated=updated,
+                    launched=launched,
                 )
             )
     if keyword in (
@@ -603,7 +597,7 @@ def query_cache(
                 if "%a" in name:
                     if preferences["SHOW_UNINSTALLED"] == "false" and (
                         "location" not in cache["apps"][str(id)].keys()
-                        and "size_on_disk" not in cache["apps"][str(id)].keys()
+                        and "size" not in cache["apps"][str(id)].keys()
                     ):
                         continue
                     app_name: str = str(id)
@@ -613,9 +607,7 @@ def query_cache(
                     if id_description is not None:
                         id_description = id_description.replace("%a", app_name)
                     if icon is None:
-                        icon_path = (
-                            f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{id}.jpg"
-                        )
+                        icon_path = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{id}.jpg"
                         if isfile(icon_path):
                             icon = icon_path
                 elif "%f" in name:
@@ -637,18 +629,14 @@ def query_cache(
                     if id_description is not None:
                         id_description = id_description.replace("%f", friend_name)
                     if icon is None:
-                        icon_path = (
-                            f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{id}.jpg"
-                        )
+                        icon_path = f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{id}.jpg"
                         if isfile(icon_path):
                             icon = icon_path
-                last_launched = None
+                launched = None
                 if f"s:{id_name}" in cache["navs"].keys() and isinstance(
                     cache["navs"][f"s:{id_name}"], dict
                 ):
-                    last_launched = get_last_launched(
-                        cache["navs"][f"s:{id_name}"]
-                    )
+                    launched = get_last_launched(cache["navs"][f"s:{id_name}"])
                 items.append(
                     SteamExtensionItem(
                         preferences,
@@ -659,7 +647,7 @@ def query_cache(
                         display_name=id_display_name,
                         description=id_description,
                         icon=icon,
-                        last_launched=last_launched,
+                        launched=launched,
                     )
                 )
     if keyword in (preferences["KEYWORD"], preferences["KEYWORD_EXTENSION"]):

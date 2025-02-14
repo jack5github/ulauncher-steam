@@ -84,17 +84,17 @@ class InstalledSteamApp(TypedDict):
 
     Args:
         name (str): The name of the Steam app.
-        install_dir (str): The path to the folder containing the Steam app.
-        size_on_disk (int): The size of the Steam app on disk in bytes.
-        last_updated (datetime | None): The time the app was last updated, or None if not updated.
-        last_launched (datetime | None): The time the app was last launched, or None if not launched.
+        dir (str): The path to the folder containing the Steam app.
+        size (int): The size of the Steam app on disk in bytes.
+        updated (datetime | None): The time the app was last updated, or None if not updated.
+        launched (datetime | None): The time the app was last launched, or None if not launched.
     """
 
     name: str
-    install_dir: str
-    size_on_disk: int
-    last_updated: datetime | None
-    last_launched: datetime | None
+    dir: str
+    size: int
+    updated: datetime | None
+    launched: datetime | None
 
 
 def get_installed_steam_apps(
@@ -131,30 +131,30 @@ def get_installed_steam_apps(
                 path_join(steamapps_folder, appmanifest_file)
             )
             name: str = app_vdf["AppState"]["name"].strip()  # type: ignore
-            install_dir: str = f"{steamapps_folder}{app_vdf['AppState']['installdir']}"
-            last_updated_str: str = app_vdf["AppState"]["LastUpdated"]  # type: ignore
-            last_updated: datetime | None = (
-                datetime.fromtimestamp(int(last_updated_str))
-                if last_updated_str != "0"
+            dir: str = f"{steamapps_folder}{app_vdf['AppState']['installdir']}"
+            updated_str: str = app_vdf["AppState"]["LastUpdated"]  # type: ignore
+            updated: datetime | None = (
+                datetime.fromtimestamp(int(updated_str))
+                if updated_str != "0"
                 else None
             )
-            last_launched_str: str = app_vdf["AppState"]["LastPlayed"]  # type: ignore
-            last_launched: datetime | None = (
-                datetime.fromtimestamp(int(last_launched_str))
-                if last_launched_str != "0"
+            launched_str: str = app_vdf["AppState"]["LastPlayed"]  # type: ignore
+            launched: datetime | None = (
+                datetime.fromtimestamp(int(launched_str))
+                if launched_str != "0"
                 else None
             )
-            size_on_disk_str: str = app_vdf["AppState"]["SizeOnDisk"]  # type: ignore
-            if size_on_disk_str == "0":
+            size_str: str = app_vdf["AppState"]["SizeOnDisk"]  # type: ignore
+            if size_str == "0":
                 log.debug("Game has not finished installing, using BytesToStage")
-                size_on_disk_str = app_vdf["AppState"]["BytesToStage"]  # type: ignore
-            size_on_disk: int = int(size_on_disk_str)
+                size_str = app_vdf["AppState"]["BytesToStage"]  # type: ignore
+            size: int = int(size_str)
             installed_steam_apps[app_id] = InstalledSteamApp(
                 name=name,
-                install_dir=install_dir,
-                size_on_disk=size_on_disk,
-                last_updated=last_updated,
-                last_launched=last_launched,
+                dir=dir,
+                size=size,
+                updated=updated,
+                launched=launched,
             )
         except Exception:
             log.error(
@@ -171,14 +171,14 @@ class NonSteamApp(TypedDict):
     Args:
         name (str): The name of the non-Steam app.
         exe (str | None): The location of the non-Steam app, or None if it is invalid.
-        size_on_disk (int | None): The size of the non-Steam app on disk in bytes.
-        last_launched (datetime | None): The time the app was last launched, or None if not launched.
+        size (int | None): The size of the non-Steam app on disk in bytes.
+        launched (datetime | None): The time the app was last launched, or None if not launched.
     """
 
     name: str
     exe: str | None
-    size_on_disk: int | None
-    last_launched: datetime | None
+    size: int | None
+    launched: datetime | None
 
 
 # TODO: Get non-Steam app icons from userdata/<user>/config/grid/<appid>_icon.*
@@ -252,22 +252,22 @@ def get_non_steam_apps(
                         exe = which_exe
                 except CalledProcessError:
                     log.warning(f"Failed to evaluate system location of '{exe}'")
-            size_on_disk: int | None = None
+            size: int | None = None
             if isfile(exe):
-                size_on_disk = getsize(exe)
+                size = getsize(exe)
             else:
                 log.warning(f"Non-Steam app executable '{exe}' does not exist")
                 exe = None
             shortcuts_dict[shortcut_id]["exe"] = exe
-            shortcuts_dict[shortcut_id]["size_on_disk"] = size_on_disk
+            shortcuts_dict[shortcut_id]["size_on_disk"] = size
             cursor += 1
         if cursor_match("\x02LastPlayTime\x00"):
-            last_launched_int: int = int.from_bytes(
+            launched_int: int = int.from_bytes(
                 buffer[cursor : cursor + 4], "little"
             )
-            shortcuts_dict[shortcut_id]["last_launched"] = (
-                datetime.fromtimestamp(last_launched_int)
-                if last_launched_int != 0
+            shortcuts_dict[shortcut_id]["launched"] = (
+                datetime.fromtimestamp(launched_int)
+                if launched_int != 0
                 else None
             )
             cursor += 4
@@ -281,8 +281,8 @@ def get_non_steam_apps(
             non_steam_apps[app_info["app_id"]] = NonSteamApp(
                 name=app_info["name"],
                 exe=app_info["exe"],
-                size_on_disk=app_info["size_on_disk"],
-                last_launched=app_info["last_launched"],
+                size=app_info["size"],
+                launched=app_info["launched"],
             )
         except Exception:
             log.error(
@@ -334,12 +334,12 @@ class OwnedSteamApp(TypedDict):
 
     Args:
         name (str): The name of the Steam app.
-        total_playtime (int): The total playtime of the Steam app in minutes.
+        playtime (int): The total playtime of the Steam app in minutes.
         icon_hash (str | None): The hash of the icon of the Steam app, or None if no icon is available.
     """
 
     name: str
-    total_playtime: int
+    playtime: int
     icon_hash: str | None
 
 
@@ -356,9 +356,7 @@ def get_owned_steam_apps(api_key: str, steamid64: int) -> dict[int, OwnedSteamAp
     """
     log.info(f"Getting owned Steam apps from Steam API for user {steamid64}")
     owned_steam_apps: dict[int, OwnedSteamApp] = {}
-    owned_apps_url: str = (
-        f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={api_key}&steamid={steamid64}&include_appinfo=1&include_played_free_games=1&format=json"
-    )
+    owned_apps_url: str = f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={api_key}&steamid={steamid64}&include_appinfo=1&include_played_free_games=1&format=json"
     owned_apps_response: list[dict[str, Any]] = []
     try:
         owned_apps_response = _get_response_from_steam_api(owned_apps_url)["response"][
@@ -369,13 +367,13 @@ def get_owned_steam_apps(api_key: str, steamid64: int) -> dict[int, OwnedSteamAp
     for owned_steam_app in owned_apps_response:
         app_id: int = owned_steam_app["appid"]
         name: str = owned_steam_app["name"].strip()
-        total_playtime: int = owned_steam_app["playtime_forever"]
+        playtime: int = owned_steam_app["playtime_forever"]
         icon_hash: str | None = owned_steam_app["img_icon_url"]
         if icon_hash == "":
             icon_hash = None
         owned_steam_apps[app_id] = OwnedSteamApp(
             name=name,
-            total_playtime=total_playtime,
+            playtime=playtime,
             icon_hash=icon_hash,
         )
     return owned_steam_apps
@@ -386,7 +384,7 @@ class SteamFriendFromList(TypedDict):
     A dictionary representation of a Steam friend from the Steam API when retrieving a list of friends.
     """
 
-    friend_since: datetime
+    since: datetime
 
 
 def get_steam_friends_list(
@@ -404,9 +402,7 @@ def get_steam_friends_list(
     """
     log.info(f"Getting Steam friends from Steam API for user {steamid64}")
     steam_friends: dict[int, SteamFriendFromList] = {}
-    steam_friends_url: str = (
-        f"https://api.steampowered.com/ISteamUser/GetFriendList/v1/?key={api_key}&steamid={steamid64}&relationship=friend"
-    )
+    steam_friends_url: str = f"https://api.steampowered.com/ISteamUser/GetFriendList/v1/?key={api_key}&steamid={steamid64}&relationship=friend"
     steam_friends_response: list[dict[str, Any]] = []
     try:
         steam_friends_response = _get_response_from_steam_api(steam_friends_url)[
@@ -416,10 +412,8 @@ def get_steam_friends_list(
         log.error("Failed to retrieve friends from Steam API", exc_info=True)
     for steam_friend in steam_friends_response:
         steam_friend_id64: int = int(steam_friend["steamid"])
-        friend_since: datetime = datetime.fromtimestamp(steam_friend["friend_since"])
-        steam_friends[steam_friend_id64] = SteamFriendFromList(
-            friend_since=friend_since
-        )
+        since: datetime = datetime.fromtimestamp(steam_friend["friend_since"])
+        steam_friends[steam_friend_id64] = SteamFriendFromList(since=since)
     return steam_friends
 
 
@@ -430,7 +424,7 @@ class SteamFriendInfo(TypedDict):
 
     name: str | None
     icon_hash: str | None
-    last_updated: datetime | None
+    updated: datetime | None
     real_name: str | None
     time_created: datetime | None
     country_code: str | None
@@ -456,9 +450,7 @@ def get_steam_friends_info(
     for i in range(0, len(steamid64s), 100):
         batch_steamid64s = steamid64s[i : min(i + 100, len(steamid64s))]
         log.debug(f"Getting Steam friends info for batch {batch_steamid64s}")
-        steam_friend_info_url: str = (
-            f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={api_key}&steamids={','.join(map(str, batch_steamid64s))}"
-        )
+        steam_friend_info_url: str = f"https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v2/?key={api_key}&steamids={','.join(map(str, batch_steamid64s))}"
         steam_friend_info_response: list[dict[str, Any]] = []
         try:
             steam_friend_info_response = _get_response_from_steam_api(
@@ -475,7 +467,7 @@ def get_steam_friends_info(
                 != "fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb"
             ):
                 icon_hash = steam_friend_info["avatarhash"]
-            last_updated: datetime | None = None
+            updated: datetime | None = None
             real_name: str | None = None
             time_created: datetime | None = None
             country: str | None = None
@@ -483,7 +475,7 @@ def get_steam_friends_info(
             city: str | None = None
             if steam_friend_info["communityvisibilitystate"] == 3:
                 if "lastlogoff" in steam_friend_info.keys():
-                    last_updated = datetime.fromtimestamp(
+                    updated = datetime.fromtimestamp(
                         steam_friend_info["lastlogoff"]
                     )
                 if "realname" in steam_friend_info.keys():
@@ -498,7 +490,7 @@ def get_steam_friends_info(
             steam_friend_infos[steamid64] = SteamFriendInfo(
                 name=name,
                 icon_hash=icon_hash,
-                last_updated=last_updated,
+                updated=updated,
                 real_name=real_name,
                 time_created=time_created,
                 country_code=country,
@@ -521,9 +513,7 @@ def get_state_or_city_codes(
     Returns:
         dict[str, str]: The associated codes and names for states or cities.
     """
-    steam_countries_url: str = (
-        f"https://steamcommunity.com/actions/QueryLocations/{country_code}{f'/{state_code}' if state_code is not None else ''}"
-    )
+    steam_countries_url: str = f"https://steamcommunity.com/actions/QueryLocations/{country_code}{f'/{state_code}' if state_code is not None else ''}"
     steam_countries_response: list[dict[str, Any]] = []
     state_or_city_codes: dict[str, str] = {}
     try:

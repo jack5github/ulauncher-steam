@@ -27,9 +27,7 @@ def download_steam_app_icon(app_id: int, icon_hash: str) -> None:
         makedirs(app_images_path)
     if isfile(f"{app_images_path}{app_id}.jpg"):
         remove(f"{app_images_path}{app_id}.jpg")
-    icon_url: str = (
-        f"http://media.steampowered.com/steamcommunity/public/images/apps/{app_id}/{icon_hash}.jpg"
-    )
+    icon_url: str = f"http://media.steampowered.com/steamcommunity/public/images/apps/{app_id}/{icon_hash}.jpg"
     try:
         urlretrieve(icon_url, f"{app_images_path}{app_id}.jpg")
     except HTTPError:
@@ -343,18 +341,18 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         def compare_last_launched(
             app: InstalledSteamApp | NonSteamApp | OwnedSteamApp, cache_app: dict
         ) -> bool:
-            if app["last_launched"] is None:
+            if app["launched"] is None:
                 return True
-            if "last_launched" in cache_app.keys():
+            if "launched" in cache_app.keys():
                 try:
                     cache_last_launched: datetime = datetime.fromtimestamp(
-                        cache_app["last_launched"]
+                        cache_app["launched"]
                     )
-                    if app["last_launched"] < cache_last_launched:
+                    if app["launched"] < cache_last_launched:
                         return False
                 except Exception:
                     log.warning(
-                        f"Failed to parse app {app['app_id']} 'last_launched' timestamp '{cache_app['last_launched']}'",
+                        f"Failed to parse app {app['app_id']} 'launched' timestamp '{cache_app['launched']}'",
                         exc_info=True,
                     )
             return True
@@ -362,12 +360,8 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         for steam_folder_index, steam_folder in enumerate(steam_folders):
             if steam_folder_index == 0:
                 log.info("Getting non-Steam apps from shortcuts.vdf")
-                userdata_folder: str = (
-                    f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA']}{DIR_SEP}"
-                )
-                shortcuts_file: str = (
-                    f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf"
-                )
+                userdata_folder: str = f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA']}{DIR_SEP}"
+                shortcuts_file: str = f"{steam_folder}userdata{DIR_SEP}{preferences['STEAM_USERDATA']}{DIR_SEP}config{DIR_SEP}shortcuts.vdf"
                 cache_app: dict[str, Any]
                 if not isdir(userdata_folder):
                     log.error(
@@ -399,14 +393,14 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                             cache_app["exe"] = app_info["exe"]
                         elif "exe" in cache_app.keys():
                             del cache_app["exe"]
-                        if app_info["size_on_disk"] is not None:
-                            cache_app["size_on_disk"] = app_info["size_on_disk"]
-                        elif "size_on_disk" in cache_app.keys():
-                            del cache_app["size_on_disk"]
-                        if app_info["last_launched"] is not None:
+                        if app_info["size"] is not None:
+                            cache_app["size"] = app_info["size"]
+                        elif "size" in cache_app.keys():
+                            del cache_app["size"]
+                        if app_info["launched"] is not None:
                             if compare_last_launched(app_info, cache_app):
-                                cache_app["last_launched"] = datetime_to_timestamp(
-                                    app_info["last_launched"]
+                                cache_app["launched"] = datetime_to_timestamp(
+                                    app_info["launched"]
                                 )
                     from_files_updated = True
             log.info("Getting installed Steam apps from appmanifest_#.acf files")
@@ -424,15 +418,15 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 except Exception:
                     log.error("Failed to get installed Steam apps", exc_info=True)
                 if not ensure_dict_key_is_dict(cache, "apps")[1]:
-                    log.debug("Removing 'size_on_disk' key from uninstalled Steam apps")
+                    log.debug("Removing 'size' key from uninstalled Steam apps")
                     for app_id in cache["apps"].keys():
                         try:
                             if (
                                 int(app_id) not in installed_steam_apps.keys()
                                 and isinstance(cache["apps"][app_id], dict)
-                                and "size_on_disk" in cache["apps"][app_id].keys()
+                                and "size" in cache["apps"][app_id].keys()
                             ):
-                                del cache["apps"][app_id]["size_on_disk"]
+                                del cache["apps"][app_id]["size"]
                         except Exception:
                             log.warning(
                                 f"Failed to check Steam app with ID '{app_id}', not a number"
@@ -440,16 +434,16 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 for app_id, app_info in installed_steam_apps.items():
                     cache_app = ensure_dict_key_is_dict(cache["apps"], str(app_id))[0]
                     cache_app["name"] = app_info["name"]
-                    cache_app["install_dir"] = app_info["install_dir"]
-                    cache_app["size_on_disk"] = app_info["size_on_disk"]
-                    if app_info["last_updated"] is not None:
-                        cache_app["last_updated"] = datetime_to_timestamp(
-                            app_info["last_updated"]
+                    cache_app["dir"] = app_info["dir"]
+                    cache_app["size"] = app_info["size"]
+                    if app_info["updated"] is not None:
+                        cache_app["updated"] = datetime_to_timestamp(
+                            app_info["updated"]
                         )
-                    if app_info["last_launched"] is not None:
+                    if app_info["launched"] is not None:
                         if compare_last_launched(app_info, cache_app):
-                            cache_app["last_launched"] = datetime_to_timestamp(
-                                app_info["last_launched"]
+                            cache_app["launched"] = datetime_to_timestamp(
+                                app_info["launched"]
                             )
                 if len(installed_steam_apps) >= 1:
                     if "CACHE_SORT" in preferences.keys() and bool(
@@ -480,7 +474,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         for app_id, app_info in owned_steam_apps.items():
             cache_app = ensure_dict_key_is_dict(cache["apps"], str(app_id))[0]
             cache_app["name"] = app_info["name"]
-            cache_app["total_playtime"] = app_info["total_playtime"]
+            cache_app["playtime"] = app_info["playtime"]
             if app_info["icon_hash"] is not None:
                 cache_app["icon_hash"] = app_info["icon_hash"]
                 app_icons_to_download.append((app_id, cache_app["icon_hash"]))
@@ -509,8 +503,8 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 log.debug(f"Skipping blacklisted friend ID '{friend_id}'")
                 continue
             cache_friend = ensure_dict_key_is_dict(cache["friends"], str(friend_id))[0]
-            cache_friend["friend_since"] = datetime_to_timestamp(
-                friend_info["friend_since"]
+            cache_friend["since"] = datetime_to_timestamp(
+                friend_info["since"]
             )
         if len(steam_friends_list) >= 1:
             from_steam_api_updated = True
@@ -576,9 +570,9 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             if friend_info["icon_hash"] is not None:
                 cache_friend["icon_hash"] = friend_info["icon_hash"]
                 friend_icons_to_download.append((friend_id, cache_friend["icon_hash"]))
-            if friend_info["last_updated"] is not None:
-                cache_friend["last_updated"] = datetime_to_timestamp(
-                    friend_info["last_updated"]
+            if friend_info["updated"] is not None:
+                cache_friend["updated"] = datetime_to_timestamp(
+                    friend_info["updated"]
                 )
             if friend_info["real_name"] is not None:
                 cache_friend["real_name"] = friend_info["real_name"]

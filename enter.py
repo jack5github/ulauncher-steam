@@ -31,7 +31,7 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         app_action: str = f"steam {action[3:]}"
         log.info(f"Launching app ID {app_id} via '{app_action}'")
         SubprocessPopen(app_action, shell=True)
-        cache_app["last_launched"] = datetime.now().timestamp()
+        cache_app["launched"] = datetime.now().timestamp()
     elif action.startswith("FRIEND"):
         friend_id: int = int(action[6:])
         cache_friend: dict[str, Any]
@@ -52,7 +52,7 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
             return
         log.info(f"Launching friend ID {friend_id} via '{friend_action}'")
         SubprocessPopen(friend_action, shell=True)
-        cache_friend["last_launched"] = datetime.now().timestamp()
+        cache_friend["launched"] = datetime.now().timestamp()
     elif action.startswith("NAV"):
         nav_action: str = action[3:]
         nav_execute: str = f"steam steam://{nav_action}"
@@ -63,7 +63,7 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         if f"s:{nav_action}" not in cache["navs"].keys():
             cache["navs"][f"s:{nav_action}"] = {}
         cache_nav: dict[str, Any] = cache["navs"][f"s:{nav_action}"]
-        cache_nav["last_launched"] = datetime.now().timestamp()
+        cache_nav["launched"] = datetime.now().timestamp()
     elif action == "update_cache":
         log.info("Updating cache")
         build_cache(preferences, force=True)
