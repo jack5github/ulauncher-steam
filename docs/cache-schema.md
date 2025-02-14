@@ -64,7 +64,7 @@ A dictionary of all the user's Steam groups. These are accessible under the same
 
 A dictionary of the additional navigation items supplied by the extension when they are activated by the user. These include items that directly relate to a Steam application or friend which are not the default action for each of them, in which case they will appear when using the `sa` or `sf` keywords. A few special navigation items directly related to extension functionality are also included, and these can be accessed using the `se` keyword.
 
-- ID (string) - The URL of the navigation item, or a string identifier for a special navigation item. If the URL begins with "steam://" or "https://", the protocol is shortened to "s:" and "w:" respectively. This identifier is used when retrieving icons from `/images/navs/<id>.jpg`, though the app or friend IDs are replaced with `%a` or `%f` respectively, and all reserved characters according to Windows file naming conventions are replaced with `-` for the icon path. ❌
+- ID (string) - The URL of the navigation item, or a string identifier for a special navigation item. If the URL begins with "steam://" or "https://", the protocol is shortened to "s:" and "w:" respectively. This identifier is used when retrieving icons from `/images/navs/<id>.jpg`, though the app or friend IDs are replaced with `%a` or `%f` respectively, and all reserved characters according to Windows file naming conventions are replaced with `-` for the icon path.
 - `launched` (integer) - A timestamp of the last time the application was launched through uLauncher.
 
 ## `updated`

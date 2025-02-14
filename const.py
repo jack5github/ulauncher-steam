@@ -88,109 +88,121 @@ DEFAULT_LANGUAGE: str = "en-GB"
 # Navigation
 # https://developer.valvesoftware.com/wiki/Steam_browser_protocol
 # TODO: Add groups actions
-# TODO: Add https:// navigations (will require adding s: in front of all Steam navigations)
 STEAM_NAVIGATIONS: list[str] = [
-    # "AddNonSteamGame",  Does nothing
-    # "advertise/%a",  Duplicate of "store/%a"
-    # "appnews/%a",  Duplicate of "updatenews/%a"
-    "backup/%a",
-    # "browsemedia",  Does nothing
-    "cdkeys/%a",
-    # "checksysreqs/%a",  Does nothing
-    "controllerconfig/%a",  # TODO: Test while using Steam Input
-    # "defrag/%a",  Does nothing
-    "exit",
-    # "flushconfig",  Does nothing
-    "forceinputappid/%a",  # TODO: Test while using Steam Input
-    # "friends",  Does nothing
-    # "friends/joinchat/%f",  Duplicate of "friends/message/%f"
-    "friends/message/%f",
-    "friends/players",
-    # "friends/settings/hideoffline",  Does nothing
-    # "friends/settings/showavatars",  Does nothing
-    # "friends/settings/sortbyname",  Does nothing
-    "friends/status/away",
-    # "friends/status/busy",  Does nothing
-    "friends/status/invisible",
-    "friends/status/offline",
-    "friends/status/online",
-    # "friends/status/play",  Does nothing
-    # "friends/status/trade",  Does nothing
-    "gameproperties/%a",
-    # "guestpasses",  Is meant to display pending gifts, but currently is a duplicate of "url/CommunityInventory"
-    "musicplayer/decreasevolume",
-    "musicplayer/increasevolume",
-    "musicplayer/pause",
-    "musicplayer/play",
-    "musicplayer/playnext",
-    "musicplayer/playprevious",
-    "musicplayer/togglemute",
-    "musicplayer/toggleplayingrepeatstatus",
-    "musicplayer/toggleplayingshuffled",
-    "musicplayer/toggleplaypause",
-    "open/activateproduct",
-    "open/bigpicture",
-    "open/console",
-    "open/downloads",
-    "open/friends",
-    "open/games",
-    # "open/games/details",  Duplicate of "open/games"
-    # "open/games/grid",  Duplicate of "open/games"
-    # "open/games/list",  Duplicate of "open/games"
-    "open/largegameslist",
-    # "open/main",  Does nothing
-    "open/minigameslist",
-    # "open/music",  Does nothing
-    # "open/musicplayer",  Does nothing
-    # "open/mymedia",  Does nothing
-    # "open/news",  Does nothing
-    # "open/registerproduct",  Does nothing
-    "open/screenshots/%a",
-    "open/servers",
-    # "open/settings",  Duplicate of "settings/account"
-    "open/tools",
-    "settings/account",
-    "settings/downloads",
-    "settings/friends",
-    "settings/ingame",
-    "settings/interface",
-    "settings/voice",
-    # "stopstreaming",  Disabled as there is no way to start streaming from the extension
-    "store",
-    "store/%a",
-    "uninstall/%a",
-    "UpdateFirmware",  # TODO: Test while using a Steam controller
-    "updatenews/%a",
-    # "url/CommentNotifications",  Encounters an error when processing the request
-    "url/CommunityFriendsThatPlay/%a",
-    "url/CommunityHome",
-    "url/CommunityInventory",
-    # "url/CommunitySearch",  Does nothing
-    # "url/DownloadsSupportInfo",  Does nothing
-    "url/FamilySharing",
-    "url/GameHub/%a",
-    # "url/LeaveGroupPage",  Does nothing
-    "url/LegalInformation",
-    "url/MyHelpRequests",
-    "url/ParentalSetup",
-    "url/PrivacyPolicy",
-    "url/SSA",
-    # "url/SteamGreenlight",  Does nothing
-    # "url/SteamIDControlPage",  Does nothing
-    "url/SteamIDEditPage",
-    "url/SteamIDFriendsPage",
-    "url/SteamIDMyProfile",
-    "url/SteamIDPage/%f",
-    "url/SteamWorkshop",
-    "url/SteamWorkshopPage/%a",
-    # "url/Store",  Duplicate of "store", does nothing if Steam is closed
-    "url/StoreAccount",
-    # "url/StoreAppPage/%a",  Duplicate of "store/%a"
-    "url/StoreCart",
-    # "url/StoreDLCPage/%a",  Does nothing
-    # "url/Storefront",  Does nothing
-    # "url/StoreFrontPage",  Duplicate of "store"
-    # "url/SupportFrontPage",  Does nothing
-    "validate/%a",
-    "viewfriendsgame/%f",
+    # "s:AddNonSteamGame",  Does nothing
+    # "s:advertise/%a",  Duplicate of "s:store/%a"
+    # "s:appnews/%a",  Duplicate of "s:updatenews/%a"
+    "s:backup/%a",
+    # "s:browsemedia",  Does nothing
+    "s:cdkeys/%a",
+    # "s:checksysreqs/%a",  Does nothing
+    "s:controllerconfig/%a",  # TODO: Test while using Steam Input
+    # "s:defrag/%a",  Does nothing
+    "s:exit",
+    # "s:flushconfig",  Does nothing
+    "s:forceinputappid/%a",  # TODO: Test while using Steam Input
+    # "s:friends",  Does nothing
+    # "s:friends/joinchat/%f",  Duplicate of "s:friends/message/%f"
+    "s:friends/message/%f",
+    "s:friends/players",
+    # "s:friends/settings/hideoffline",  Does nothing
+    # "s:friends/settings/showavatars",  Does nothing
+    # "s:friends/settings/sortbyname",  Does nothing
+    "s:friends/status/away",
+    # "s:friends/status/busy",  Does nothing
+    "s:friends/status/invisible",
+    "s:friends/status/offline",
+    "s:friends/status/online",
+    # "s:friends/status/play",  Does nothing
+    # "s:friends/status/trade",  Does nothing
+    "s:gameproperties/%a",
+    # "s:guestpasses",  Is meant to display pending gifts, but currently is a duplicate of "s:url/CommunityInventory"
+    "s:musicplayer/decreasevolume",
+    "s:musicplayer/increasevolume",
+    "s:musicplayer/pause",
+    "s:musicplayer/play",
+    "s:musicplayer/playnext",
+    "s:musicplayer/playprevious",
+    "s:musicplayer/togglemute",
+    "s:musicplayer/toggleplayingrepeatstatus",
+    "s:musicplayer/toggleplayingshuffled",
+    "s:musicplayer/toggleplaypause",
+    "s:open/activateproduct",
+    "s:open/bigpicture",
+    "s:open/console",
+    "s:open/downloads",
+    "s:open/friends",
+    "s:open/games",
+    # "s:open/games/details",  Duplicate of "s:open/games"
+    # "s:open/games/grid",  Duplicate of "s:open/games"
+    # "s:open/games/list",  Duplicate of "s:open/games"
+    "s:open/largegameslist",
+    # "s:open/main",  Does nothing
+    "s:open/minigameslist",
+    # "s:open/music",  Does nothing
+    # "s:open/musicplayer",  Does nothing
+    # "s:open/mymedia",  Does nothing
+    # "s:open/news",  Does nothing
+    # "s:open/registerproduct",  Does nothing
+    "s:open/screenshots/%a",
+    "s:open/servers",
+    # "s:open/settings",  Duplicate of "s:settings/account"
+    "s:open/tools",
+    "s:settings/account",
+    "s:settings/downloads",
+    "s:settings/friends",
+    "s:settings/ingame",
+    "s:settings/interface",
+    "s:settings/voice",
+    # "s:stopstreaming",  Disabled as there is no way to start streaming from the extension
+    "s:store",
+    "s:store/%a",
+    "s:uninstall/%a",
+    "s:UpdateFirmware",  # TODO: Test while using a Steam controller
+    "s:updatenews/%a",
+    # "s:url/CommentNotifications",  Encounters an error when processing the request
+    "s:url/CommunityFriendsThatPlay/%a",
+    "s:url/CommunityHome",
+    "s:url/CommunityInventory",
+    # "s:url/CommunitySearch",  Does nothing
+    # "s:url/DownloadsSupportInfo",  Does nothing
+    "s:url/FamilySharing",
+    "s:url/GameHub/%a",
+    # "s:url/LeaveGroupPage",  Does nothing
+    "s:url/LegalInformation",
+    "s:url/MyHelpRequests",
+    "s:url/ParentalSetup",
+    "s:url/PrivacyPolicy",
+    "s:url/SSA",
+    # "s:url/SteamGreenlight",  Does nothing
+    # "s:url/SteamIDControlPage",  Does nothing
+    "s:url/SteamIDEditPage",
+    "s:url/SteamIDFriendsPage",
+    "s:url/SteamIDMyProfile",
+    "s:url/SteamIDPage/%f",
+    "s:url/SteamWorkshop",
+    "s:url/SteamWorkshopPage/%a",
+    # "s:url/Store",  Duplicate of "s:store", does nothing if Steam is closed
+    "s:url/StoreAccount",
+    # "s:url/StoreAppPage/%a",  Duplicate of "s:store/%a"
+    "s:url/StoreCart",
+    # "s:url/StoreDLCPage/%a",  Does nothing
+    # "s:url/Storefront",  Does nothing
+    # "s:url/StoreFrontPage",  Duplicate of "s:store"
+    # "s:url/SupportFrontPage",  Does nothing
+    "s:validate/%a",
+    "s:viewfriendsgame/%f",
+    # TODO: Add nav images for the following URLs
+    # TODO: Add support for inserting the user's Steam username into the URL
+    "w:help.steampowered.com",
+    "w:steamcommunity.com/discussions",
+    "w:steamcommunity.com/market",
+    "w:store.steampowered.com/account/cookiepreferences",
+    "w:store.steampowered.com/account/preferences",
+    "w:store.steampowered.com/charts",
+    "w:store.steampowered.com/explore",
+    "w:store.steampowered.com/news",
+    "w:store.steampowered.com/replay",
+    "w:store.steampowered.com/steamaccount/addfunds",
+    "w:store.steampowered.com/wishlist",
 ]

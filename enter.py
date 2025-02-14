@@ -13,11 +13,20 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         action (str): The action to execute.
         preferences (dict[str, Any]): The preferences dictionary.
     """
-    from cache import build_cache, clear_cache, clear_images, load_cache, save_cache
-    from datetime import datetime
+    from cache import (
+        build_cache,
+        clear_cache,
+        clear_images,
+        datetime_to_timestamp,
+        ensure_dict_key_is_dict,
+        load_cache,
+        save_cache,
+    )
     from subprocess import Popen as SubprocessPopen
+    from typing import Literal
 
     cache: dict[str, Any] = load_cache()
+    force_cache: bool | Literal["skip"] = False
     if action.startswith("APP"):
         app_id: int = int(action.split("/")[-1])
         cache_app: dict[str, Any]
@@ -31,7 +40,7 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         app_action: str = f"steam {action[3:]}"
         log.info(f"Launching app ID {app_id} via '{app_action}'")
         SubprocessPopen(app_action, shell=True)
-        cache_app["launched"] = datetime.now().timestamp()
+        cache_app["launched"] = datetime_to_timestamp()
     elif action.startswith("FRIEND"):
         friend_id: int = int(action[6:])
         cache_friend: dict[str, Any]
@@ -52,30 +61,35 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
             return
         log.info(f"Launching friend ID {friend_id} via '{friend_action}'")
         SubprocessPopen(friend_action, shell=True)
-        cache_friend["launched"] = datetime.now().timestamp()
-    elif action.startswith("NAV"):
-        nav_action: str = action[3:]
-        nav_execute: str = f"steam steam://{nav_action}"
-        log.info(f"Launching navigation '{nav_action}' via '{nav_execute}'")
-        SubprocessPopen(nav_execute, shell=True)
-        if "navs" not in cache.keys():
-            cache["navs"] = {}
-        if f"s:{nav_action}" not in cache["navs"].keys():
-            cache["navs"][f"s:{nav_action}"] = {}
-        cache_nav: dict[str, Any] = cache["navs"][f"s:{nav_action}"]
-        cache_nav["launched"] = datetime.now().timestamp()
+        cache_friend["launched"] = datetime_to_timestamp()
+    elif action.startswith("s:") or action.startswith("w:"):
+        execute: str
+        if action.startswith("s:"):
+            execute = f"steam steam://{action[2:]}"
+        else:  # "w:"
+            execute = f"xdg-open https://{action[2:]}"
+        log.info(f"Launching navigation '{action}' via '{execute}'")
+        SubprocessPopen(execute, shell=True)
+        ensure_dict_key_is_dict(cache, "navs")
+        ensure_dict_key_is_dict(cache["navs"], action)
+        cache["navs"][action]["launched"] = datetime_to_timestamp()
     elif action == "update_cache":
         log.info("Updating cache")
-        build_cache(preferences, force=True)
-        return
+        ensure_dict_key_is_dict(cache, "navs")
+        ensure_dict_key_is_dict(cache["navs"], action)
+        cache["navs"][action]["launched"] = datetime_to_timestamp()
+        force_cache = True
     elif action == "clear_cache":
         log.info("Clearing cache")
         clear_cache()
         return
     elif action == "clear_images":
         log.info("Clearing images")
+        ensure_dict_key_is_dict(cache, "navs")
+        ensure_dict_key_is_dict(cache["navs"], action)
+        cache["navs"][action]["launched"] = datetime_to_timestamp()
         clear_images()
-        return
+        force_cache = "skip"
     elif action == "rebuild_cache":
         log.info("Rebuilding cache")
         clear_cache()
@@ -88,7 +102,8 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         log.error(f"Invalid action '{action}'")
         return
     save_cache(cache, preferences)
-    build_cache(preferences)
+    if not isinstance(force_cache, str):  # != "skip"
+        build_cache(preferences, force=force_cache)
 
 
 if __name__ == "__main__":

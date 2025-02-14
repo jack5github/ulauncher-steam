@@ -207,7 +207,7 @@ class SteamExtensionItem:
 
     def get_action(self) -> str:
         """
-        Returns the script action of the SteamExtensionItem. If the type is "app", the "steam://rungameid/{id}" action is returned. If the type is "friend", the item's steamid64 is returned. If the type is "nav", the item's name as a Steam protocol is returned. Otherwise, the item's name is returned. All actions are preceded by their type in uppercase, except for the "action" type.
+        Returns the script action of the SteamExtensionItem. If the type is "app", the "steam://rungameid/{id}" action is returned. If the type is "friend", the item's steamid64 is returned. If the type is "nav", the action is returned as is. Otherwise, the item's name is returned. All actions that are not of the "nav" or "action" types are preceded by their type in uppercase.
 
         Returns:
             str: The script action of the SteamExtensionItem.
@@ -217,10 +217,9 @@ class SteamExtensionItem:
             action = f"steam://rungameid/{self.id}"
         elif self.type == "friend":
             action = str(self.id)
-        elif self.type == "nav":
+        elif self.type in ("nav", "action"):
             for modifier in ("%a", "%f"):
                 action = action.replace(modifier, str(self.id))
-        elif self.type == "action":
             return action
         action = f"{self.type.upper()}{action}"
         return action
@@ -558,13 +557,11 @@ def query_cache(
             return re_sub(r"[<>:\"/\\|?*]", "-", filename)
 
         for name in STEAM_NAVIGATIONS:
-            nav_display_name: str = get_lang_string(
-                lang, preferences["LANGUAGE"], f"s:{name}"
-            )
+            nav_display_name: str = get_lang_string(lang, preferences["LANGUAGE"], name)
             description: str | None = None
             try:
                 description = get_lang_string(
-                    lang, preferences["LANGUAGE"], f"s:{name}%d", strict=True
+                    lang, preferences["LANGUAGE"], f"{name}%d", strict=True
                 )
             except KeyError:
                 pass
@@ -667,10 +664,10 @@ def query_cache(
                         if isfile(icon_path):
                             icon = icon_path
                 launched = None
-                if f"s:{id_name}" in cache["navs"].keys() and isinstance(
-                    cache["navs"][f"s:{id_name}"], dict
+                if id_name in cache["navs"].keys() and isinstance(
+                    cache["navs"][id_name], dict
                 ):
-                    launched = get_last_launched(cache["navs"][f"s:{id_name}"])
+                    launched = get_last_launched(cache["navs"][id_name])
                 items.append(
                     SteamExtensionItem(
                         preferences,
