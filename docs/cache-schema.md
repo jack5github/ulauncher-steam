@@ -1,6 +1,6 @@
 # Extension cache JSON schema
 
-This document outlines the structure of the cache file **cache.json** saved and used by this extension.
+This document outlines the structure of the cache file **cache.json** saved and used by this extension. All property names are stored in camelCase and value types are chosen carefully to reduce the size of the cache.
 
 > TODO: This schema has not been fully implemented. A cross (❌) beside a property indicates that the cache does not adhere to its specification, whether due to the property name being incorrect or the value not matching the specification.
 

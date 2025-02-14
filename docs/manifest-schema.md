@@ -1,6 +1,6 @@
 # Preferences manifest JSON schema
 
-This document outlines the structure of the preferences file **manifest.json** used by this extension. The preference IDs are capitalised to maintain compatibility with Windows for testing purposes.
+This document outlines the structure of the preferences file **manifest.json** used by this extension. The preference IDs are capitalised with underscores between words to maintain compatibility with Windows for testing purposes, though option values should use camelCase to be consistent with the cache property naming scheme.
 
 > TODO: This schema has not been fully implemented. A cross (❌) beside a property indicates that the cache does not adhere to its specification, whether due to the property name being incorrect or the value not matching the specification.
 

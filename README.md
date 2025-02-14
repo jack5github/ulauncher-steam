@@ -13,7 +13,9 @@ This extension integrates Steam file searches and API calls into [uLauncher](htt
 
 If you would like to improve this extension, feel free to fork it, make your changes and submit a pull request.
 
-To add support for a new language, add language strings to the **lang.csv** file in a column with the appropriate ISO 639-1 language code, and add that code as an option of the `LANGUAGE_CODE` property in **manifest.json**.
+To add support for a new language, add language strings to the **lang.csv** file in a column with the appropriate ISO 639-1 language code, and add that code as an option of the `LANGUAGE` property in **manifest.json**.
+
+When adding new features to the cache or preferences to the manifest, please make sure to update **cache-schema.md** or **manifest-schema.md** in the **docs** folder respectively, to ensure consistency is maintained throughout the extension.
 
 ### Debugging
 
