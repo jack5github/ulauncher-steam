@@ -29,7 +29,6 @@ class SteamExtensionItem:
         icon: str | None = None,
         last_updated: datetime | None = None,
         last_launched: datetime | None = None,
-        times_launched: int = 0,
     ) -> None:
         """
         Initialises a new SteamExtensionItem instance.
@@ -51,7 +50,6 @@ class SteamExtensionItem:
             icon (str | None, optional): The path to the icon of the item, must include the extension path. If None, the default icon will be used. Defaults to None.
             last_updated (datetime | None, optional): The last time the item was updated. Defaults to None.
             last_launched (datetime | None, optional): The last time the item was launched. Defaults to None.
-            times_launched (int, optional): The number of times the item has been launched. Defaults to 0.
         """
         self.preferences: dict[str, Any] = preferences
         self.lang: dict[str, dict[str, str]] = lang
@@ -76,7 +74,6 @@ class SteamExtensionItem:
                 )
         self.last_updated: datetime | None = last_updated
         self.last_launched: datetime | None = last_launched
-        self.times_launched: int = times_launched
 
     def __str__(self) -> str:
         """
@@ -257,8 +254,6 @@ class SteamExtensionItem:
                         if self.last_launched is not None
                         else 0
                     )
-                elif sort_key == "times_launched":
-                    sort_list.append(-self.times_launched)
                 else:
                     log.warning(f"Sort key '{sort_key}' not recognised")
             if len(sort_list) == 0:
@@ -406,24 +401,22 @@ def query_cache(
     friend_blacklist: list[int] = get_blacklist("friend", preferences)
     items: list[SteamExtensionItem] = []
 
-    def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
+    def get_last_launched(info: dict[str, Any]) -> datetime | None:
         """
-        Returns the last time an item was launched and the number of times it has been launched from an item dictionary's values.
+        Returns the last time an item was launched from an item dictionary's values.
 
         Args:
             info (dict[str, Any]): The item dictionary.
 
         Returns:
-            tuple[datetime | None, int]: The last time the item was launched and the number of times it has been launched.
+            tuple[datetime | None, int]: The last time the item was launched.
         """
         last_launched: datetime | None = timestamp_to_datetime(info, "last_launched")
-        times_launched: int = info.get("times_launched", 0)
-        return last_launched, times_launched
+        return last_launched
 
     icon: str | None
     icon_path: str
     last_launched: datetime | None
-    times_launched: int
     if keyword in (preferences["KEYWORD"], preferences["KEYWORD_APPS"]):
         app_id_int: int
         name: str
@@ -469,7 +462,7 @@ def query_cache(
                 )
                 if isfile(icon_path):
                     icon = icon_path
-                last_launched, times_launched = get_launches(app_info)
+                last_launched = get_last_launched(app_info)
                 items.append(
                     SteamExtensionItem(
                         preferences,
@@ -483,7 +476,6 @@ def query_cache(
                         total_playtime=total_playtime,
                         icon=icon,
                         last_launched=last_launched,
-                        times_launched=times_launched,
                     )
                 )
         if "non_steam_apps" in cache.keys() and isinstance(
@@ -509,7 +501,7 @@ def query_cache(
                 ).replace("%a", name)
                 location = app_info.get("exe")
                 size_on_disk = app_info.get("size_on_disk", 0)
-                last_launched, times_launched = get_launches(app_info)
+                last_launched = get_last_launched(app_info)
                 items.append(
                     SteamExtensionItem(
                         preferences,
@@ -522,7 +514,6 @@ def query_cache(
                         location=location,
                         size_on_disk=size_on_disk,
                         last_launched=last_launched,
-                        times_launched=times_launched,
                     )
                 )
     if (
@@ -577,7 +568,7 @@ def query_cache(
                 friend_info, "last_updated"
             )
             time_created = timestamp_to_datetime(friend_info, "time_created")
-            last_launched, times_launched = get_launches(friend_info)
+            last_launched = get_last_launched(friend_info)
             items.append(
                 SteamExtensionItem(
                     preferences,
@@ -591,7 +582,6 @@ def query_cache(
                     icon=icon,
                     last_updated=last_updated,
                     last_launched=last_launched,
-                    times_launched=times_launched,
                 )
             )
     if keyword in (
@@ -718,11 +708,10 @@ def query_cache(
                         if isfile(icon_path):
                             icon = icon_path
                 last_launched = None
-                times_launched = 0
                 if f"s:{id_name}" in cache["steam_navs"].keys() and isinstance(
                     cache["steam_navs"][f"s:{id_name}"], dict
                 ):
-                    last_launched, times_launched = get_launches(
+                    last_launched = get_last_launched(
                         cache["steam_navs"][f"s:{id_name}"]
                     )
                 items.append(
@@ -736,7 +725,6 @@ def query_cache(
                         description=id_description,
                         icon=icon,
                         last_launched=last_launched,
-                        times_launched=times_launched,
                     )
                 )
     if keyword in (preferences["KEYWORD"], preferences["KEYWORD_ACTIONS"]):
