@@ -379,11 +379,12 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                         )
                     except Exception:
                         log.error("Failed to get non-Steam apps", exc_info=True)
-                    if not ensure_dict_key_is_dict(cache, "nonSteam")[1]:
-                        log.debug("Removing non-existant non-Steam apps")
+                    if ensure_dict_key_is_dict(cache, "nonSteam")[1]:
+                        log.debug("Removing non-existent and blacklisted non-Steam apps")
                         for app_id in cache["nonSteam"].keys():
-                            if int(app_id) not in non_steam_apps.keys():
+                            if int(app_id) not in non_steam_apps.keys() or int(app_id) in app_blacklist:
                                 del cache["nonSteam"][app_id]
+                                from_files_updated = True
                     for app_id, app_info in non_steam_apps.items():
                         cache_app = ensure_dict_key_is_dict(
                             cache["nonSteam"], str(app_id)
@@ -417,7 +418,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                     )
                 except Exception:
                     log.error("Failed to get installed Steam apps", exc_info=True)
-                if not ensure_dict_key_is_dict(cache, "apps")[1]:
+                if ensure_dict_key_is_dict(cache, "apps")[1]:
                     log.debug("Removing 'size' key from uninstalled Steam apps")
                     for app_id in cache["apps"].keys():
                         try:
@@ -496,7 +497,12 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             )
         except Exception:
             log.error("Failed to get Steam friends list", exc_info=True)
-        ensure_dict_key_is_dict(cache, "friends")
+        if ensure_dict_key_is_dict(cache, "friends")[1]:
+            log.debug("Removing non-existent and blacklisted friends")
+            for friend_id in cache["friends"].keys():
+                if int(friend_id) not in steam_friends_list.keys() or int(friend_id) in friend_blacklist:
+                    del cache["friends"][friend_id]
+                    from_steam_api_updated = True
         cache_friend: dict[str, Any]
         for friend_id, friend_info in steam_friends_list.items():
             if friend_id in friend_blacklist:
