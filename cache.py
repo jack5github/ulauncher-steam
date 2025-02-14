@@ -25,8 +25,9 @@ def download_steam_app_icon(app_id: int, icon_hash: str) -> None:
     app_images_path: str = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}"
     if not isdir(app_images_path):
         makedirs(app_images_path)
-    if isfile(f"{app_images_path}{app_id}.jpg"):
-        remove(f"{app_images_path}{app_id}.jpg")
+    elif isfile(f"{app_images_path}{app_id}.jpg"):
+        log.debug(f"Skipping download of Steam icon for app ID {app_id}")
+        return
     icon_url: str = f"http://media.steampowered.com/steamcommunity/public/images/apps/{app_id}/{icon_hash}.jpg"
     try:
         urlretrieve(icon_url, f"{app_images_path}{app_id}.jpg")
@@ -48,8 +49,9 @@ def download_steam_friend_icon(steamid64: int, icon_hash: str) -> None:
     friend_images_path: str = f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}"
     if not isdir(friend_images_path):
         makedirs(friend_images_path)
-    if isfile(f"{friend_images_path}{steamid64}.jpg"):
-        remove(f"{friend_images_path}{steamid64}.jpg")
+    elif isfile(f"{friend_images_path}{steamid64}.jpg"):
+        log.debug(f"Skipping download of Steam icon for steamid64 {steamid64}")
+        return
     icon_url: str = f"http://avatars.steamstatic.com/{icon_hash}_full.jpg"
     try:
         urlretrieve(icon_url, f"{friend_images_path}{steamid64}.jpg")
@@ -477,8 +479,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             cache_app["name"] = app_info["name"]
             cache_app["playtime"] = app_info["playtime"]
             if app_info["icon_hash"] is not None:
-                cache_app["icon_hash"] = app_info["icon_hash"]
-                app_icons_to_download.append((app_id, cache_app["icon_hash"]))
+                app_icons_to_download.append((app_id, app_info["icon_hash"]))
         if len(owned_steam_apps) >= 1:
             if "CACHE_SORT" in preferences.keys() and bool(preferences["CACHE_SORT"]):
                 cache["apps"] = {
@@ -574,8 +575,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             cache_friend = ensure_dict_key_is_dict(cache["friends"], str(friend_id))[0]
             cache_friend["name"] = friend_info["name"]
             if friend_info["icon_hash"] is not None:
-                cache_friend["icon_hash"] = friend_info["icon_hash"]
-                friend_icons_to_download.append((friend_id, cache_friend["icon_hash"]))
+                friend_icons_to_download.append((friend_id, friend_info["icon_hash"]))
             if friend_info["updated"] is not None:
                 cache_friend["updated"] = datetime_to_timestamp(
                     friend_info["updated"]
