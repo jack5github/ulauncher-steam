@@ -432,6 +432,10 @@ def query_cache(
                 ).replace("%a", name)
                 location = app_info.get("exe")
                 size = app_info.get("size", 0)
+                icon = None
+                icon_path = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id_int}.jpg"
+                if isfile(icon_path):
+                    icon = icon_path
                 launched = get_last_launched(app_info)
                 items.append(
                     SteamExtensionItem(
@@ -443,6 +447,7 @@ def query_cache(
                         name=name,
                         display_name=non_steam_display_name,
                         location=location,
+                        icon=icon,
                         size=size,
                         launched=launched,
                     )
