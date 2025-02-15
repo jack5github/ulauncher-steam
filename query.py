@@ -573,7 +573,7 @@ def query_cache(
                         ].keys()
                     ):
                         location = f"{cache['countries'][friend_info['country']][friend_info['state']][str(friend_info['city'])]}, {location}"
-            icon = None
+            icon = f"{EXTENSION_PATH}images{DIR_SEP}friend-default.jpg"
             icon_path = (
                 f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{friend_id_int}.jpg"
             )
