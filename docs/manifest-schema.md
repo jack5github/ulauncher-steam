@@ -144,7 +144,7 @@ Options:
 
 - `all` - *Yes* (default)
 - `onlyApps` - *Only owned apps*
-- `onlyFriends` - *Only friends and groups*
+- `onlyFriends` - *Only friends and groups* ❌
 - `none` - *No*
 
 This setting controls the display of navigation items that depend on app and friend IDs. There are a lot of these, so the user may prefer to hide them altogether.

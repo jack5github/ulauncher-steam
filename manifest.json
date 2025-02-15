@@ -116,8 +116,8 @@
 			"default_value": "all",
 			"options": [
 				{ "value": "all", "text": "Yes" },
-				{ "value": "only_names", "text": "Only real names" },
-				{ "value": "only_locations", "text": "Only locations" },
+				{ "value": "onlyNames", "text": "Only real names" },
+				{ "value": "onlyLocations", "text": "Only locations" },
 				{ "value": "none", "text": "No" }
 			]
 		},
@@ -126,10 +126,12 @@
 			"type": "select",
 			"name": "Show app and friend menus",
 			"description": "Whether to show extra navigation items for apps and friends",
-			"default_value": "true",
+			"default_value": "all",
 			"options": [
-				{ "value": "true", "text": "Yes" },
-				{ "value": "false", "text": "No" }
+				{ "value": "all", "text": "Yes" },
+				{ "value": "onlyApps", "text": "Only owned apps" },
+				{ "value": "onlyFriends", "text": "Only friends" },
+				{ "value": "none", "text": "No" }
 			]
 		},
 		{
