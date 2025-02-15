@@ -1,9 +1,9 @@
 __pycache__
+.venv
 .vscode
 images/apps
 images/friends
 rnd
-venv
 .env
 cache.json
 logging.conf

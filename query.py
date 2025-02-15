@@ -5,6 +5,8 @@ from typing import Any, Literal
 
 log: Logger = get_logger(__name__)
 
+ITEM_TYPES: tuple[str, ...] = ("app", "friend", "nav", "action")
+
 
 class SteamExtensionItem:
     """
@@ -342,14 +344,18 @@ def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
 A dictionary of metrics used when sorting items based on a search query and their multipliers.
 """
 ITEM_METRIC_MULTS: dict[str, float] = {
-    "complexity": 1.0,
-    "name-length": 0.1,
-    "name-indices": 0.3,
-    "desc-matches": 1.0,
-    "name-lowest": 1.0,
-    "requires-waiting": 1.1,
-    "last-launched": 1.0,
-    "times-launched": 1.0,
+    "type": 1.0,  # The ease-of-use of the item type
+    "name-fuzzy-index": 1.0,  # How early fuzzy word matches appear in the name
+    "name-fuzzy-order": 1.0,  # Whether fuzzy word matches are in order in the name
+    "name-exact-index": 1.0,  # How early exact word matches appear in the name
+    "name-exact-order": 1.0,  # Whether exact word matches are in order in the name
+    "name-length": 1.0,  # The shortness of the name length
+    "name-chars": 1.0,  # The alphabetical ordering of the name
+    "desc-fuzzy": 1.0,  # Whether fuzzy word matches are in the description
+    "desc-length": 1.0,  # The shortness of the description length
+    "installed": 1.0,  # Whether the item is installed
+    "launched": 1.0,  # The last time the item was launched
+    "times": 1.0,  # The number of times the item has been launched
 }
 
 
@@ -373,44 +379,72 @@ def get_item_metrics(
     Returns:
         dict[str, float]: The list of metrics.
     """
+    from re import Match as ReMatch, search as re_search, sub as re_sub
+
     metrics: dict[str, float] = {k: 0.0 for k in ITEM_METRIC_MULTS.keys()}
-    if item.type == "friend":
-        metrics["complexity"] = 1 / 3
-    elif item.type == "nav":
-        metrics["complexity"] = 2 / 3
-    elif item.type != "app":  # "action"
-        metrics["complexity"] = 1.0
-    name: str = item.get_name().lower()
-    name_index_lowest: int = len(name)
-    metrics["name-length"] = min(len(" ".join(split_search)) / len(name), 1.0)
-    desc: str = item.get_description().lower()
-    for word in split_search:
-        name_index: int = name.find(word)
-        if name_index != -1:
-            if name_index < name_index_lowest:
-                name_index_lowest = name_index
-            reversed_name: str = name[name_index - 1 :: -1] if name_index > 0 else " "
-            name_index = reversed_name.find(" ")
-        else:
-            name_index = len(name)
-        metrics["name-indices"] += name_index / len(name)
-        if word not in desc:
-            metrics["desc-matches"] += 1
-    metrics["name-indices"] /= len(split_search)
-    metrics["name-lowest"] = name_index_lowest / len(name)
-    metrics["desc-matches"] /= len(split_search)
-    if (item.location is None and item.size == 0) or item.type == "action":
-        metrics["requires-waiting"] = 1.0
+    metrics["type"] = ITEM_TYPES.index(item.type) / (len(ITEM_TYPES) - 1)
+    if item.type == "app" and item.size == 0 and item.location is None:
+        metrics["installed"] = 1.0
     if oldest_launched is not None and item.launched is not None:
-        metrics["last-launched"] += (now - item.launched).days / (
-            now - oldest_launched
-        ).days
+        metrics["launched"] = (now - item.launched).days / (now - oldest_launched).days
     else:
-        metrics["last-launched"] = 1.0
-    if item.times > 0:
-        metrics["times-launched"] = 1 - (item.times / most_times)
+        metrics["launched"] = 1.0
+    if most_times >= 1:
+        metrics["times"] = item.times / most_times
     else:
-        metrics["times-launched"] = 1.0
+        metrics["times"] = 1.0
+    name: str = re_sub(r"[^a-z0-9 ]", " ", item.get_name().lower())
+    metrics["name-length"] = min(len(name) - 1, 100) / 100
+    metrics["name-chars"] = sum(ord(char) - 32 for char in name[:100]) / sum(
+        ord("z") - 32 for _ in range(100)
+    )
+    description: str = re_sub(r"[^a-z0-9 ]", " ", item.get_description().lower())
+    biggest_word_len: int = max(len(word) for word in split_search)
+    previous_fuzzy_index: int | None = None
+    previous_exact_index: int | None = None
+    for word in split_search:
+        fuzzy_index: int = name.find(word)
+        if fuzzy_index != -1:
+            word_len_factor: float = (
+                (len(word) - 1) / (biggest_word_len - 1) if biggest_word_len >= 2 else 0
+            )
+            metrics["name-fuzzy-index"] += (
+                (fuzzy_index / (len(name) - 1))  # Position of the word
+                + word_len_factor  # Length of the word
+            ) / 2
+            if previous_fuzzy_index is not None and fuzzy_index < previous_fuzzy_index:
+                metrics["name-fuzzy-order"] += 1.0
+            previous_fuzzy_index = fuzzy_index
+            exact_match: ReMatch | None = re_search(f"\\b{word}\\b", name)
+            if exact_match is not None:
+                metrics["name-exact-index"] += (
+                    (exact_match.start() / (len(name) - 1))  # Position of the word
+                    + word_len_factor  # Length of the word
+                ) / 2
+                if (
+                    previous_exact_index is not None
+                    and exact_match.start() < previous_exact_index
+                ):
+                    metrics["name-exact-order"] += 1.0
+                previous_exact_index = exact_match.start()
+            else:
+                metrics["name-exact-index"] += 1.0
+                metrics["name-exact-order"] += 1.0
+        else:
+            metrics["name-fuzzy-index"] += 1.0
+            metrics["name-fuzzy-order"] += 1.0
+            metrics["name-exact-index"] += 1.0
+            metrics["name-exact-order"] += 1.0
+            previous_fuzzy_index = -1
+            previous_exact_index = -1
+        fuzzy_index = description.find(word)
+        if fuzzy_index == -1:
+            metrics["desc-fuzzy"] += 1.0
+    metrics["name-fuzzy-index"] /= len(split_search)
+    metrics["name-fuzzy-order"] /= len(split_search)
+    metrics["name-exact-index"] /= len(split_search)
+    metrics["name-exact-order"] /= len(split_search)
+    metrics["desc-fuzzy"] /= len(split_search)
     return metrics
 
 
