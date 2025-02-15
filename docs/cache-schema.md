@@ -23,7 +23,7 @@ A dictionary of all Steam applications owned by the user, both installed and not
 
 A dictionary of all non-Steam applications associated with the current installed instance of Steam. These are accessible under the same keyword as owned Steam applications for simplicity.
 
-- ID (string) - The integer ID of the application. This ID is used when retrieving icons from `/images/apps/<id>.jpg`. ❌
+- ID (string) - The integer ID of the application. This ID is used when retrieving icons from `/images/apps/<id>.*`. **.jpg** and **.png** image files are supported, with **.png** being preferred.
 - `name` (string) - The name of the application.
 - `launched` (string) - A timestamp of the last time the application was launched, followed by an `x` then the number of times the application has been launched through uLauncher if more than 0.
 

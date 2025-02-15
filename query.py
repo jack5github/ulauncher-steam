@@ -504,11 +504,11 @@ def query_cache(
                 location = app_info.get("exe")
                 size = app_info.get("size", 0)
                 icon = None
-                icon_path = (
-                    f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id_int}.jpg"
-                )
-                if isfile(icon_path):
-                    icon = icon_path
+                icon_path = f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{app_id_int}"
+                if isfile(f"{icon_path}.png"):
+                    icon = f"{icon_path}.png"
+                elif isfile(f"{icon_path}.jpg"):
+                    icon = f"{icon_path}.jpg"
                 launched, times = compare_launches(app_info)
                 items.append(
                     SteamExtensionItem(
