@@ -23,9 +23,11 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         save_cache,
     )
     from const import DIR_SEP
+    from datetime import datetime
     from os import name as os_name
     from subprocess import Popen as SubprocessPopen
     from typing import Literal
+    from query import get_launches
 
     command: str = "steam"
     if os_name == "nt":
@@ -109,11 +111,11 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
     else:
         log.error(f"Invalid action '{action}'")
         return
-    cache_item["launched"] = datetime_to_timestamp()
-    if "times" in cache_item.keys():
-        cache_item["times"] += 1
-    else:
-        cache_item["times"] = 1
+    launched: datetime | None
+    times: int
+    launched, times = get_launches(cache_item)
+    times += 1
+    cache_item["launched"] = f"{datetime_to_timestamp(launched)}x{times}"
     save_cache(cache, preferences)
     if not isinstance(force_cache, str):  # != "skip"
         build_cache(preferences, force=force_cache)

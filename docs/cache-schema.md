@@ -17,8 +17,7 @@ A dictionary of all Steam applications owned by the user, both installed and not
 - `playtime` (integer) - The total playtime of the application in minutes.
 - `dir` (string) - The path to the folder containing the application.
 - `size` (integer) - The size of the application on disk in bytes.
-- `launched` (integer) - A timestamp of the last time the application was launched. Unlike other `launched` properties, this timestamp can be acquired both through the Steam API and uLauncher activations.
-- `times` (integer) - The number of times the application has been launched through uLauncher.
+- `launched` (string) - A timestamp of the last time the application was launched, followed by an `x` then the number of times the application has been launched through uLauncher if more than 0. Unlike other `launched` properties, the timestamp can be acquired both through the Steam API and uLauncher activations.
 
 ### `nonSteam` (Keyword: `sa`)
 
@@ -26,8 +25,7 @@ A dictionary of all non-Steam applications associated with the current installed
 
 - ID (string) - The integer ID of the application. This ID is used when retrieving icons from `/images/apps/<id>.jpg`. ❌
 - `name` (string) - The name of the application.
-- `launched` (integer) - A timestamp of the last time the application was launched through uLauncher.
-- `times` (integer) - The number of times the application has been launched through uLauncher.
+- `launched` (string) - A timestamp of the last time the application was launched, followed by an `x` then the number of times the application has been launched through uLauncher if more than 0.
 
 ### `friends` (Keyword: `sf`)
 
@@ -42,8 +40,7 @@ A dictionary of all the user's Steam friends.
 - `since` (integer) - A timestamp of when the friend was added to the user's friend list.
 - `created` (integer) - A timestamp of when the friend's profile was created.
 - `updated` (integer) - A timestamp of when the friend's profile was last updated.
-- `launched` (integer) - A timestamp of the last time the application was launched through uLauncher.
-- `times` (integer) - The number of times the friend has been launched through uLauncher.
+- `launched` (string) - A timestamp of the last time the friend was launched, followed by an `x` then the number of times the friend has been launched through uLauncher if more than 0.
 
 ### `groups` (Keyword: `sf`) ❌
 
@@ -51,16 +48,14 @@ A dictionary of all the user's Steam groups. These are accessible under the same
 
 - ID (string) - The integer ID of the group. This ID is used when retrieving icons from `/images/groups/<id>.jpg`. ❌
 - `name` (string) - The name of the group. ❌
-- `launched` (integer) - A timestamp of the last time the group was launched through uLauncher. ❌
-- `times` (integer) - The number of times the group has been launched through uLauncher. ❌
+- `launched` (string) - A timestamp of the last time the group was launched, followed by an `x` then the number of times the group has been launched through uLauncher if more than 0. ❌
 
 ### `navs` (Keyword: `sn`)
 
 A dictionary of the additional navigation items supplied by the extension when they are activated by the user. These include items that directly relate to a Steam application or friend which are not the default action for each of them, in which case they will appear when using the `sa` or `sf` keywords. A few special navigation items directly related to extension functionality are also included, and these can be accessed using the `se` keyword.
 
 - ID (string) - The URL of the navigation item, or a string identifier for a special navigation item. If the URL begins with "steam://" or "https://", the protocol is shortened to "s:" and "w:" respectively. This identifier is used when retrieving icons from `/images/navs/<id>.jpg`, though the app or friend IDs are replaced with `%a` or `%f` respectively, and all reserved characters according to Windows file naming conventions are replaced with `-` for the icon path.
-- `launched` (integer) - A timestamp of the last time the navigation item was launched through uLauncher.
-- `times` (integer) - The number of times the navigation item has been launched through uLauncher.
+- `launched` (string) - A timestamp of the last time the navigation item was launched, followed by an `x` then the number of times the navigation item has been launched through uLauncher if more than 0.
 
 ## Internal data
 

@@ -273,7 +273,26 @@ def get_lang_string(
     return key
 
 
-def timestamp_to_datetime(info: dict[str, Any], key: str) -> datetime | None:
+def timestamp_to_datetime(timestamp: int) -> datetime:
+    """
+    Converts a UTC timestamp to a local datetime object.
+
+    Args:
+        timestamp (int): The timestamp to convert.
+
+    Returns:
+        datetime: The datetime object.
+    """
+    from datetime import timedelta
+    from time import gmtime, localtime, mktime
+
+    date = datetime.fromtimestamp(timestamp, timezone.utc)
+    offset: timedelta = timedelta(seconds=mktime(localtime()) - mktime(gmtime()))
+    date += offset
+    return date
+
+
+def timestamp_to_datetime_from_dict(info: dict[str, Any], key: str) -> datetime | None:
     """
     Converts a UTC timestamp in a dictionary to a datetime object to a local datetime object.
 
@@ -284,16 +303,37 @@ def timestamp_to_datetime(info: dict[str, Any], key: str) -> datetime | None:
     Returns:
         datetime | None: The datetime object, or None if the timestamp is not found.
     """
-    from datetime import timedelta
-    from time import gmtime, localtime, mktime
 
-    date: datetime | None = None
     timestamp: int | None = info.get(key)
-    if timestamp is not None:
-        date = datetime.fromtimestamp(timestamp, timezone.utc)
-        offset: timedelta = timedelta(seconds=mktime(localtime()) - mktime(gmtime()))
-        date += offset
-    return date
+    return timestamp_to_datetime(timestamp) if timestamp is not None else None
+
+
+def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
+    """
+    Returns the last time an item was launched and the number of times it has been launched from an item dictionary's value for the key "launched", which is in either one of the formats "TIMESTAMP" or "TIMESTAMPxTIMES".
+
+    Args:
+        info (dict[str, Any]): The item dictionary.
+
+    Returns:
+        tuple[datetime | None, int]: The last time the item was launched and the number of times it has been launched.
+    """
+    launched_str: str | None = info.get("launched")
+    if launched_str is None:
+        return None, 0
+    launched_split: list[str] = launched_str.split("x")
+    if len(launched_split) >= 2:
+        log.error(f"Invalid launched value '{launched_str}'")
+        return None, 0
+    launched_ints: list[int]
+    try:
+        launched_ints = [int(num) for num in launched_split]
+    except ValueError:
+        log.error(f"Invalid launched value '{launched_str}'")
+        return None, 0
+    launched: datetime | None = timestamp_to_datetime(launched_ints[0])
+    times: int = launched_ints[1] if len(launched_ints) == 2 else 0
+    return launched, times
 
 
 def query_cache(
@@ -348,12 +388,16 @@ def query_cache(
     app_blacklist: list[int] = get_blacklist("app", preferences)
     friend_blacklist: list[int] = get_blacklist("friend", preferences)
     items: list[SteamExtensionItem] = []
+    icon: str | None
+    icon_path: str
+    launched: datetime | None
+    times: int
     oldest_launched: datetime | None = None
     most_times: int = 0
 
-    def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
+    def compare_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
         """
-        Returns the last time an item was launched and the number of times it has been launched from an item dictionary's values.
+        Compares the launch times and times of an item to the current oldest launch time and most times of an item, and updates them if the item has a newer launch time or more times. This function also returns the last time the item was launched and the number of times it has been launched.
 
         Args:
             info (dict[str, Any]): The item dictionary.
@@ -364,20 +408,17 @@ def query_cache(
         nonlocal oldest_launched
         nonlocal most_times
 
-        launched: datetime | None = timestamp_to_datetime(info, "launched")
+        launched: datetime | None
+        times: int
+        launched, times = get_launches(info)
         if launched is not None and (
-            oldest_launched is None or launched < oldest_launched
+            oldest_launched is None or launched > oldest_launched
         ):
             oldest_launched = launched
-        times: int = info.get("times", 0)
         if times > most_times:
             most_times = times
         return launched, times
 
-    icon: str | None
-    icon_path: str
-    launched: datetime | None
-    times: int
     if keyword in (preferences["KEYWORD"], preferences["KEYWORD_APPS"]):
         app_id_int: int
         name: str
@@ -423,7 +464,7 @@ def query_cache(
                 )
                 if isfile(icon_path):
                     icon = icon_path
-                launched, times = get_launches(app_info)
+                launched, times = compare_launches(app_info)
                 items.append(
                     SteamExtensionItem(
                         preferences,
@@ -467,7 +508,7 @@ def query_cache(
                 )
                 if isfile(icon_path):
                     icon = icon_path
-                launched, times = get_launches(app_info)
+                launched, times = compare_launches(app_info)
                 items.append(
                     SteamExtensionItem(
                         preferences,
@@ -537,9 +578,11 @@ def query_cache(
             )
             if isfile(icon_path):
                 icon = icon_path
-            updated: datetime | None = timestamp_to_datetime(friend_info, "updated")
-            created = timestamp_to_datetime(friend_info, "created")
-            launched, times = get_launches(friend_info)
+            updated: datetime | None = timestamp_to_datetime_from_dict(
+                friend_info, "updated"
+            )
+            created = timestamp_to_datetime_from_dict(friend_info, "created")
+            launched, times = compare_launches(friend_info)
             items.append(
                 SteamExtensionItem(
                     preferences,
@@ -694,7 +737,9 @@ def query_cache(
                 if id_name in cache["navs"].keys() and isinstance(
                     cache["navs"][id_name], dict
                 ):
-                    launched, times = get_launches(cache["steam_navs"][f"s:{id_name}"])
+                    launched, times = compare_launches(
+                        cache["steam_navs"][f"s:{id_name}"]
+                    )
                 items.append(
                     SteamExtensionItem(
                         preferences,
