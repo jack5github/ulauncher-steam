@@ -295,8 +295,9 @@ def _get_response_from_steam_api(url: str) -> dict[str, Any]:
 
     Raises:
         ValueError: If the Steam API key is invalid.
-        ValueError: If the parameters sent to the Steam API are invalid.
+        ValueError: If the parameters sent to the Steam API are invalid, due to a Bad Request HTML response.
         ConnectionError: If an unknown error occurs with the Steam API.
+        ValueError: If the parameters sent to the Steam API are invalid, due to an empty response.
 
     Returns:
         dict[str, Any]: The response from the Steam API.
@@ -316,10 +317,13 @@ def _get_response_from_steam_api(url: str) -> dict[str, Any]:
         response
         == b"<html><head><title>Bad Request</title></head><body><h1>Bad Request</h1>Please verify that all required parameters are being sent</body></html>"
     ):
-        raise ValueError("Parameters sent to Steam API are invalid")
+        raise ValueError("Parameters sent to Steam API are invalid, bad request")
     elif response.startswith(b"<html>"):
         raise ConnectionError(f"Unknown error with Steam API: {response.decode()}")
-    return json_loads(response)
+    response_dict: dict[str, Any] = json_loads(response)
+    if len(response_dict) == 0:
+        raise ValueError("Parameters sent to Steam API are invalid, response is empty")
+    return response_dict
 
 
 def get_steamid64(api_key: str, username: str) -> int | None:

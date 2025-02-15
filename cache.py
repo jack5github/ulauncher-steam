@@ -52,7 +52,7 @@ def download_steam_friend_icon(steamid64: int, icon_hash: str) -> None:
     if not isdir(friend_images_path):
         makedirs(friend_images_path)
     elif isfile(f"{friend_images_path}{steamid64}.jpg"):
-        log.debug(f"Skipping download of Steam icon for steamid64 {steamid64}")
+        log.debug(f"Skipping download of Steam icon for steamID64 {steamid64}")
         return
     icon_url: str = f"http://avatars.steamstatic.com/{icon_hash}_full.jpg"
     try:
