@@ -33,26 +33,24 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
             preferences["STEAM_FOLDER"] = f"{preferences['STEAM_FOLDER']}{DIR_SEP}"
         command = f'"{preferences["STEAM_FOLDER"]}steam.exe"'
     cache: dict[str, Any] = load_cache()
+    cache_item: dict[str, Any]
     force_cache: bool | Literal["skip"] = False
     if action.startswith("APP"):
         app_id: int = int(action.split("/")[-1])
-        cache_app: dict[str, Any]
         if "apps" in cache.keys() and str(app_id) in cache["apps"].keys():
-            cache_app = cache["apps"][str(app_id)]
+            cache_item = cache["apps"][str(app_id)]
         elif "nonSteam" in cache.keys() and str(app_id) in cache["nonSteam"].keys():
-            cache_app = cache["nonSteam"][str(app_id)]
+            cache_item = cache["nonSteam"][str(app_id)]
         else:
             log.error(f"Cannot execute '{action}', app ID {app_id} not found in cache")
             return
         app_action: str = f"{command} {action[3:]}"
         log.info(f"Launching app ID {app_id} via '{app_action}'")
         SubprocessPopen(app_action, shell=True)
-        cache_app["launched"] = datetime_to_timestamp()
     elif action.startswith("FRIEND"):
         friend_id: int = int(action[6:])
-        cache_friend: dict[str, Any]
         if "friends" in cache.keys() and str(friend_id) in cache["friends"].keys():
-            cache_friend = cache["friends"][str(friend_id)]
+            cache_item = cache["friends"][str(friend_id)]
         else:
             log.error(
                 f"Cannot execute action, friend ID {friend_id} not found in cache"
@@ -68,7 +66,6 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
             return
         log.info(f"Launching friend ID {friend_id} via '{friend_action}'")
         SubprocessPopen(friend_action, shell=True)
-        cache_friend["launched"] = datetime_to_timestamp()
     elif action.startswith("s:") or action.startswith("w:"):
         execute: str
         if action.startswith("s:"):
@@ -83,12 +80,12 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         SubprocessPopen(execute, shell=True)
         ensure_dict_key_is_dict(cache, "navs")
         ensure_dict_key_is_dict(cache["navs"], action)
-        cache["navs"][action]["launched"] = datetime_to_timestamp()
+        cache_item = cache["steam_navs"][action]
     elif action == "update_cache":
         log.info("Updating cache")
         ensure_dict_key_is_dict(cache, "navs")
         ensure_dict_key_is_dict(cache["navs"], action)
-        cache["navs"][action]["launched"] = datetime_to_timestamp()
+        cache_item = cache["steam_navs"][action]
         force_cache = True
     elif action == "clear_cache":
         log.info("Clearing cache")
@@ -98,7 +95,7 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         log.info("Clearing images")
         ensure_dict_key_is_dict(cache, "navs")
         ensure_dict_key_is_dict(cache["navs"], action)
-        cache["navs"][action]["launched"] = datetime_to_timestamp()
+        cache_item = cache["steam_navs"][action]
         clear_images()
         force_cache = "skip"
     elif action == "rebuild_cache":
@@ -112,6 +109,11 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
     else:
         log.error(f"Invalid action '{action}'")
         return
+    cache_item["launched"] = datetime_to_timestamp()
+    if "times" in cache_item.keys():
+        cache_item["times"] += 1
+    else:
+        cache_item["times"] = 1
     save_cache(cache, preferences)
     if not isinstance(force_cache, str):  # != "skip"
         build_cache(preferences, force=force_cache)

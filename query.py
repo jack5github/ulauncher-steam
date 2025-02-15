@@ -29,6 +29,7 @@ class SteamExtensionItem:
         icon: str | None = None,
         updated: datetime | None = None,
         launched: datetime | None = None,
+        times: int = 0,
     ) -> None:
         """
         Initialises a new SteamExtensionItem instance.
@@ -50,6 +51,7 @@ class SteamExtensionItem:
             icon (str | None, optional): The path to the icon of the item, must include the extension path. If None, the default icon will be used. Defaults to None.
             updated (datetime | None, optional): The last time the item was updated. Defaults to None.
             launched (datetime | None, optional): The last time the item was launched. Defaults to None.
+            times (int, optional): The number of times the item has been launched. Defaults to 0.
         """
         self.preferences: dict[str, Any] = preferences
         self.lang: dict[str, dict[str, str]] = lang
@@ -74,6 +76,7 @@ class SteamExtensionItem:
                 )
         self.updated: datetime | None = updated
         self.launched: datetime | None = launched
+        self.times: int = times
 
     def __str__(self) -> str:
         """
@@ -346,29 +349,35 @@ def query_cache(
     friend_blacklist: list[int] = get_blacklist("friend", preferences)
     items: list[SteamExtensionItem] = []
     oldest_launched: datetime | None = None
+    most_times: int = 0
 
-    def get_last_launched(info: dict[str, Any]) -> datetime | None:
+    def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
         """
-        Returns the last time an item was launched from an item dictionary's values.
+        Returns the last time an item was launched and the number of times it has been launched from an item dictionary's values.
 
         Args:
             info (dict[str, Any]): The item dictionary.
 
         Returns:
-            tuple[datetime | None, int]: The last time the item was launched.
+            tuple[datetime | None, int]: The last time the item was launched and the number of times it has been launched.
         """
         nonlocal oldest_launched
+        nonlocal most_times
 
         launched: datetime | None = timestamp_to_datetime(info, "launched")
         if launched is not None and (
             oldest_launched is None or launched < oldest_launched
         ):
             oldest_launched = launched
-        return launched
+        times: int = info.get("times", 0)
+        if times > most_times:
+            most_times = times
+        return launched, times
 
     icon: str | None
     icon_path: str
     launched: datetime | None
+    times: int
     if keyword in (preferences["KEYWORD"], preferences["KEYWORD_APPS"]):
         app_id_int: int
         name: str
@@ -414,7 +423,7 @@ def query_cache(
                 )
                 if isfile(icon_path):
                     icon = icon_path
-                launched = get_last_launched(app_info)
+                launched, times = get_launches(app_info)
                 items.append(
                     SteamExtensionItem(
                         preferences,
@@ -428,6 +437,7 @@ def query_cache(
                         playtime=playtime,
                         icon=icon,
                         launched=launched,
+                        times=times,
                     )
                 )
         if "nonSteam" in cache.keys() and isinstance(cache["nonSteam"], dict):
@@ -457,7 +467,7 @@ def query_cache(
                 )
                 if isfile(icon_path):
                     icon = icon_path
-                launched = get_last_launched(app_info)
+                launched, times = get_launches(app_info)
                 items.append(
                     SteamExtensionItem(
                         preferences,
@@ -471,6 +481,7 @@ def query_cache(
                         icon=icon,
                         size=size,
                         launched=launched,
+                        times=times,
                     )
                 )
     if (
@@ -528,7 +539,7 @@ def query_cache(
                 icon = icon_path
             updated: datetime | None = timestamp_to_datetime(friend_info, "updated")
             created = timestamp_to_datetime(friend_info, "created")
-            launched = get_last_launched(friend_info)
+            launched, times = get_launches(friend_info)
             items.append(
                 SteamExtensionItem(
                     preferences,
@@ -542,6 +553,7 @@ def query_cache(
                     icon=icon,
                     updated=updated,
                     launched=launched,
+                    times=times,
                 )
             )
     if keyword in (
@@ -678,10 +690,11 @@ def query_cache(
                         if isfile(icon_path):
                             icon = icon_path
                 launched = None
+                times = 0
                 if id_name in cache["navs"].keys() and isinstance(
                     cache["navs"][id_name], dict
                 ):
-                    launched = get_last_launched(cache["navs"][id_name])
+                    launched, times = get_launches(cache["steam_navs"][f"s:{id_name}"])
                 items.append(
                     SteamExtensionItem(
                         preferences,
@@ -693,6 +706,7 @@ def query_cache(
                         description=id_description,
                         icon=icon,
                         launched=launched,
+                        times=times,
                     )
                 )
     if keyword in (preferences["KEYWORD"], preferences["KEYWORD_EXTENSION"]):
@@ -734,6 +748,7 @@ def query_cache(
         DESC_WORD_MATCHES_MULT: float = 1  # Words in description match
         UNINSTALLED_MULT: float = 1.1  # Item is uninstalled
         LAST_LAUNCHED_MULT: float = 1  # Item has been launched recently
+        TIMES_LAUNCHED_MULT: float = 1  # Item has been launched many times
 
         def get_placement(item: SteamExtensionItem) -> float:
             """
@@ -776,6 +791,10 @@ def query_cache(
                 )
             else:
                 placement += LAST_LAUNCHED_MULT
+            if item.times > 0:
+                placement += (1 - (item.times / most_times)) * TIMES_LAUNCHED_MULT
+            else:
+                placement += TIMES_LAUNCHED_MULT
             return placement
 
         items = sorted(items, key=lambda item: get_placement(item))
