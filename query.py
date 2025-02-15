@@ -338,6 +338,82 @@ def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
     return launched, times
 
 
+"""
+A dictionary of metrics used when sorting items based on a search query and their multipliers.
+"""
+ITEM_METRIC_MULTS: dict[str, float] = {
+    "complexity": 1.0,
+    "name-length": 0.1,
+    "name-indices": 0.3,
+    "desc-matches": 1.0,
+    "name-lowest": 1.0,
+    "requires-waiting": 1.1,
+    "last-launched": 1.0,
+    "times-launched": 1.0,
+}
+
+
+def get_item_metrics(
+    item: SteamExtensionItem,
+    split_search: list[str],
+    oldest_launched: datetime | None,
+    most_times: int,
+    now: datetime,
+) -> dict[str, float]:
+    """
+    Gets the metrics of an item based on various attributes scaled between 0 and 1, used when sorting items based on a search query. The lower the metric, the more impactful it is when sorting.
+
+    Args:
+        item (SteamExtensionItem): The item to get the metrics of.
+        split_search (list[str]): The list of words in the search query.
+        oldest_launched (datetime | None): The oldest launch time of an item.
+        most_times (int): The most times an item has been launched.
+        now (datetime): The current datetime.
+
+    Returns:
+        dict[str, float]: The list of metrics.
+    """
+    metrics: dict[str, float] = {k: 0.0 for k in ITEM_METRIC_MULTS.keys()}
+    if item.type == "friend":
+        metrics["complexity"] = 1 / 3
+    elif item.type == "nav":
+        metrics["complexity"] = 2 / 3
+    elif item.type != "app":  # "action"
+        metrics["complexity"] = 1.0
+    name: str = item.get_name().lower()
+    name_index_lowest: int = len(name)
+    metrics["name-length"] = min(len(" ".join(split_search)) / len(name), 1.0)
+    desc: str = item.get_description().lower()
+    for word in split_search:
+        name_index: int = name.find(word)
+        if name_index != -1:
+            if name_index < name_index_lowest:
+                name_index_lowest = name_index
+            reversed_name: str = name[name_index - 1 :: -1] if name_index > 0 else " "
+            name_index = reversed_name.find(" ")
+        else:
+            name_index = len(name)
+        metrics["name-indices"] += name_index / len(name)
+        if word not in desc:
+            metrics["desc-matches"] += 1
+    metrics["name-indices"] /= len(split_search)
+    metrics["name-lowest"] = name_index_lowest / len(name)
+    metrics["desc-matches"] /= len(split_search)
+    if (item.location is None and item.size == 0) or item.type == "action":
+        metrics["requires-waiting"] = 1.0
+    if oldest_launched is not None and item.launched is not None:
+        metrics["last-launched"] += (now - item.launched).days / (
+            now - oldest_launched
+        ).days
+    else:
+        metrics["last-launched"] = 1.0
+    if item.times > 0:
+        metrics["times-launched"] = 1 - (item.times / most_times)
+    else:
+        metrics["times-launched"] = 1.0
+    return metrics
+
+
 def query_cache(
     keyword: str, preferences: dict[str, Any], search: str | None = None
 ) -> list[SteamExtensionItem]:
@@ -785,14 +861,6 @@ def query_cache(
         ]
         split_search: list[str] = search.split()
         now: datetime = datetime.now(timezone.utc)
-        # Placement multipliers, higher values will bring to top
-        NON_NAVIGATION_MULT: float = 1  # Item is not a navigation
-        NAME_WORD_INDICES_MULT: float = 0.3  # Words in name have search earlier in them
-        NAME_WORD_LOW_INDEX_MULT: float = 1  # Name starts with search
-        DESC_WORD_MATCHES_MULT: float = 1  # Words in description match
-        UNINSTALLED_MULT: float = 1.1  # Item is uninstalled
-        LAST_LAUNCHED_MULT: float = 1  # Item has been launched recently
-        TIMES_LAUNCHED_MULT: float = 1  # Item has been launched many times
 
         def get_placement(item: SteamExtensionItem) -> float:
             """
@@ -804,41 +872,12 @@ def query_cache(
             Returns:
                 float: The placement of the item.
             """
+            metrics: dict[str, float] = get_item_metrics(
+                item, split_search, oldest_launched, most_times, now
+            )
             placement: float = 0.0
-            if item.type not in ("app", "friend"):
-                placement += NON_NAVIGATION_MULT
-            name: str = item.get_name().lower()
-            name_index_lowest: int = len(name)
-            desc: str = item.get_description().lower()
-            for word in split_search:
-                name_index: int = name.find(word)
-                if name_index != -1:
-                    if name_index < name_index_lowest:
-                        name_index_lowest = name_index
-                    reversed_name: str = (
-                        name[name_index - 1 :: -1] if name_index > 0 else " "
-                    )
-                    name_index = reversed_name.find(" ")
-                else:
-                    name_index = len(name)
-                placement += name_index * NAME_WORD_INDICES_MULT / len(split_search)
-                if word in desc:
-                    placement += DESC_WORD_MATCHES_MULT / len(split_search)
-            placement += name_index_lowest * NAME_WORD_LOW_INDEX_MULT
-            if item.location is None and item.size == 0:
-                placement += UNINSTALLED_MULT
-            if oldest_launched is not None and item.launched is not None:
-                placement += (
-                    (now - item.launched).days
-                    / (now - oldest_launched).days
-                    * LAST_LAUNCHED_MULT
-                )
-            else:
-                placement += LAST_LAUNCHED_MULT
-            if item.times > 0:
-                placement += (1 - (item.times / most_times)) * TIMES_LAUNCHED_MULT
-            else:
-                placement += TIMES_LAUNCHED_MULT
+            for key, mult in ITEM_METRIC_MULTS.items():
+                placement += metrics[key] * mult
             return placement
 
         items = sorted(items, key=lambda item: get_placement(item))
