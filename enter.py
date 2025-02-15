@@ -5,13 +5,16 @@ from typing import Any
 log: Logger = get_logger(__name__)
 
 
-def execute_action(action: str, preferences: dict[str, Any]) -> None:
+def execute_action(
+    action: str, preferences: dict[str, Any], execute: bool = True
+) -> None:
     """
     Executes the given action from the Steam extension.
 
     Args:
         action (str): The action to execute.
         preferences (dict[str, Any]): The preferences dictionary.
+        execute (bool, optional): Whether to execute the action. If this is False, the action is only logged in the cache as having been launched. Defaults to True.
     """
     from cache import (
         build_cache,
@@ -46,9 +49,10 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         else:
             log.error(f"Cannot execute '{action}', app ID {app_id} not found in cache")
             return
-        app_action: str = f"{command} {action[3:]}"
-        log.info(f"Launching app ID {app_id} via '{app_action}'")
-        SubprocessPopen(app_action, shell=True)
+        if execute:
+            app_action: str = f"{command} {action[3:]}"
+            log.info(f"Launching app ID {app_id} via '{app_action}'")
+            SubprocessPopen(app_action, shell=True)
     elif action.startswith("FRIEND"):
         friend_id: int = int(action[6:])
         if "friends" in cache.keys() and str(friend_id) in cache["friends"].keys():
@@ -58,54 +62,68 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
                 f"Cannot execute action, friend ID {friend_id} not found in cache"
             )
             return
-        friend_action: str
-        if preferences["FRIEND_ACTION"] == "chat":
-            friend_action = f"{command} steam://friends/message/{friend_id}"
-        elif preferences["FRIEND_ACTION"] == "profile":
-            friend_action = f"{command} steam://url/SteamIDPage/{friend_id}"
-        else:
-            log.error(f"Unknown default friend action '{preferences['FRIEND_ACTION']}'")
-            return
-        log.info(f"Launching friend ID {friend_id} via '{friend_action}'")
-        SubprocessPopen(friend_action, shell=True)
+        if execute:
+            friend_action: str
+            if preferences["FRIEND_ACTION"] == "chat":
+                friend_action = f"{command} steam://friends/message/{friend_id}"
+            elif preferences["FRIEND_ACTION"] == "profile":
+                friend_action = f"{command} steam://url/SteamIDPage/{friend_id}"
+            else:
+                log.error(
+                    f"Unknown default friend action '{preferences['FRIEND_ACTION']}'"
+                )
+                return
+            log.info(f"Launching friend ID {friend_id} via '{friend_action}'")
+            SubprocessPopen(friend_action, shell=True)
     elif action.startswith("s:") or action.startswith("w:"):
-        execute: str
+        to_run: str
         if action.startswith("s:"):
-            execute = f"{command} steam://{action[2:]}"
+            to_run = f"{command} steam://{action[2:]}"
         elif os_name == "nt":  # "w:"
-            execute = f"xdg-open https://{action[2:]}"
+            to_run = f"xdg-open https://{action[2:]}"
         else:
             # TODO: Add support for opening URLs in Windows
             log.error("Opening URLs is not supported on this platform")
             return
-        log.info(f"Launching navigation '{action}' via '{execute}'")
-        SubprocessPopen(execute, shell=True)
-        ensure_dict_key_is_dict(cache, "navs")
-        ensure_dict_key_is_dict(cache["navs"], action)
-        cache_item = cache["navs"][action]
+        if execute:
+            log.info(f"Launching navigation '{action}' via '{execute}'")
+            SubprocessPopen(to_run, shell=True)
+            ensure_dict_key_is_dict(cache, "navs")
+            ensure_dict_key_is_dict(cache["navs"], action)
+            cache_item = cache["navs"][action]
     elif action == "update_cache":
         log.info("Updating cache")
         ensure_dict_key_is_dict(cache, "navs")
         ensure_dict_key_is_dict(cache["navs"], action)
         cache_item = cache["navs"][action]
-        force_cache = True
+        if execute:
+            force_cache = True
     elif action == "clear_cache":
         log.info("Clearing cache")
-        clear_cache()
-        return
+        if execute:
+            clear_cache()
+            return
+        ensure_dict_key_is_dict(cache, "navs")
+        ensure_dict_key_is_dict(cache["navs"], action)
+        cache_item = cache["navs"][action]
     elif action == "clear_images":
         log.info("Clearing images")
         ensure_dict_key_is_dict(cache, "navs")
         ensure_dict_key_is_dict(cache["navs"], action)
         cache_item = cache["navs"][action]
-        clear_images()
-        force_cache = "skip"
+        if execute:
+            clear_images()
+            force_cache = "skip"
     elif action == "rebuild_cache":
         log.info("Rebuilding cache")
-        clear_cache()
-        clear_images()
-        build_cache(preferences)
-        return
+        if execute:
+            clear_cache()
+            clear_images()
+            build_cache(preferences)
+            return
+        ensure_dict_key_is_dict(cache, "navs")
+        ensure_dict_key_is_dict(cache["navs"], action)
+        cache_item = cache["navs"][action]
     elif action == "no_results":
         return
     else:
@@ -117,7 +135,7 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
     times += 1
     cache_item["launched"] = f"{datetime_to_timestamp(launched)}x{times}"
     save_cache(cache, preferences)
-    if not isinstance(force_cache, str):  # != "skip"
+    if execute and not isinstance(force_cache, str):  # != "skip"
         build_cache(preferences, force=force_cache)
 
 
