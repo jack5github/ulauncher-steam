@@ -355,7 +355,6 @@ def query_cache(
     from cache import get_blacklist, load_cache
     from const import check_required_preferences, STEAM_NAVIGATIONS
     from csv import DictReader
-    from difflib import SequenceMatcher
     from os.path import isfile
 
     check_required_preferences(preferences)
