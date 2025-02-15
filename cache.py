@@ -299,6 +299,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         get_state_or_city_codes,
         get_steam_friends_info,
         get_steam_friends_list,
+        get_steamid64,
         InstalledSteamApp,
         NonSteamApp,
         OwnedSteamApp,
@@ -316,14 +317,16 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
     update_from_files: bool = True
     update_from_steam_api: bool = True
     if "extension" not in cache.keys():
-        log.warning("'extension' not found in cache.json")
+        log.warning("'extension' key not found in cache.json")
     elif not isinstance(cache["extension"], dict):
-        log.warning("'extension' in cache.json is not a dictionary")
+        log.warning("cache.json key 'extension' is not a dictionary")
     elif not force:
 
         def compare_last_updated(key: str) -> bool:
             if key not in cache["extension"].keys():
-                log.warning(f"'extension' in cache.json does not contain '{key}' key")
+                log.warning(
+                    f"cache.json key 'extension' does not contain property '{key}'"
+                )
                 return True
             updated_last: datetime = datetime.min
             try:
@@ -483,12 +486,43 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 cache["extension"]["files"] = datetime_to_timestamp()
                 save_cache(cache, preferences)
     if update_from_steam_api or force:
-        log.info("Getting owned Steam apps from Steam API")
+        log.debug("Checking steamID64 in cache is up to date")
         from_steam_api_updated: bool = False
+        steamid64: int | None = None
+        if (
+            "username" not in cache["extension"].keys()
+            or preferences["STEAM_USERNAME"] != cache["extension"]["username"]
+            or "id" not in cache["extension"].keys()
+        ):
+            log.info("Getting user steamID64 from Steam API")
+            steamid64 = get_steamid64(
+                preferences["STEAM_API_KEY"], preferences["STEAM_USERNAME"]
+            )
+            if steamid64 is not None:
+                cache["extension"]["username"] = preferences["STEAM_USERNAME"]
+                cache["extension"]["id"] = steamid64
+                from_steam_api_updated = True
+        else:
+            try:
+                steamid64 = int(cache["extension"]["id"])
+            except ValueError:
+                log.error(
+                    f"cache.json key 'extension' property 'id' is not a valid steamID64"
+                )
+        if steamid64 is None:
+            log.error(
+                f"Steam extension cache failed to finish building, steamID64 could not be retrieved for user '{preferences['STEAM_USERNAME']}'"
+            )
+            return
+        if from_steam_api_updated:
+            cache["extension"]["steamApi"] = datetime_to_timestamp()
+            save_cache(cache, preferences)
+            from_steam_api_updated = False
+        log.info("Getting owned Steam apps from Steam API")
         owned_steam_apps: dict[int, OwnedSteamApp] = {}
         try:
             owned_steam_apps = get_owned_steam_apps(
-                preferences["STEAM_API_KEY"], int(preferences["STEAMID64"])
+                preferences["STEAM_API_KEY"], steamid64
             )
         except Exception:
             log.error("Failed to get owned Steam apps", exc_info=True)
@@ -510,12 +544,12 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         if from_steam_api_updated:
             cache["extension"]["steamApi"] = datetime_to_timestamp()
             save_cache(cache, preferences)
-        from_steam_api_updated = False
+            from_steam_api_updated = False
         log.info("Getting friends list from Steam API")
         steam_friends_list: dict[int, SteamFriendFromList] = {}
         try:
             steam_friends_list = get_steam_friends_list(
-                preferences["STEAM_API_KEY"], int(preferences["STEAMID64"])
+                preferences["STEAM_API_KEY"], steamid64
             )
         except Exception:
             log.error("Failed to get Steam friends list", exc_info=True)
@@ -540,7 +574,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         if from_steam_api_updated:
             cache["extension"]["steamApi"] = datetime_to_timestamp()
             save_cache(cache, preferences)
-        from_steam_api_updated = False
+            from_steam_api_updated = False
         log.info("Getting friends info from Steam API")
         steam_friends_info: dict[int, SteamFriendInfo] = {}
         try:
@@ -597,7 +631,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         if from_steam_api_updated:
             cache["extension"]["steamApi"] = datetime_to_timestamp()
             save_cache(cache, preferences)
-        from_steam_api_updated = False
+            from_steam_api_updated = False
         friend_icons_to_download: list[tuple[int, str]] = []
         for friend_id, friend_info in steam_friends_info.items():
             if friend_id in friend_blacklist:

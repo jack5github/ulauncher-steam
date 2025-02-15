@@ -72,9 +72,9 @@ Default: Empty
 
 This setting is required in order to fetch data from the Steam Web API.
 
-### `STEAM_USERNAME`: Steam username ❌
+### `STEAM_USERNAME`: Steam username
 
-*Username to use when fetching data (found at store.steampowered.com/account)* (input) ❌
+*Username to use when fetching data (found at store.steampowered.com/account)* (input)
 
 Default: Empty
 
@@ -196,6 +196,7 @@ This setting is mainly for debugging. It allows developers to extract from the e
 
 ## Debugging
 
-The following settings are not exposed in uLauncher and are only used for debugging.
+The following settings are not exposed in uLauncher and are only used in debugging. They are expected to be present in the **.env** file during debugging, which must start with `[PREFERENCES]` and represent keys and values in the format `KEY=value`.
 
+- `STEAMID64` - The 64-bit Steam ID of the current user. A fallback for functions executed directly from the extension's submodules, when it is infeasible to repeatedly request it from the Steam API or load it from the cache.
 - `ITEM_REPR` - A boolean that is inspected when returning a list of items via the console when executing submodules directly. If `true`, a verbose representation of each item is returned, otherwise only the title and description seen in uLauncher are returned.

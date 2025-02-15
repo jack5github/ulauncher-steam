@@ -77,7 +77,7 @@ A dictionary of country, state and city codes in use by the user's Steam friends
 
 A dictionary of property values that directly relate to individual functions of the extension.
 
-- `username` (string) - The username of the current user as entered into the extension preferences. ❌
-- `id` (integer) - The 64-bit Steam ID of the current user derived from the username. ❌
+- `username` (string) - The username of the current user as entered into the extension preferences. This must be stored in the cache in order to check if the username has changed, requiring `id` to be updated.
+- `id` (integer) - The 64-bit Steam ID of the current user derived from the username in the cache.
 - `files` (integer) - The timestamp of the last time the cache was updated from files on disk.
 - `steamApi` (integer) - The timestamp of the last time the cache was updated from the Steam API.

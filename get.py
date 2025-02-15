@@ -322,6 +322,28 @@ def _get_response_from_steam_api(url: str) -> dict[str, Any]:
     return json_loads(response)
 
 
+def get_steamid64(api_key: str, username: str) -> int | None:
+    """
+    Gets the steamID64 of a user from the Steam API.
+
+    Args:
+        api_key (str): The Steam API key.
+        username (str): The username of the user.
+
+    Returns:
+        int | None: The steamID64 of the user, or None if there was an error.
+    """
+    log.info(f"Getting steamID64 from Steam API for user '{username}'")
+    steamid64_url: str = (
+        f"https://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key={api_key}&vanityurl={username}"
+    )
+    try:
+        return int(_get_response_from_steam_api(steamid64_url)["response"]["steamid"])
+    except Exception:
+        log.error("Failed to retrieve steamID64 from Steam API", exc_info=True)
+        return None
+
+
 class OwnedSteamApp(TypedDict):
     """
     A dictionary representation of an owned Steam app.
