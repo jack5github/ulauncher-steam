@@ -77,7 +77,7 @@ def check_required_preferences(preferences: dict[str, Any]) -> None:
             key for key in REQUIRED_PREFERENCES if key not in preferences.keys()
         )
         raise ValueError(
-            f"Missing preference key '{missing_preference}', add to .env file"
+            f"Missing preference key '{missing_preference}' (if using console, add to .env file): {preferences}"
         )
     except StopIteration:
         pass

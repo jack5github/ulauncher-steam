@@ -344,18 +344,18 @@ def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
 A dictionary of metrics used when sorting items based on a search query and their multipliers.
 """
 ITEM_METRIC_MULTS: dict[str, float] = {
-    "type": 1.0,  # The ease-of-use of the item type
-    "name-fuzzy-index": 1.0,  # How early fuzzy word matches appear in the name
-    "name-fuzzy-order": 1.0,  # Whether fuzzy word matches are in order in the name
-    "name-exact-index": 1.0,  # How early exact word matches appear in the name
-    "name-exact-order": 1.0,  # Whether exact word matches are in order in the name
-    "name-length": 1.0,  # The shortness of the name length
-    "name-chars": 1.0,  # The alphabetical ordering of the name
+    "type": 0.952468,  # The ease-of-use of the item type
+    "name-fuzzy-index": 0.044683,  # How early fuzzy word matches appear in the name
+    "name-fuzzy-order": 0.116993,  # Whether fuzzy word matches are in order in the name
+    "name-exact-index": 0.095432,  # How early exact word matches appear in the name
+    "name-exact-order": 0.109133,  # Whether exact word matches are in order in the name
+    "name-length": 0.575333,  # The shortness of the name length
+    "name-chars": 0.587040,  # The alphabetical ordering of the name
     "desc-fuzzy": 1.0,  # Whether fuzzy word matches are in the description
-    "desc-length": 1.0,  # The shortness of the description length
-    "installed": 1.0,  # Whether the item is installed
-    "launched": 1.0,  # The last time the item was launched
-    "times": 1.0,  # The number of times the item has been launched
+    "desc-length": 0.589272,  # The shortness of the description length
+    "installed": 0.207623,  # Whether the item is installed
+    "launched": 0.539458,  # The last time the item was launched
+    "times": 0.220538,  # The number of times the item has been launched
 }
 
 
@@ -386,7 +386,9 @@ def get_item_metrics(
     if item.type == "app" and item.size == 0 and item.location is None:
         metrics["installed"] = 1.0
     if oldest_launched is not None and item.launched is not None:
-        metrics["launched"] = (now - item.launched).days / (now - oldest_launched).days
+        metrics["launched"] = max(
+            (now - item.launched).days / (now - oldest_launched).days, 0
+        )
     else:
         metrics["launched"] = 1.0
     if most_times >= 1:
@@ -399,6 +401,7 @@ def get_item_metrics(
         ord("z") - 32 for _ in range(100)
     )
     description: str = re_sub(r"[^a-z0-9 ]", " ", item.get_description().lower())
+    metrics["desc-length"] = max(min(len(description) - 1, 100), 0) / 100
     biggest_word_len: int = max(len(word) for word in split_search)
     previous_fuzzy_index: int | None = None
     previous_exact_index: int | None = None

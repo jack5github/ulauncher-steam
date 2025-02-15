@@ -85,12 +85,12 @@ def execute_action(
             # TODO: Add support for opening URLs in Windows
             log.error("Opening URLs is not supported on this platform")
             return
+        ensure_dict_key_is_dict(cache, "navs")
+        ensure_dict_key_is_dict(cache["navs"], action)
+        cache_item = cache["navs"][action]
         if execute:
-            log.info(f"Launching navigation '{action}' via '{execute}'")
+            log.info(f"Launching navigation '{action}' via '{to_run}'")
             SubprocessPopen(to_run, shell=True)
-            ensure_dict_key_is_dict(cache, "navs")
-            ensure_dict_key_is_dict(cache["navs"], action)
-            cache_item = cache["navs"][action]
     elif action == "update_cache":
         log.info("Updating cache")
         ensure_dict_key_is_dict(cache, "navs")
