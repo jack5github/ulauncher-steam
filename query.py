@@ -318,11 +318,13 @@ def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
     Returns:
         tuple[datetime | None, int]: The last time the item was launched and the number of times it has been launched.
     """
-    launched_str: str | None = info.get("launched")
+    launched_str: str | int | None = info.get("launched")
     if launched_str is None:
         return None, 0
+    if not isinstance(launched_str, str):  # int
+        launched_str = str(launched_str)
     launched_split: list[str] = launched_str.split("x")
-    if len(launched_split) >= 2:
+    if len(launched_split) >= 3:
         log.error(f"Invalid launched value '{launched_str}'")
         return None, 0
     launched_ints: list[int]
@@ -737,9 +739,7 @@ def query_cache(
                 if id_name in cache["navs"].keys() and isinstance(
                     cache["navs"][id_name], dict
                 ):
-                    launched, times = compare_launches(
-                        cache["steam_navs"][f"s:{id_name}"]
-                    )
+                    launched, times = compare_launches(cache["navs"][id_name])
                 items.append(
                     SteamExtensionItem(
                         preferences,

@@ -82,12 +82,12 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         SubprocessPopen(execute, shell=True)
         ensure_dict_key_is_dict(cache, "navs")
         ensure_dict_key_is_dict(cache["navs"], action)
-        cache_item = cache["steam_navs"][action]
+        cache_item = cache["navs"][action]
     elif action == "update_cache":
         log.info("Updating cache")
         ensure_dict_key_is_dict(cache, "navs")
         ensure_dict_key_is_dict(cache["navs"], action)
-        cache_item = cache["steam_navs"][action]
+        cache_item = cache["navs"][action]
         force_cache = True
     elif action == "clear_cache":
         log.info("Clearing cache")
@@ -97,7 +97,7 @@ def execute_action(action: str, preferences: dict[str, Any]) -> None:
         log.info("Clearing images")
         ensure_dict_key_is_dict(cache, "navs")
         ensure_dict_key_is_dict(cache["navs"], action)
-        cache_item = cache["steam_navs"][action]
+        cache_item = cache["navs"][action]
         clear_images()
         force_cache = "skip"
     elif action == "rebuild_cache":
