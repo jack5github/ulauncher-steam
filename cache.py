@@ -403,7 +403,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                         log.debug(
                             "Removing non-existent and blacklisted non-Steam apps"
                         )
-                        for app_id in cache["nonSteam"].keys():
+                        for app_id in list(cache["nonSteam"].keys()):
                             if (
                                 int(app_id) not in non_steam_apps.keys()
                                 or int(app_id) in app_blacklist
@@ -555,7 +555,7 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             log.error("Failed to get Steam friends list", exc_info=True)
         if ensure_dict_key_is_dict(cache, "friends")[1]:
             log.debug("Removing non-existent and blacklisted friends")
-            for friend_id in cache["friends"].keys():
+            for friend_id in list(cache["friends"].keys()):
                 if (
                     int(friend_id) not in steam_friends_list.keys()
                     or int(friend_id) in friend_blacklist
