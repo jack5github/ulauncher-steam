@@ -362,13 +362,13 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
             if "launched" in cache_app.keys():
                 try:
                     cache_last_launched: datetime = datetime.fromtimestamp(
-                        cache_app["launched"]
+                        int(str(cache_app["launched"]).split("x")[0])
                     )
                     if app["launched"] < cache_last_launched:
                         return False
                 except Exception:
                     log.warning(
-                        f"Failed to parse app {app['app_id']} 'launched' timestamp '{cache_app['launched']}'",
+                        f"Failed to parse 'launched' timestamp '{cache_app['launched']}' of app '{app['name']}'",
                         exc_info=True,
                     )
             return True
@@ -425,9 +425,18 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                             del cache_app["size"]
                         if app_info["launched"] is not None:
                             if compare_last_launched(app_info, cache_app):
+                                non_steam_times: int | None = (
+                                    cache_app["launched"].split("x")[1]
+                                    if len(cache_app["launched"].split("x")) == 2
+                                    else None
+                                )
                                 cache_app["launched"] = datetime_to_timestamp(
                                     app_info["launched"]
                                 )
+                                if non_steam_times is not None:
+                                    cache_app["launched"] = (
+                                        f"{cache_app['launched']}x{non_steam_times}"
+                                    )
                     from_files_updated = True
             log.info("Getting installed Steam apps from appmanifest_#.acf files")
             steamapps_folder: str = f"{steam_folder}steamapps{DIR_SEP}"
@@ -468,9 +477,18 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                         )
                     if app_info["launched"] is not None:
                         if compare_last_launched(app_info, cache_app):
+                            installed_times: int | None = (
+                                cache_app["launched"].split("x")[1]
+                                if len(cache_app["launched"].split("x")) == 2
+                                else None
+                            )
                             cache_app["launched"] = datetime_to_timestamp(
                                 app_info["launched"]
                             )
+                            if installed_times is not None:
+                                cache_app["launched"] = (
+                                    f"{cache_app['launched']}x{installed_times}"
+                                )
                 if len(installed_steam_apps) >= 1:
                     if "CACHE_SORT" in preferences.keys() and bool(
                         preferences["CACHE_SORT"]
