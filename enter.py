@@ -124,7 +124,7 @@ def execute_action(
         ensure_dict_key_is_dict(cache, "navs")
         ensure_dict_key_is_dict(cache["navs"], action)
         cache_item = cache["navs"][action]
-    elif action == "no_results":
+    elif action in ("no_results", "error"):
         return
     else:
         log.error(f"Invalid action '{action}'")
