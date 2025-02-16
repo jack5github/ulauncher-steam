@@ -782,9 +782,11 @@ def query_cache(
             ):
                 continue
             for id in ids:
-                if "%a" in name and id in app_blacklist:
-                    continue
-                if "%f" in name and id in friend_blacklist:
+                if (
+                    ("%a" in name and id in app_blacklist)
+                    or ("%f" in name and id in friend_blacklist)
+                    or ("%u" in name and preferences["STEAM_USERNAME"] == "")
+                ):
                     continue
                 id_name: str = name
                 skip_dependent_nav: bool = False
@@ -800,13 +802,7 @@ def query_cache(
                 id_description: str | None = description
                 icon = None
                 icon_path = f"{EXTENSION_PATH}images{DIR_SEP}navs{DIR_SEP}{sanitise_filename(f'{name}.png')}"
-                if isfile(icon_path):
-                    icon = icon_path
-                else:
-                    log.debug(
-                        f"Failed to find icon for navigation '{name}' at '{icon_path}'"
-                    )
-                if "%a" in name:
+                if "%a" in name:  # App ID
                     if preferences["SHOW_UNINSTALLED"] == "false" and (
                         "location" not in cache["apps"][str(id)].keys()
                         and "size" not in cache["apps"][str(id)].keys()
@@ -822,9 +818,7 @@ def query_cache(
                         icon_path = (
                             f"{EXTENSION_PATH}images{DIR_SEP}apps{DIR_SEP}{id}.jpg"
                         )
-                        if isfile(icon_path):
-                            icon = icon_path
-                elif "%f" in name:
+                elif "%f" in name:  # Friend steamID64
                     skip_repeated_action: bool = False
                     for act, key in (
                         ("friends/message/", "chat"),
@@ -845,8 +839,20 @@ def query_cache(
                         icon_path = (
                             f"{EXTENSION_PATH}images{DIR_SEP}friends{DIR_SEP}{id}.jpg"
                         )
-                        if isfile(icon_path):
-                            icon = icon_path
+                elif "%u" in name:  # Username
+                    id_display_name = nav_display_name.replace(
+                        "%u", preferences["STEAM_USERNAME"]
+                    )
+                    if id_description is not None:
+                        id_description = id_description.replace(
+                            "%u", preferences["STEAM_USERNAME"]
+                        )
+                if isfile(icon_path):
+                    icon = icon_path
+                else:
+                    log.debug(
+                        f"Failed to find icon for navigation '{name}' at '{icon_path}'"
+                    )
                 launched = None
                 times = 0
                 if id_name in cache["navs"].keys() and isinstance(
