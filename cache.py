@@ -426,8 +426,8 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                         if app_info["launched"] is not None:
                             if compare_last_launched(app_info, cache_app):
                                 non_steam_times: int | None = (
-                                    cache_app["launched"].split("x")[1]
-                                    if len(cache_app["launched"].split("x")) == 2
+                                    int(cache_app["launched"].split("x")[1])
+                                    if len(str(cache_app["launched"]).split("x")) == 2
                                     else None
                                 )
                                 cache_app["launched"] = datetime_to_timestamp(
@@ -478,8 +478,8 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                     if app_info["launched"] is not None:
                         if compare_last_launched(app_info, cache_app):
                             installed_times: int | None = (
-                                cache_app["launched"].split("x")[1]
-                                if len(cache_app["launched"].split("x")) == 2
+                                int(cache_app["launched"].split("x")[1])
+                                if len(str(cache_app["launched"]).split("x")) == 2
                                 else None
                             )
                             cache_app["launched"] = datetime_to_timestamp(
