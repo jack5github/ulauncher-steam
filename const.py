@@ -192,7 +192,6 @@ STEAM_NAVIGATIONS: list[str] = [
     # "s:url/SupportFrontPage",  Does nothing
     "s:validate/%a",
     "s:viewfriendsgame/%f",
-    # TODO: Add nav images for the following URLs
     "w:help.steampowered.com",
     "w:steamcommunity.com/discussions",
     "w:steamcommunity.com/id/%u/badges",
