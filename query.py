@@ -466,13 +466,14 @@ def query_cache(
     Returns:
         list[SteamExtensionItem]: The list of SteamExtensionItems that match the criteria.
     """
-    from cache import get_blacklist, load_cache
-    from const import check_required_preferences, STEAM_NAVIGATIONS
     from csv import DictReader
     from os.path import isfile
 
     items: list[SteamExtensionItem] = []
     try:
+        from cache import get_blacklist, load_cache
+        from const import check_required_preferences, STEAM_NAVIGATIONS
+
         check_required_preferences(preferences)
         if keyword not in (
             preferences["KEYWORD"],
