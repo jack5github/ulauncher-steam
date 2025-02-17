@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from logging import Logger
 from os import makedirs, remove
 from os.path import isdir, isfile
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 from urllib.error import HTTPError
 from urllib.request import urlretrieve
 
@@ -234,6 +234,34 @@ def datetime_to_timestamp(dt: datetime | None = None) -> int:
     return floor(dt.timestamp())
 
 
+def merge_dictionaries(
+    source: dict[str, Any],
+    update: dict[str, Any],
+    del_if_none: list[str] = [],
+    rules: dict[str, Callable[[Any | None, Any], Any | None]] = {},
+) -> None:
+    """
+    Merges the update dictionary into the source dictionary, using the rules dictionary to determine how to merge each key if they are provided.
+
+    Args:
+        source (dict[str, Any]): The source dictionary to merge into.
+        update (dict[str, Any]): The dictionary to merge into the source dictionary. None values will be ignored.
+        del_if_none (list[str], optional): A list of keys to delete from the source dictionary if they have no value in the update dictionary. Defaults to [].
+        rules (dict[str, Callable[[Any | None, Any], Any | None]], optional): The rules dictionary to determine how to merge each key. Each value of this dictionary is a function that takes two arguments, the old value and the new value, and returns either the new value to use or None if the key should not be set. Defaults to {}.
+    """
+    for key in del_if_none:
+        if key in source.keys() and (key not in update.keys() or update[key] is None):
+            del source[key]
+    for key, value in update.keys():
+        if key not in rules.keys():
+            if value is not None:
+                source[key] = value
+            continue
+        new_value: Any = rules[key](source[key], value)
+        if new_value is not None:
+            source[key] = new_value
+
+
 def save_cache(cache: dict[str, Any], preferences: dict[str, Any]) -> None:
     """
     Saves the updated cache dictionary to its JSON file.
@@ -354,24 +382,44 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
         steam_folders: list[str] = get_steam_folders(preferences)
         from_files_updated: bool = False
 
-        def compare_last_launched(
-            app: InstalledSteamApp | NonSteamApp | OwnedSteamApp, cache_app: dict
-        ) -> bool:
-            if app["launched"] is None:
-                return True
-            if "launched" in cache_app.keys():
-                try:
-                    cache_last_launched: datetime = datetime.fromtimestamp(
-                        int(str(cache_app["launched"]).split("x")[0])
+        def return_launches(
+            old_launched: int | str | None, new_launched: datetime | None
+        ) -> int | str | None:
+            """
+            Returns the launched integer or string to be added to the cache for an app, based on its launch time from the app info in comparison to the cache values.
+
+            Args:
+                old_launched (int | str | None): The cached launched integer or string for the app. If a string, includes the number of times the app has been launched.
+                new_launched (int | None): The new launched integer for the app.
+
+            Returns:
+                int | str | None: The launched integer or string to be added to the cache for the app.
+            """
+            if old_launched is None:
+                return datetime_to_timestamp(new_launched)
+            if new_launched is None:
+                return old_launched
+            try:
+                old_launched_dt: datetime = datetime.fromtimestamp(
+                    int(str(old_launched).split("x")[0])
+                )
+                if new_launched > old_launched_dt:
+                    times: int | None = (
+                        int(str(old_launched).split("x")[1])
+                        if len(str(old_launched).split("x")) == 2
+                        else None
                     )
-                    if app["launched"] < cache_last_launched:
-                        return False
-                except Exception:
-                    log.warning(
-                        f"Failed to parse 'launched' timestamp '{cache_app['launched']}' of app '{app['name']}'",
-                        exc_info=True,
+                    return (
+                        datetime_to_timestamp(new_launched)
+                        if times is None
+                        else (f"{datetime_to_timestamp(new_launched)}x{times}")
                     )
-            return True
+            except Exception:
+                log.warning(
+                    f"Failed to parse 'launched' timestamp '{old_launched}'",
+                    exc_info=True,
+                )
+            return old_launched
 
         for steam_folder_index, steam_folder in enumerate(steam_folders):
             if steam_folder_index == 0:
@@ -414,29 +462,16 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                         cache_app = ensure_dict_key_is_dict(
                             cache["nonSteam"], str(app_id)
                         )[0]
-                        cache_app["name"] = app_info["name"]
-                        if app_info["exe"] is not None:
-                            cache_app["exe"] = app_info["exe"]
-                        elif "exe" in cache_app.keys():
-                            del cache_app["exe"]
-                        if app_info["size"] is not None:
-                            cache_app["size"] = app_info["size"]
-                        elif "size" in cache_app.keys():
-                            del cache_app["size"]
-                        if app_info["launched"] is not None:
-                            if compare_last_launched(app_info, cache_app):
-                                non_steam_times: int | None = (
-                                    int(cache_app["launched"].split("x")[1])
-                                    if len(str(cache_app["launched"]).split("x")) == 2
-                                    else None
+                        merge_dictionaries(
+                            cache_app,
+                            app_info,  # type: ignore
+                            del_if_none=["exe", "size"],
+                            rules={
+                                "launched": lambda old_launched, new_launched: return_launches(
+                                    old_launched, new_launched
                                 )
-                                cache_app["launched"] = datetime_to_timestamp(
-                                    app_info["launched"]
-                                )
-                                if non_steam_times is not None:
-                                    cache_app["launched"] = (
-                                        f"{cache_app['launched']}x{non_steam_times}"
-                                    )
+                            },
+                        )
                     from_files_updated = True
             log.info("Getting installed Steam apps from appmanifest_#.acf files")
             steamapps_folder: str = f"{steam_folder}steamapps{DIR_SEP}"
@@ -468,27 +503,20 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                             )
                 for app_id, app_info in installed_steam_apps.items():
                     cache_app = ensure_dict_key_is_dict(cache["apps"], str(app_id))[0]
-                    cache_app["name"] = app_info["name"]
-                    cache_app["dir"] = app_info["dir"]
-                    cache_app["size"] = app_info["size"]
-                    if app_info["updated"] is not None:
-                        cache_app["updated"] = datetime_to_timestamp(
-                            app_info["updated"]
-                        )
-                    if app_info["launched"] is not None:
-                        if compare_last_launched(app_info, cache_app):
-                            installed_times: int | None = (
-                                int(cache_app["launched"].split("x")[1])
-                                if len(str(cache_app["launched"]).split("x")) == 2
-                                else None
-                            )
-                            cache_app["launched"] = datetime_to_timestamp(
-                                app_info["launched"]
-                            )
-                            if installed_times is not None:
-                                cache_app["launched"] = (
-                                    f"{cache_app['launched']}x{installed_times}"
-                                )
+                    merge_dictionaries(
+                        cache_app,
+                        app_info,  # type: ignore
+                        rules={
+                            "updated": lambda old_updated, new_updated: (
+                                datetime_to_timestamp(new_updated)
+                                if new_updated is not None
+                                else old_updated
+                            ),
+                            "launched": lambda old_launched, new_launched: return_launches(
+                                old_launched, new_launched
+                            ),
+                        },
+                    )
                 if len(installed_steam_apps) >= 1:
                     if "CACHE_SORT" in preferences.keys() and bool(
                         preferences["CACHE_SORT"]
@@ -656,21 +684,28 @@ def build_cache(preferences: dict[str, Any], force: bool = False) -> None:
                 log.debug(f"Skipping blacklisted friend ID '{friend_id}'")
                 continue
             cache_friend = ensure_dict_key_is_dict(cache["friends"], str(friend_id))[0]
-            cache_friend["name"] = friend_info["name"]
-            if friend_info["icon_hash"] is not None:
-                friend_icons_to_download.append((friend_id, friend_info["icon_hash"]))
-            if friend_info["updated"] is not None:
-                cache_friend["updated"] = datetime_to_timestamp(friend_info["updated"])
-            if friend_info["real_name"] is not None:
-                cache_friend["realName"] = friend_info["real_name"]
-            if friend_info["created"] is not None:
-                cache_friend["created"] = datetime_to_timestamp(friend_info["created"])
-            if friend_info["country_code"] is not None:
-                cache_friend["country"] = friend_info["country_code"]
-            if friend_info["state_code"] is not None:
-                cache_friend["state"] = friend_info["state_code"]
-            if friend_info["city_code"] is not None:
-                cache_friend["city"] = friend_info["city_code"]
+
+            def prepare_to_download_icon(icon_hash: str) -> None:
+                if icon_hash is not None:
+                    friend_icons_to_download.append((friend_id, icon_hash))
+
+            merge_dictionaries(
+                cache_friend,
+                friend_info,  # type: ignore
+                rules={
+                    "icon_hash": lambda _, hash: prepare_to_download_icon(hash),
+                    "updated": lambda old_updated, new_updated: (
+                        datetime_to_timestamp(new_updated)
+                        if new_updated is not None
+                        else old_updated
+                    ),
+                    "created": lambda old_created, new_created: (
+                        datetime_to_timestamp(new_created)
+                        if new_created is not None
+                        else old_created
+                    ),
+                },
+            )
             from_steam_api_updated = True
         if from_steam_api_updated:
             cache["extension"]["steamApi"] = datetime_to_timestamp()
