@@ -252,10 +252,12 @@ def merge_dictionaries(
     for key in del_if_none:
         if key in source.keys() and (key not in update.keys() or update[key] is None):
             del source[key]
-    for key, value in update.keys():
+    for key, value in update.items():
         if key not in rules.keys():
             if value is not None:
                 source[key] = value
+            continue
+        if key not in source.keys():
             continue
         new_value: Any = rules[key](source[key], value)
         if new_value is not None:
