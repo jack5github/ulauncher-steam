@@ -1,7 +1,4 @@
-from cache import build_cache
-from enter import execute_action
 from os import name as os_name
-from query import SteamExtensionItem, query_cache
 from typing import Any
 
 
@@ -31,7 +28,7 @@ if os_name != "nt":
             Initialises a new SteamExtension instance.
             """
             log.debug("Initialising Steam extension")
-            super().__init__()
+            super(SteamExtension, self).__init__()
             self.subscribe(PreferencesEvent, SteamExtensionStartListener())
             self.subscribe(KeywordQueryEvent, SteamExtensionQueryListener())
             self.subscribe(ItemEnterEvent, SteamExtensionItemListener())
@@ -46,6 +43,8 @@ if os_name != "nt":
                 event (PreferencesEvent): The event that triggered this listener.
                 _ (Extension): The Steam extension, unused in this context due to it being empty.
             """
+            from cache import build_cache
+
             log.debug("Steam extension started, building cache")
             preferences: dict[str, Any] = event.preferences
             build_cache(preferences)
@@ -62,22 +61,34 @@ if os_name != "nt":
             Returns:
                 RenderResultListAction: A call for uLauncher to render the query results.
             """
-            from const import EXTENSION_PATH
-
-            preferences: dict[str, Any] = extension.preferences
-            items: list[SteamExtensionItem] = query_cache(
-                event.get_keyword(), preferences, event.get_argument()
-            )
-            log.debug("Converting query results to ExtensionResultItems")
             result_items: list[ExtensionResultItem] = []
-            for item in items:
-                result_items.append(
-                    ExtensionResultItem(
-                        icon=item.icon.replace(EXTENSION_PATH, ""),
-                        name=item.get_name(),
-                        description=item.get_description(),
-                        on_enter=ExtensionCustomAction(item.get_action()),
+            try:
+                from const import DIR_SEP, EXTENSION_PATH
+                from query import SteamExtensionItem, query_cache
+
+                preferences: dict[str, Any] = extension.preferences
+                items: list[SteamExtensionItem] = query_cache(
+                    event.get_keyword(), preferences, event.get_argument()
+                )
+                log.debug("Converting query results to ExtensionResultItems")
+                for item in items:
+                    result_items.append(
+                        ExtensionResultItem(
+                            icon=item.icon.replace(EXTENSION_PATH, ""),
+                            name=item.get_name(),
+                            description=item.get_description(),
+                            on_enter=ExtensionCustomAction(item.get_action()),
+                        )
                     )
+            except Exception as err:
+                return result_items.insert(
+                    0,
+                    ExtensionResultItem(
+                        icon=f"images{DIR_SEP}icon.png",
+                        name=err.__class__.__name__,
+                        description=str(err),
+                        on_enter=ExtensionCustomAction("error"),
+                    ),
                 )
             return RenderResultListAction(result_items)
 
@@ -90,6 +101,8 @@ if os_name != "nt":
                 event (ItemEnterEvent): The event that triggered this listener, containing the selected action.
                 extension (Extension): The Steam extension, containing the preferences dictionary.
             """
+            from enter import execute_action
+
             action: str = event.get_data()
             preferences: dict[str, Any] = extension.preferences
             execute_action(action, preferences)
@@ -99,7 +112,10 @@ if os_name != "nt":
 
 
 elif __name__ == "__main__":
+    from cache import build_cache
     from const import get_preferences_from_env
+    from enter import execute_action
+    from query import SteamExtensionItem, query_cache
 
     preferences: dict[str, Any] = get_preferences_from_env()
     build_cache(preferences)
