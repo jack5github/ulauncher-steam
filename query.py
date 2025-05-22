@@ -344,19 +344,20 @@ def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
 A dictionary of metrics used when sorting items based on a search query and their multipliers.
 """
 ITEM_METRIC_MULTS: dict[str, float] = {
-    "type": 0.900048,  # The ease-of-use of the item type
-    "name-fuzzy-index": 0.017874,  # How early fuzzy word matches appear in the name
-    "name-fuzzy-order": 0.010738,  # Whether fuzzy word matches are in order in the name
-    "name-word-fuzzy-index": 0.125079,  # How early fuzzy matches appear in each name word
-    "name-exact-index": 0.092011,  # How early exact word matches appear in the name
-    "name-exact-order": 0.090517,  # Whether exact word matches are in order in the name
-    "name-length": 0.389491,  # The shortness of the name length
-    "name-chars": 0.420879,  # The alphabetical ordering of the name
-    "desc-fuzzy": 1.0,  # Whether fuzzy word matches are in the description
-    "desc-length": 0.283547,  # The shortness of the description length
-    "installed": 0.286202,  # Whether the item is installed
-    "launched": 0.261724,  # The last time the item was launched
-    "times": 0.348635,  # The number of times the item has been launched
+    "type": 0.946027,  # The ease-of-use of the item type
+    "name-fuzzy-index": 0.060019,  # How early fuzzy word matches appear in the name
+    "name-fuzzy-order": 0.066769,  # Whether fuzzy word matches are in order in the name
+    "name-word-fuzzy-index": 0.187744,  # How early fuzzy matches appear in each name word
+    "name-exact-index": 0.044566,  # How early exact word matches appear in the name
+    "name-exact-order": 0.034055,  # Whether exact word matches are in order in the name
+    "name-length": 0.404428,  # The shortness of the name length
+    "name-chars": 0.430958,  # The alphabetical ordering of the name
+    # TODO: Replace desc-fuzzy with a more detailed metric that measures the same thing
+    "desc-fuzzy": 0.4,  # Whether fuzzy word matches are in the description
+    "desc-length": 0.371447,  # The shortness of the description length
+    "installed": 0.197777,  # Whether the item is installed
+    "launched": 0.314397,  # The last time the item was launched
+    "times": 0.534842,  # The number of times the item has been launched
 }
 
 
