@@ -343,20 +343,20 @@ def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
 """
 A dictionary of metrics used when sorting items based on a search query and their multipliers.
 """
-# TODO: Add metric for how early each word appears in the individual words of the name
 ITEM_METRIC_MULTS: dict[str, float] = {
-    "type": 0.924256,  # The ease-of-use of the item type
-    "name-fuzzy-index": 0.196592,  # How early fuzzy word matches appear in the name
-    "name-fuzzy-order": 0.177762,  # Whether fuzzy word matches are in order in the name
-    "name-exact-index": 0.051574,  # How early exact word matches appear in the name
-    "name-exact-order": 0.047850,  # Whether exact word matches are in order in the name
-    "name-length": 0.282486,  # The shortness of the name length
-    "name-chars": 0.297724,  # The alphabetical ordering of the name
+    "type": 0.900048,  # The ease-of-use of the item type
+    "name-fuzzy-index": 0.017874,  # How early fuzzy word matches appear in the name
+    "name-fuzzy-order": 0.010738,  # Whether fuzzy word matches are in order in the name
+    "name-word-fuzzy-index": 0.125079,  # How early fuzzy matches appear in each name word
+    "name-exact-index": 0.092011,  # How early exact word matches appear in the name
+    "name-exact-order": 0.090517,  # Whether exact word matches are in order in the name
+    "name-length": 0.389491,  # The shortness of the name length
+    "name-chars": 0.420879,  # The alphabetical ordering of the name
     "desc-fuzzy": 1.0,  # Whether fuzzy word matches are in the description
-    "desc-length": 0.379305,  # The shortness of the description length
-    "installed": 0.241787,  # Whether the item is installed
-    "launched": 0.604697,  # The last time the item was launched
-    "times": 0.073986,  # The number of times the item has been launched
+    "desc-length": 0.283547,  # The shortness of the description length
+    "installed": 0.286202,  # Whether the item is installed
+    "launched": 0.261724,  # The last time the item was launched
+    "times": 0.348635,  # The number of times the item has been launched
 }
 
 
@@ -387,9 +387,14 @@ def get_item_metrics(
     if item.type == "app" and item.size == 0 and item.location is None:
         metrics["installed"] = 1.0
     if oldest_launched is not None and item.launched is not None:
-        metrics["launched"] = max(
-            (now - item.launched).days / (now - oldest_launched).days, 0
-        )
+        try:
+            metrics["launched"] = max(
+                (now - item.launched).total_seconds()
+                / (now - oldest_launched).total_seconds(),
+                0,
+            )
+        except ZeroDivisionError:
+            metrics["launched"] = 0.0  # Oldest launch time is the same as now
     else:
         metrics["launched"] = 1.0
     if most_times >= 1:
@@ -419,6 +424,25 @@ def get_item_metrics(
             if previous_fuzzy_index is not None and fuzzy_index < previous_fuzzy_index:
                 metrics["name-fuzzy-order"] += 1.0
             previous_fuzzy_index = fuzzy_index
+            split_name: list[str] = name.split()
+            for name_part in split_name:
+                fuzzy_part_index: int = name_part.find(word)
+                if fuzzy_part_index != -1:
+                    try:
+                        metrics["name-word-fuzzy-index"] += (
+                            # Position of the word in the name part
+                            fuzzy_part_index
+                            / (len(name_part) - 1)
+                            # Number of name parts
+                        ) / len(split_name)
+                    except ZeroDivisionError:
+                        # Name part is empty, should not count one way or the other
+                        metrics["name-word-fuzzy-index"] += 0.5
+                else:
+                    metrics["name-word-fuzzy-index"] += 1.0 / len(split_name)
+            metrics["name-word-fuzzy-index"] = (
+                metrics["name-word-fuzzy-index"] + word_len_factor  # Length of the word
+            ) / 2
             exact_match: ReMatch | None = re_search(f"\\b{word}\\b", name)
             if exact_match is not None:
                 metrics["name-exact-index"] += (
@@ -437,6 +461,7 @@ def get_item_metrics(
         else:
             metrics["name-fuzzy-index"] += 1.0
             metrics["name-fuzzy-order"] += 1.0
+            metrics["name-word-fuzzy-index"] += 1.0
             metrics["name-exact-index"] += 1.0
             metrics["name-exact-order"] += 1.0
             previous_fuzzy_index = -1

@@ -82,7 +82,7 @@ def execute_action(
         elif os_name == "nt":  # "w:"
             to_run = f"xdg-open https://{action[2:]}"
         else:
-            # TODO: Add support for opening URLs in Windows
+            # TODO (low priority): Add support for opening URLs in Windows
             log.error("Opening URLs is not supported on this platform")
             return
         ensure_dict_key_is_dict(cache, "navs")
