@@ -344,19 +344,19 @@ def get_launches(info: dict[str, Any]) -> tuple[datetime | None, int]:
 A dictionary of metrics used when sorting items based on a search query and their multipliers.
 """
 ITEM_METRIC_MULTS: dict[str, float] = {
-    "type": 0.946027,  # The ease-of-use of the item type
-    "name-fuzzy-index": 0.060019,  # How early fuzzy word matches appear in the name
-    "name-fuzzy-order": 0.066769,  # Whether fuzzy word matches are in order in the name
-    "name-word-fuzzy-index": 0.187744,  # How early fuzzy matches appear in each name word
-    "name-exact-index": 0.044566,  # How early exact word matches appear in the name
-    "name-exact-order": 0.034055,  # Whether exact word matches are in order in the name
-    "name-length": 0.404428,  # The shortness of the name length
-    "name-chars": 0.430958,  # The alphabetical ordering of the name
+    "type": 1.0,  # The ease-of-use of the item type
+    "name-fuzzy-index": 0.121590,  # How early fuzzy word matches appear in the name
+    "name-fuzzy-order": 0.105751,  # Whether fuzzy word matches are in order in the name
+    "name-word-fuzzy-index": 0.090187,  # How early fuzzy matches appear in each name word
+    "name-exact-index": 0.068413,  # How early exact word matches appear in the name
+    "name-exact-order": 0.062662,  # Whether exact word matches are in order in the name
+    "name-length": 0.448897,  # The shortness of the name length
+    "name-chars": 0.480775,  # The alphabetical ordering of the name
     "desc-fuzzy": 0.4,  # Whether fuzzy word matches are in the description
-    "desc-length": 0.371447,  # The shortness of the description length
-    "installed": 0.197777,  # Whether the item is installed
-    "launched": 0.314397,  # The last time the item was launched
-    "times": 0.534842,  # The number of times the item has been launched
+    "desc-length": 0.351481,  # The shortness of the description length
+    "installed": 0.526740,  # Whether the item is installed
+    "launched": 0.409736,  # The last time the item was launched
+    "times": 0.776913,  # The number of times the item has been launched
 }
 
 
@@ -406,6 +406,7 @@ def get_item_metrics(
     metrics["name-chars"] = sum(ord(char) - 32 for char in name[:100]) / sum(
         ord("z") - 32 for _ in range(100)
     )
+    # TODO: Use seperate description for metrics to ensure accurate results
     description: str = re_sub(r"[^a-z0-9 ]", " ", item.get_description().lower())
     metrics["desc-length"] = max(min(len(description) - 1, 100), 0) / 100
     biggest_word_len: int = (
