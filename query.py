@@ -398,7 +398,7 @@ def get_item_metrics(
     else:
         metrics["launched"] = 1.0
     if most_times >= 1:
-        metrics["times"] = item.times / most_times
+        metrics["times"] = 1.0 - (item.times / most_times)
     else:
         metrics["times"] = 1.0
     name: str = re_sub(r"[^a-z0-9 ]", " ", item.get_name().lower())
