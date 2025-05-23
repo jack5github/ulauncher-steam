@@ -128,9 +128,12 @@ class SteamExtensionItem:
             )
         )
 
-    def get_description(self) -> str:
+    def get_description(self, for_sorting: bool = False) -> str:
         """
         Returns the description of the SteamExtensionItem that can be safely displayed for and filtered through by the user.
+
+        Args:
+            for_sorting (bool, optional): Whether the description is being used for sorting. If True, this will remove some information to make the description more suitable for calculating metrics. Defaults to False.
 
         Returns:
             str: The description string of the SteamExtensionItem to display in uLauncher.
@@ -146,12 +149,13 @@ class SteamExtensionItem:
                 description += " | "
 
         if self.type == "app":
+            if not for_sorting:
+                if self.playtime > 0:
+                    description += f"{self.playtime / 60:.1f} hrs"
+                if self.launched is not None:
+                    add_divider()
+                    description += datetime.strftime(self.launched, "%b %d, %Y")
             location_added: bool = False
-            if self.playtime > 0:
-                description += f"{self.playtime / 60:.1f} hrs"
-            if self.launched is not None:
-                add_divider()
-                description += datetime.strftime(self.launched, "%b %d, %Y")
             if self.location is not None:
                 add_divider()
                 location_str: str = DIR_SEP.join(
@@ -165,25 +169,26 @@ class SteamExtensionItem:
                     location_str = "/"
                 description += location_str
                 location_added = True
-            if self.size > 0:
-                if location_added:
-                    if not description.endswith(":"):
-                        description += ":"
-                    description += " "
-                else:
-                    add_divider()
-                if self.size < 1000:
-                    description += f"{self.size} B"
-                elif self.size < 1000**2:
-                    description += f"{self.size / 1000:.2f} KB"
-                elif self.size < 1000**3:
-                    description += f"{self.size / 1000 ** 2:.2f} MB"
-                elif self.size < 1000**4:
-                    description += f"{self.size / 1000 ** 3:.2f} GB"
-                else:
-                    description += f"{self.size / 1000 ** 4:.2f} TB"
-            add_divider()
-            description += str(self.id)
+            if not for_sorting:
+                if self.size > 0:
+                    if location_added:
+                        if not description.endswith(":"):
+                            description += ":"
+                        description += " "
+                    else:
+                        add_divider()
+                    if self.size < 1000:
+                        description += f"{self.size} B"
+                    elif self.size < 1000**2:
+                        description += f"{self.size / 1000:.2f} KB"
+                    elif self.size < 1000**3:
+                        description += f"{self.size / 1000 ** 2:.2f} MB"
+                    elif self.size < 1000**4:
+                        description += f"{self.size / 1000 ** 3:.2f} GB"
+                    else:
+                        description += f"{self.size / 1000 ** 4:.2f} TB"
+                add_divider()
+                description += str(self.id)
         elif self.type == "friend":
             if self.real_name is not None and self.preferences["SHOW_REAL"] in (
                 "all",
@@ -196,8 +201,9 @@ class SteamExtensionItem:
             ):
                 add_divider()
                 description += self.location
-            add_divider()
-            description += str(self.id)
+            if not for_sorting:
+                add_divider()
+                description += str(self.id)
         elif self.description is not None:
             description = self.description
         return description
@@ -406,8 +412,9 @@ def get_item_metrics(
     metrics["name-chars"] = sum(ord(char) - 32 for char in name[:100]) / sum(
         ord("z") - 32 for _ in range(100)
     )
-    # TODO: Use seperate description for metrics to ensure accurate results
-    description: str = re_sub(r"[^a-z0-9 ]", " ", item.get_description().lower())
+    description: str = re_sub(
+        r"[^a-z0-9 ]", " ", item.get_description(for_sorting=True).lower()
+    )
     metrics["desc-length"] = max(min(len(description) - 1, 100), 0) / 100
     biggest_word_len: int = (
         max(len(word) for word in split_search) if len(split_search) > 0 else 0
