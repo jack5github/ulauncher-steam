@@ -358,7 +358,7 @@ ITEM_METRIC_MULTS: dict[str, float] = {
     "name-exact-order": 0.062662,  # Whether exact word matches are in order in the name
     "name-length": 0.448897,  # The shortness of the name length
     "name-chars": 0.480775,  # The alphabetical ordering of the name
-    "desc-fuzzy": 0.4,  # Whether fuzzy word matches are in the description
+    "desc-fuzzy-order": 0.4,  # Whether fuzzy matches are in order in the description
     "desc-length": 0.351481,  # The shortness of the description length
     "installed": 0.526740,  # Whether the item is installed
     "launched": 0.409736,  # The last time the item was launched
@@ -419,8 +419,9 @@ def get_item_metrics(
     biggest_word_len: int = (
         max(len(word) for word in split_search) if len(split_search) > 0 else 0
     )
-    previous_fuzzy_index: int | None = None
-    previous_exact_index: int | None = None
+    previous_name_fuzzy_index: int | None = None
+    previous_name_exact_index: int | None = None
+    previous_desc_fuzzy_index: int | None = None
     for word in split_search:
         fuzzy_index: int = name.find(word)
         if fuzzy_index != -1:
@@ -431,9 +432,16 @@ def get_item_metrics(
                 (fuzzy_index / (len(name) - 1))  # Position of the word
                 + word_len_factor  # Length of the word
             ) / 2
-            if previous_fuzzy_index is not None and fuzzy_index < previous_fuzzy_index:
-                metrics["name-fuzzy-order"] += 1.0
-            previous_fuzzy_index = fuzzy_index
+            if previous_name_fuzzy_index is not None:
+                for _ in range(2):  # Loop should never run more than twice
+                    if fuzzy_index == -1:
+                        metrics["name-fuzzy-order"] += 1.0
+                        break
+                    if fuzzy_index >= previous_name_fuzzy_index:
+                        break
+                    fuzzy_index = name[previous_name_fuzzy_index:].find(word)
+            if fuzzy_index != -1:
+                previous_name_fuzzy_index = fuzzy_index
             split_name: list[str] = name.split()
             for name_part in split_name:
                 fuzzy_part_index: int = name_part.find(word)
@@ -460,11 +468,11 @@ def get_item_metrics(
                     + word_len_factor  # Length of the word
                 ) / 2
                 if (
-                    previous_exact_index is not None
-                    and exact_match.start() < previous_exact_index
+                    previous_name_exact_index is not None
+                    and exact_match.start() < previous_name_exact_index
                 ):
                     metrics["name-exact-order"] += 1.0
-                previous_exact_index = exact_match.start()
+                previous_name_exact_index = exact_match.start()
             else:
                 metrics["name-exact-index"] += 1.0
                 metrics["name-exact-order"] += 1.0
@@ -474,17 +482,23 @@ def get_item_metrics(
             metrics["name-word-fuzzy-index"] += 1.0
             metrics["name-exact-index"] += 1.0
             metrics["name-exact-order"] += 1.0
-            previous_fuzzy_index = -1
-            previous_exact_index = -1
         fuzzy_index = description.find(word)
-        if fuzzy_index == -1:
-            metrics["desc-fuzzy"] += word_len_factor
+        if previous_desc_fuzzy_index is not None:
+            for _ in range(2):  # Loop should never run more than twice
+                if fuzzy_index == -1:
+                    metrics["desc-fuzzy-order"] += 1.0
+                    break
+                if fuzzy_index >= previous_desc_fuzzy_index:
+                    break
+                fuzzy_index = description[previous_desc_fuzzy_index:].find(word)
+        if fuzzy_index != -1:
+            previous_desc_fuzzy_index = fuzzy_index
     if len(split_search) > 0:
         metrics["name-fuzzy-index"] /= len(split_search)
         metrics["name-fuzzy-order"] /= len(split_search)
         metrics["name-exact-index"] /= len(split_search)
         metrics["name-exact-order"] /= len(split_search)
-        metrics["desc-fuzzy"] /= len(split_search)
+        metrics["desc-fuzzy-order"] /= len(split_search)
     return metrics
 
 
