@@ -352,7 +352,6 @@ ITEM_METRIC_MULTS: dict[str, float] = {
     "name-exact-order": 0.034055,  # Whether exact word matches are in order in the name
     "name-length": 0.404428,  # The shortness of the name length
     "name-chars": 0.430958,  # The alphabetical ordering of the name
-    # TODO: Replace desc-fuzzy with a more detailed metric that measures the same thing
     "desc-fuzzy": 0.4,  # Whether fuzzy word matches are in the description
     "desc-length": 0.371447,  # The shortness of the description length
     "installed": 0.197777,  # Whether the item is installed
@@ -409,7 +408,9 @@ def get_item_metrics(
     )
     description: str = re_sub(r"[^a-z0-9 ]", " ", item.get_description().lower())
     metrics["desc-length"] = max(min(len(description) - 1, 100), 0) / 100
-    biggest_word_len: int = max(len(word) for word in split_search)
+    biggest_word_len: int = (
+        max(len(word) for word in split_search) if len(split_search) > 0 else 0
+    )
     previous_fuzzy_index: int | None = None
     previous_exact_index: int | None = None
     for word in split_search:
@@ -469,12 +470,13 @@ def get_item_metrics(
             previous_exact_index = -1
         fuzzy_index = description.find(word)
         if fuzzy_index == -1:
-            metrics["desc-fuzzy"] += 1.0
-    metrics["name-fuzzy-index"] /= len(split_search)
-    metrics["name-fuzzy-order"] /= len(split_search)
-    metrics["name-exact-index"] /= len(split_search)
-    metrics["name-exact-order"] /= len(split_search)
-    metrics["desc-fuzzy"] /= len(split_search)
+            metrics["desc-fuzzy"] += word_len_factor
+    if len(split_search) > 0:
+        metrics["name-fuzzy-index"] /= len(split_search)
+        metrics["name-fuzzy-order"] /= len(split_search)
+        metrics["name-exact-index"] /= len(split_search)
+        metrics["name-exact-order"] /= len(split_search)
+        metrics["desc-fuzzy"] /= len(split_search)
     return metrics
 
 
